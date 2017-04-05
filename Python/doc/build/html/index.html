@@ -1,0 +1,476 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Welcome to PHATE’s documentation &#8212; PHATE 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-phate.phate">
+<span id="welcome-to-phate-s-documentation"></span><h1>Welcome to PHATE&#8217;s documentation<a class="headerlink" href="#module-phate.phate" title="Permalink to this headline">¶</a></h1>
+<p>Potential of Heat-diffusion for Affinity-based Trajectory Embedding (PHATE)</p>
+<dl class="class">
+<dt id="phate.phate.PHATE">
+<em class="property">class </em><code class="descclassname">phate.phate.</code><code class="descname">PHATE</code><span class="sig-paren">(</span><em>n_components=2</em>, <em>a=10</em>, <em>k=5</em>, <em>t=30</em>, <em>mds='classic'</em>, <em>knn_dist='euclidean'</em>, <em>mds_dist='euclidean'</em>, <em>njobs=1</em>, <em>random_state=None</em><span class="sig-paren">)</span><a class="headerlink" href="#phate.phate.PHATE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">sklearn.base.BaseEstimator</span></code></p>
+<p>Potential of Heat-diffusion for Affinity-based Trajectory Embedding (PHATE)</p>
+<p>Embeds high dimensional single-cell data into two or three dimensions for visualization of biological progressions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>data</strong> : ndarray [n, p]</p>
+<blockquote>
+<div><p>2 dimensional input data array with n cells and p dimensions</p>
+</div></blockquote>
+<p><strong>n_components</strong> : int, optional, default: 2</p>
+<blockquote>
+<div><p>number of dimensions in which the data will be embedded</p>
+</div></blockquote>
+<p><strong>a</strong> : int, optional, default: 10</p>
+<blockquote>
+<div><p>sets decay rate of kernel tails</p>
+</div></blockquote>
+<p><strong>k</strong> : int, optional, default: 5</p>
+<blockquote>
+<div><p>used to set epsilon while autotuning kernel bandwidth</p>
+</div></blockquote>
+<p><strong>t</strong> : int, optional, default: 30</p>
+<blockquote>
+<div><p>power to which the diffusion operator is powered
+sets the level of diffusion</p>
+</div></blockquote>
+<p><strong>mds</strong> : string, optional, default: &#8216;classic&#8217;</p>
+<blockquote>
+<div><p>choose from [&#8216;classic&#8217;, &#8216;metric&#8217;, &#8216;nonmetric&#8217;]
+which MDS algorithm is used for dimensionality reduction</p>
+</div></blockquote>
+<p><strong>knn_dist</strong> : string, optional, default: &#8216;euclidean&#8217;</p>
+<blockquote>
+<div><p>reccomended values: &#8216;eucliean&#8217; and &#8216;cosine&#8217;
+Any metric from scipy.spatial.distance can be used
+distance metric for building kNN graph</p>
+</div></blockquote>
+<p><strong>mds_dist</strong> : string, optional, default: &#8216;euclidean&#8217;</p>
+<blockquote>
+<div><p>reccomended values: &#8216;eucliean&#8217; and &#8216;cosine&#8217;
+Any metric from scipy.spatial.distance can be used
+distance metric for MDS</p>
+</div></blockquote>
+<p><strong>njobs</strong> : integer, optional, default: 1</p>
+<blockquote>
+<div><p>The number of jobs to use for the computation.
+If -1 all CPUs are used. If 1 is given, no parallel computing code is used at all, which is useful for debugging.
+For n_jobs below -1, (n_cpus + 1 + n_jobs) are used. Thus for n_jobs = -2, all CPUs but one are used</p>
+</div></blockquote>
+<p><strong>random_state</strong> : integer or numpy.RandomState, optional</p>
+<blockquote class="last">
+<div><p>The generator used to initialize SMACOF (metric, nonmetric) MDS
+If an integer is given, it fixes the seed
+Defaults to the global numpy random number generator</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">References</p>
+<table class="docutils citation" frame="void" id="r1" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id1">[R1]</a></td><td><a class="reference external" href="http://biorxiv.org/content/early/2017/03/24/120378">Moon KR, van Dijk D, Zheng W, et al. (2017). &#8220;PHATE: A Dimensionality Reduction Method for Visualizing Trajectory Structures in High-Dimensional Biological Data&#8221;. Biorxiv.</a></td></tr>
+</tbody>
+</table>
+<p class="rubric">Attributes</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="12%" />
+<col width="88%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>embedding</td>
+<td>(array-like, shape [n_samples, n_dimensions]) Stores the position of the dataset in the embedding space</td>
+</tr>
+<tr class="row-even"><td>diff_op</td>
+<td>(array-like, shape [n_samples, n_samples]) The diffusion operator fit on the input data</td>
+</tr>
+<tr class="row-odd"><td>diff_potential</td>
+<td>(array-like, shape [n_samples, n_samples]) Precomputed diffusion potential</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#phate.phate.PHATE.fit" title="phate.phate.PHATE.fit"><code class="xref py py-obj docutils literal"><span class="pre">fit</span></code></a>(X)</td>
+<td>Computes the position of the cells in the embedding space</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#phate.phate.PHATE.fit_transform" title="phate.phate.PHATE.fit_transform"><code class="xref py py-obj docutils literal"><span class="pre">fit_transform</span></code></a>(X)</td>
+<td>Computes the position of the cells in the embedding space</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#phate.phate.PHATE.get_params" title="phate.phate.PHATE.get_params"><code class="xref py py-obj docutils literal"><span class="pre">get_params</span></code></a>([deep])</td>
+<td>Get parameters for this estimator.</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#phate.phate.PHATE.reset_diffusion" title="phate.phate.PHATE.reset_diffusion"><code class="xref py py-obj docutils literal"><span class="pre">reset_diffusion</span></code></a>([t])</td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="#phate.phate.PHATE.reset_mds" title="phate.phate.PHATE.reset_mds"><code class="xref py py-obj docutils literal"><span class="pre">reset_mds</span></code></a>([mds,&nbsp;mds_dist])</td>
+<td></td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="#phate.phate.PHATE.set_params" title="phate.phate.PHATE.set_params"><code class="xref py py-obj docutils literal"><span class="pre">set_params</span></code></a>(\*\*params)</td>
+<td>Set the parameters of this estimator.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="phate.phate.PHATE.fit">
+<code class="descname">fit</code><span class="sig-paren">(</span><em>X</em><span class="sig-paren">)</span><a class="headerlink" href="#phate.phate.PHATE.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the position of the cells in the embedding space</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>X</strong> : array, shape=[n_samples, n_features]</p>
+<p><strong>Input data.</strong></p>
+<p><strong>diff_op</strong> : array, shape=[n_samples, n_samples], optional</p>
+<p class="last"><strong>Precomputed diffusion operator</strong></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="phate.phate.PHATE.fit_transform">
+<code class="descname">fit_transform</code><span class="sig-paren">(</span><em>X</em><span class="sig-paren">)</span><a class="headerlink" href="#phate.phate.PHATE.fit_transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the position of the cells in the embedding space</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>X</strong> : array, shape=[n_samples, n_features]</p>
+<p><strong>Input data.</strong></p>
+<p><strong>diff_op</strong> : array, shape=[n_samples, n_samples], optional</p>
+<p><strong>Precomputed diffusion operator</strong></p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>embedding</strong> : array, shape=[n_samples, n_dimensions]</p>
+<p class="last">The cells embedded in a lower dimensional space using PHATE</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="phate.phate.PHATE.get_params">
+<code class="descname">get_params</code><span class="sig-paren">(</span><em>deep=True</em><span class="sig-paren">)</span><a class="headerlink" href="#phate.phate.PHATE.get_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get parameters for this estimator.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>deep</strong> : boolean, optional</p>
+<blockquote>
+<div><p>If True, will return the parameters for this estimator and
+contained subobjects that are estimators.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>params</strong> : mapping of string to any</p>
+<blockquote class="last">
+<div><p>Parameter names mapped to their values.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="phate.phate.PHATE.reset_diffusion">
+<code class="descname">reset_diffusion</code><span class="sig-paren">(</span><em>t=30</em><span class="sig-paren">)</span><a class="headerlink" href="#phate.phate.PHATE.reset_diffusion" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="phate.phate.PHATE.reset_mds">
+<code class="descname">reset_mds</code><span class="sig-paren">(</span><em>mds='classic'</em>, <em>mds_dist='euclidean'</em><span class="sig-paren">)</span><a class="headerlink" href="#phate.phate.PHATE.reset_mds" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="phate.phate.PHATE.set_params">
+<code class="descname">set_params</code><span class="sig-paren">(</span><em>**params</em><span class="sig-paren">)</span><a class="headerlink" href="#phate.phate.PHATE.set_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the parameters of this estimator.</p>
+<p>The method works on simple estimators as well as on nested objects
+(such as pipelines). The latter have parameters of the form
+<code class="docutils literal"><span class="pre">&lt;component&gt;__&lt;parameter&gt;</span></code> so that it&#8217;s possible to update each
+component of a nested object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">self</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="phate.phate.embed_phate">
+<code class="descclassname">phate.phate.</code><code class="descname">embed_phate</code><span class="sig-paren">(</span><em>data</em>, <em>n_components=2</em>, <em>a=10</em>, <em>k=5</em>, <em>t=30</em>, <em>mds='classic'</em>, <em>knn_dist='euclidean'</em>, <em>mds_dist='euclidean'</em>, <em>diff_op=None</em>, <em>diff_potential=None</em>, <em>njobs=1</em>, <em>random_state=None</em><span class="sig-paren">)</span><a class="headerlink" href="#phate.phate.embed_phate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Embeds high dimensional single-cell data into two or three dimensions for visualization of biological progressions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>data</strong> : ndarray [n, p]</p>
+<blockquote>
+<div><p>2 dimensional input data array with n cells and p dimensions</p>
+</div></blockquote>
+<p><strong>n_components</strong> : int, optional, default: 2</p>
+<blockquote>
+<div><p>number of dimensions in which the data will be embedded</p>
+</div></blockquote>
+<p><strong>a</strong> : int, optional, default: 10</p>
+<blockquote>
+<div><p>sets decay rate of kernel tails</p>
+</div></blockquote>
+<p><strong>k</strong> : int, optional, default: 5</p>
+<blockquote>
+<div><p>used to set epsilon while autotuning kernel bandwidth</p>
+</div></blockquote>
+<p><strong>t</strong> : int, optional, default: 30</p>
+<blockquote>
+<div><p>power to which the diffusion operator is powered
+sets the level of diffusion</p>
+</div></blockquote>
+<p><strong>mds</strong> : string, optional, default: &#8216;classic&#8217;</p>
+<blockquote>
+<div><p>choose from [&#8216;classic&#8217;, &#8216;metric&#8217;, &#8216;nonmetric&#8217;]
+which multidimensional scaling algorithm is used for dimensionality reduction</p>
+</div></blockquote>
+<p><strong>knn_dist</strong> : string, optional, default: &#8216;euclidean&#8217;</p>
+<blockquote>
+<div><p>reccomended values: &#8216;eucliean&#8217; and &#8216;cosine&#8217;
+Any metric from scipy.spatial.distance can be used
+distance metric for building kNN graph</p>
+</div></blockquote>
+<p><strong>mds_dist</strong> : string, optional, default: &#8216;euclidean&#8217;</p>
+<blockquote>
+<div><p>reccomended values: &#8216;eucliean&#8217; and &#8216;cosine&#8217;
+Any metric from scipy.spatial.distance can be used
+distance metric for MDS</p>
+</div></blockquote>
+<p><strong>diff_op</strong> : ndarray, optional [n, n], default: None</p>
+<blockquote>
+<div><p>Precomputed diffusion operator</p>
+</div></blockquote>
+<p><strong>diff_potential</strong> : ndarray, optional [n, n], default: None</p>
+<blockquote>
+<div><p>Precomputed diffusion potential</p>
+</div></blockquote>
+<p><strong>random_state</strong> : integer or numpy.RandomState, optional</p>
+<blockquote>
+<div><p>The generator used to initialize SMACOF (metric, nonmetric) MDS
+If an integer is given, it fixes the seed
+Defaults to the global numpy random number generator</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>embedding</strong> : ndarray [n_samples, n_components]</p>
+<blockquote>
+<div><p>PHATE embedding in low dimensional space.</p>
+</div></blockquote>
+<p><strong>diff_op</strong> : ndarray [n_samples, n_samples]</p>
+<blockquote class="last">
+<div><p>PHATE embedding in low dimensional space.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">References</p>
+<table class="docutils citation" frame="void" id="r2" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id3">[R2]</a></td><td><a class="reference external" href="http://biorxiv.org/content/early/2017/03/24/120378">Moon KR, van Dijk D, Zheng W, et al. (2017). &#8220;PHATE: A Dimensionality Reduction Method for Visualizing Trajectory Structures in High-Dimensional Biological Data&#8221;. Biorxiv.</a></td></tr>
+</tbody>
+</table>
+</dd></dl>
+
+<span class="target" id="module-phate.mds"></span><dl class="function">
+<dt id="phate.mds.cmdscale">
+<code class="descclassname">phate.mds.</code><code class="descname">cmdscale</code><span class="sig-paren">(</span><em>D</em><span class="sig-paren">)</span><a class="headerlink" href="#phate.mds.cmdscale" title="Permalink to this definition">¶</a></dt>
+<dd><p>Classical multidimensional scaling (MDS)
+Copyright © 2014-7 Francis Song, New York University
+<a class="reference external" href="http://www.nervouscomputer.com/hfs/cmdscale-in-python/">http://www.nervouscomputer.com/hfs/cmdscale-in-python/</a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>D</strong> : (n, n) array</p>
+<blockquote>
+<div><p>Symmetric distance matrix.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>Y</strong> : (n, p) array</p>
+<blockquote>
+<div><p>Configuration matrix. Each column represents a dimension. Only the
+p dimensions corresponding to positive eigenvalues of B are returned.
+Note that each dimension is only determined up to an overall sign,
+corresponding to a reflection.</p>
+</div></blockquote>
+<p><strong>e</strong> : (n,) array</p>
+<blockquote class="last">
+<div><p>Eigenvalues of B.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="phate.mds.embed_MDS">
+<code class="descclassname">phate.mds.</code><code class="descname">embed_MDS</code><span class="sig-paren">(</span><em>X</em>, <em>ndim=2</em>, <em>how='classic'</em>, <em>distance_metric='euclidean'</em>, <em>njobs=1</em>, <em>seed=None</em><span class="sig-paren">)</span><a class="headerlink" href="#phate.mds.embed_MDS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs classic, metric, and non-metric MDS</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>X: ndarray [n_samples, n_samples]</strong></p>
+<blockquote>
+<div><p>2 dimensional input data array with n_samples
+embed_MDS does not check for matrix squareness, but this is nescessary for PHATE</p>
+</div></blockquote>
+<p><strong>n_dim</strong> : int, optional, default: 2</p>
+<blockquote>
+<div><p>number of dimensions in which the data will be embedded</p>
+</div></blockquote>
+<p><strong>how</strong> : string, optional, default: &#8216;classic&#8217;</p>
+<blockquote>
+<div><p>choose from [&#8216;classic&#8217;, &#8216;metric&#8217;, &#8216;nonmetric&#8217;]
+which MDS algorithm is used for dimensionality reduction</p>
+</div></blockquote>
+<p><strong>distance_metric</strong> : string, optional, default: &#8216;euclidean&#8217;</p>
+<blockquote>
+<div><p>choose from [‘braycurtis’, ‘canberra’, ‘chebyshev’, ‘cityblock’, ‘correlation’, ‘cosine’, ‘dice’, ‘euclidean’, ‘hamming’, ‘jaccard’, ‘kulsinski’, ‘mahalanobis’, ‘matching’, ‘minkowski’, ‘rogerstanimoto’, ‘russellrao’, ‘seuclidean’, ‘sokalmichener’, ‘sokalsneath’, ‘sqeuclidean’, ‘yule’]
+distance metric for MDS</p>
+</div></blockquote>
+<p><strong>njobs</strong> : integer, optional, default: 1</p>
+<blockquote>
+<div><p>The number of jobs to use for the computation.
+If -1 all CPUs are used. If 1 is given, no parallel computing code is used at all, which is useful for debugging.
+For n_jobs below -1, (n_cpus + 1 + n_jobs) are used. Thus for n_jobs = -2, all CPUs but one are used</p>
+</div></blockquote>
+<p><strong>seed: integer or numpy.RandomState, optional</strong></p>
+<blockquote>
+<div><p>The generator used to initialize SMACOF (metric, nonmetric) MDS
+If an integer is given, it fixes the seed
+Defaults to the global numpy random number generator</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>Y</strong> : ndarray [n_samples, n_dim]</p>
+<blockquote class="last">
+<div><p>low dimensional embedding of X using MDS</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="#">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/index.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017 Krishnaswamy Lab, Yale University.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.5.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+      |
+      <a href="_sources/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
