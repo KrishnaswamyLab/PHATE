@@ -30,4 +30,4 @@ All the dependencies will be automatically installed using the above commands
 2. Add the PHATE/Matlab directory to your MATLAB path and run any of our `test` scripts to get a feel for PHATE.
 
 ##### Command line
-A tutorial on PHATE usage and visualization for single cell RNA-seq data can be found in this notebook: https://nbviewer.jupyter.org/github/SmitaKrishnaswamy/PHATE/blob/master/Python/test/phate_examples.ipynb(https://nbviewer.jupyter.org/github/SmitaKrishnaswamy/PHATE/blob/master/Python/test/phate_examples.ipynb)
+A tutorial on PHATE usage and visualization for single cell RNA-seq data can be found in this notebook: https://nbviewer.jupyter.org/github/SmitaKrishnaswamy/PHATE/blob/master/Python/test/phate_examples.ipynb
