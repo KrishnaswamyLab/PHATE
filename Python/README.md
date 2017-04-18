@@ -24,4 +24,4 @@ If you want to try running our test script on a DLA fractal tree:
         $ ./phate_test_tree.py #output saved in a png
 
 ### Jupyter Notebook
-A demo on PHATE usage and visualization for single cell RNA-seq data can be found in this notebook: [https://nbviewer.jupyter.org/github/SmitaKrishnaswamy/PHATE/blob/master/Python/test/phate_examples.ipynb](https://nbviewer.jupyter.org/github/SmitaKrishnaswamy/PHATE/blob/master/Python/test/phate_examples.ipynb)
+A demo on PHATE usage and visualization for single cell RNA-seq data can be found in this notebook: [https://nbviewer.jupyter.org/github/KrishnaswamyLab/PHATE/blob/master/Python/test/phate_examples.ipynb](https://nbviewer.jupyter.org/github/KrishnaswamyLab/PHATE/blob/master/Python/test/phate_examples.ipynb)
