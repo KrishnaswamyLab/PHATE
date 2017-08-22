@@ -15,7 +15,7 @@ from scipy.spatial.distance import squareform
 
 from .mds import embed_MDS
 
-def embed_phate(data, n_components=2, a=10, k=5, t=30, mds='classic', knn_dist='euclidean', mds_dist='euclidean', diff_op=None, diff_potential=None, njobs=1, random_state=None):
+def embed_phate(data, n_components=2, a=10, k=5, t=30, mds='classic', knn_dist='euclidean', mds_dist='euclidean', diff_op=None, diff_potential=None, njobs=1, random_state=None, verbose=True):
     """
     Embeds high dimensional single-cell data into two or three dimensions for visualization of biological progressions.
 
@@ -62,6 +62,9 @@ def embed_phate(data, n_components=2, a=10, k=5, t=30, mds='classic', knn_dist='
         If an integer is given, it fixes the seed
         Defaults to the global numpy random number generator
 
+    verbose : boolean, optional, default: True
+        Print updates during PHATE embedding
+
     Returns
     -------
     embedding : ndarray [n_samples, n_components]
@@ -76,12 +79,13 @@ def embed_phate(data, n_components=2, a=10, k=5, t=30, mds='classic', knn_dist='
        <http://biorxiv.org/content/early/2017/03/24/120378>`_
     """
     start = time.time()
-
+    #print('Imported numpy: %s'%np.__file__)
     M = data
     #if nothing is precomputed
     if diff_op is None:
         tic = time.time()
-        print("Bulding kNN graph and diffusion operator...")
+        if verbose:
+            print("Bulding kNN graph and diffusion operator...")
         nbrs = NearestNeighbors(n_neighbors=k+1, metric=knn_dist).fit(M)
         knn_dst, indices = nbrs.kneighbors(M)
         epsilon = knn_dst[:,k] # bandwidth(x) = distance to k-th neighbor of x
@@ -96,28 +100,39 @@ def embed_phate(data, n_components=2, a=10, k=5, t=30, mds='classic', knn_dist='
 
         #clearing variables for memory
         gs_ker = pdx = diff_deg = knn_dst = M = None
-        print("Built graph and diffusion operator in %.2f seconds."%(time.time() - tic))
+        if verbose:
+            print("Built graph and diffusion operator in %.2f seconds."%(time.time() - tic))
     else:
-        print("Using precomputed diffusion operator...")
+        if verbose:
+            print("Using precomputed diffusion operator...")
 
     if diff_potential is None:
         tic = time.time()
-        print("Calculating diffusion potential...")
+        if verbose:
+            print("Calculating diffusion potential...")
         #transforming X
+        #print('Diffusion operator • %s:'%t)
+        #print(diff_op)
         X = np.linalg.matrix_power(diff_op,t) #diffused diffusion operator
+        #print('X:')
+        #print(X)
         X[X == 0] = np.finfo(float).eps #handling zeros
         X[X <= np.finfo(float).eps] = np.finfo(float).eps #handling small values
         diff_potential = -1*np.log(X) #diffusion potential
-        print("Calculated diffusion potential in %.2f seconds."%(time.time() - tic))
+        if verbose:
+            print("Calculated diffusion potential in %.2f seconds."%(time.time() - tic))
     #if diffusion potential is precomputed (i.e. 'mds' or 'mds_dist' has changed on PHATE object)
     else:
-        print("Using precomputed diffusion potential...")
+        if verbose:
+            print("Using precomputed diffusion potential...")
 
     tic = time.time()
-    print("Embedding data using %s MDS..."%(mds))
+    if verbose:
+            print("Embedding data using %s MDS..."%(mds))
     embedding = embed_MDS(diff_potential, ndim=n_components, how=mds, distance_metric=mds_dist, njobs=njobs, seed=random_state)
-    print("Embedded data in %.2f seconds."%(time.time() - tic))
-    print("Finished PHATE embedding in %.2f seconds.\n"%(time.time() - start))
+    if verbose:
+        print("Embedded data in %.2f seconds."%(time.time() - tic))
+        print("Finished PHATE embedding in %.2f seconds.\n"%(time.time() - start))
     return embedding, diff_op, diff_potential
 
 class PHATE(BaseEstimator):
@@ -184,7 +199,7 @@ class PHATE(BaseEstimator):
        <http://biorxiv.org/content/early/2017/03/24/120378>`_
     """
 
-    def __init__(self, n_components=2, a=10, k=5, t=30, mds='classic', knn_dist='euclidean', mds_dist='euclidean', njobs=1, random_state=None):
+    def __init__(self, n_components=2, a=10, k=5, t=30, mds='classic', knn_dist='euclidean', mds_dist='euclidean', njobs=1, random_state=None, verbose=True):
         self.ndim = n_components
         self.a = a
         self.k = k
@@ -196,6 +211,7 @@ class PHATE(BaseEstimator):
         self.random_state = random_state
         self.diff_op = None
         self.diff_potential = None
+        self.verbose = verbose
 
     def reset_mds(self, n_components=2, mds="classic", mds_dist="euclidean"):
         self.n_components=n_components
@@ -241,6 +257,6 @@ class PHATE(BaseEstimator):
         """
         self.embedding, self.diff_op, self.diff_potential = embed_phate(X, n_components=self.ndim, a=self.a, k=self.k, t=self.t,
                                                                         mds=self.mds, knn_dist=self.knn_dist, mds_dist=self.mds_dist, njobs=self.njobs,
-                                                                        diff_op = self.diff_op, diff_potential = self.diff_potential, random_state=self.random_state)
+                                                                        diff_op = self.diff_op, diff_potential = self.diff_potential, random_state=self.random_state, verbose=self.verbose)
 
         return self.embedding
