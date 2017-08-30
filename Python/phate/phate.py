@@ -8,12 +8,11 @@ Potential of Heat-diffusion for Affinity-based Trajectory Embedding (PHATE)
 import time
 import numpy as np
 import sklearn
-from sklearn.neighbors import NearestNeighbors
 from sklearn.base import BaseEstimator
 from scipy.spatial.distance import pdist
 from scipy.spatial.distance import squareform
 
-#sdfasdf 
+#sdfasdf
 from .mds import embed_MDS
 
 def embed_phate(data, n_components=2, a=10, k=5, t=30, mds='classic', knn_dist='euclidean', mds_dist='euclidean', diff_op=None, diff_potential=None, njobs=1, random_state=None, verbose=True):
@@ -87,10 +86,9 @@ def embed_phate(data, n_components=2, a=10, k=5, t=30, mds='classic', knn_dist='
         tic = time.time()
         if verbose:
             print("Bulding kNN graph and diffusion operator...")
-        nbrs = NearestNeighbors(n_neighbors=k+1, metric=knn_dist).fit(M)
-        knn_dst, indices = nbrs.kneighbors(M)
-        epsilon = knn_dst[:,k] # bandwidth(x) = distance to k-th neighbor of x
         pdx = squareform(pdist(M, metric=knn_dist))
+        knn_dist = np.sort(pdx, axis=1)
+        epsilon = knn_dst[:,k] # bandwidth(x) = distance to k-th neighbor of x
         pdx = (pdx / epsilon).T # autotuning d(x,:) using epsilon(x).
 
         gs_ker = np.exp(-1 * ( pdx ** a)) # not really Gaussian kernel
