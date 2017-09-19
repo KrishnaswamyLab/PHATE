@@ -88,7 +88,7 @@ def embed_phate(data, n_components=2, a=10, k=5, t=30, mds='classic', knn_dist='
             print("Bulding kNN graph and diffusion operator...")
         pdx = squareform(pdist(M, metric=knn_dist))
         knn_dist = np.sort(pdx, axis=1)
-        epsilon = knn_dst[:,k] # bandwidth(x) = distance to k-th neighbor of x
+        epsilon = knn_dist[:,k] # bandwidth(x) = distance to k-th neighbor of x
         pdx = (pdx / epsilon).T # autotuning d(x,:) using epsilon(x).
 
         gs_ker = np.exp(-1 * ( pdx ** a)) # not really Gaussian kernel
