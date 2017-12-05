@@ -115,9 +115,9 @@ if(isempty(DiffOp)&isempty(DiffOp_t))
     epsilon = knnDST(:,k+1); % bandwidth(x) = distance to k-th neighbor of x
     PDX = bsxfun(@rdivide,PDX,epsilon); % autotuning d(x,:) using epsilon(x)
     GsKer = exp(-PDX.^a); % not really Gaussian kernel
-    GsKer=GsKer+GsKer'; % distfunetrization
-    DiffDeg = diag(sum(GsKer,2)); % degrees
-    DiffOp = DiffDeg^(-1)*GsKer; % row stochastic
+    GsKer=GsKer+GsKer'; % symmetrization
+    DiffDeg = diag(1./sum(GsKer,2)); % Inverse of degrees
+    DiffOp = DiffDeg*GsKer; % row stochastic
 
     % Clear a bit of space for memory
     clear GsKer PDX DiffDeg
@@ -127,8 +127,9 @@ end
 if(isempty(DiffOp_t))
     disp 'diffusing operator'
     DiffOp_t = DiffOp^t;
-    X = DiffOp_t;
 end
+
+X = DiffOp_t;
 
 disp 'potential recovery'
 X(X<=eps)=eps;
@@ -154,6 +155,12 @@ switch mds_method
         opt = statset('display', 'iter');
         Y_start = randmds(X, ndim);
         Y = mdscale(X, ndim, 'options', opt, 'start', Y_start);
+    % built-in MATLAB version of MMDS
+    case 'mmds'
+        disp 'MMDS'
+        opt=statset('display','iter');
+        Y_start = randmds(X,ndim);
+        Y = mdscale(X,ndim,'options',opt,'start',Y_start,'Criterion','metricstress');
 end
 
 disp 'done.'
