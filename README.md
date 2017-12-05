@@ -32,6 +32,11 @@ All the dependencies will be automatically installed using the above commands
 #### R version
 
 1. The R version of PHATE can be accessed [here](https://github.com/KrishnaswamyLab/phater).
+2. The R version can also be accessed with this repository by adding the following steps after cloning:
+        
+        $ git submodule init
+        $ git submodule update
+        $ cd phater
 
 ### Python demo
 A demo on PHATE usage and visualization for single cell RNA-seq data can be found in this notebook: [https://nbviewer.jupyter.org/github/KrishnaswamyLab/PHATE/blob/master/Python/test/phate_examples.ipynb](https://nbviewer.jupyter.org/github/KrishnaswamyLab/PHATE/blob/master/Python/test/phate_examples.ipynb?flush_cache=true)
