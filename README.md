@@ -29,9 +29,9 @@ All the dependencies will be automatically installed using the above commands
 
 2. Add the PHATE/Matlab directory to your MATLAB path and run any of our `test` scripts to get a feel for PHATE.
 
-#### Installation and dependencies for the R version
+#### R version
 
-1. Check back soon, R code is coming!
+1. The R version of PHATE can be accessed [here](https://github.com/KrishnaswamyLab/phater).
 
 ### Python demo
 A demo on PHATE usage and visualization for single cell RNA-seq data can be found in this notebook: [https://nbviewer.jupyter.org/github/KrishnaswamyLab/PHATE/blob/master/Python/test/phate_examples.ipynb](https://nbviewer.jupyter.org/github/KrishnaswamyLab/PHATE/blob/master/Python/test/phate_examples.ipynb?flush_cache=true)
