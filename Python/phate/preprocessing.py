@@ -6,7 +6,7 @@ import sklearn.decomposition
 import numpy as np
 import scipy.sparse as sp
 
-def pca_reduce(data, n_components=100, solver='sparse'):
+def pca_reduce(data, n_components=100, solver='sparse', verbose=False):
     """PCA dimensionality reduction
     Reduces input matrix and saves n_components. If solver='sparse', then
     `sklearn.decomposition.TruncatedSVD` is used for dimensionality reduction.
@@ -32,7 +32,7 @@ def pca_reduce(data, n_components=100, solver='sparse'):
         input data reduced to desired number of dimensions
     """
 
-    print('Running PCA to %s dimensions using %s PCA...'%(n_components, solver))
+    if verbose: print('Running PCA to %s dimensions using %s PCA...'%(n_components, solver))
     if solver == 'sparse':
         if not sp.issparse(data):
             try:
@@ -48,7 +48,7 @@ def pca_reduce(data, n_components=100, solver='sparse'):
 
     return data_reduced
 
-def library_size_normalize(data):
+def library_size_normalize(data, verbose=False):
     """Performs L1 normalization on input data
     Performs L1 normalization on input data such that the sum of expression values for each cell sums to 1
     then returns normalized matrix to the metric space using median UMI count per
@@ -64,7 +64,7 @@ def library_size_normalize(data):
     data_norm : ndarray [n, p]
         2 dimensional array with normalized gene expression values
     """
-    print("Normalizing library sizes for %s cells"%(data.shape[0]))
+    if verbose: print("Normalizing library sizes for %s cells"%(data.shape[0]))
     data_norm = sklearn.preprocessing.normalize(data, norm = 'l1', axis = 1)
     #norm = 'l1' computes the L1 norm which computes the
     #axis = 1 independently normalizes each sample
