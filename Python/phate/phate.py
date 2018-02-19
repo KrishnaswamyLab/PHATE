@@ -85,7 +85,7 @@ def embed_phate(data, n_components=2, a=10, k=5, t=30, mds='classic', knn_dist='
     if diff_op is None:
         tic = time.time()
         if verbose:
-            print("Bulding kNN graph and diffusion operator...")
+            print("Building kNN graph and diffusion operator...")
         pdx = squareform(pdist(M, metric=knn_dist))
         knn_dist = np.sort(pdx, axis=1)
         epsilon = knn_dist[:,k] # bandwidth(x) = distance to k-th neighbor of x
