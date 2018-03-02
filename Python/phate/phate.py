@@ -86,10 +86,13 @@ def embed_phate(data, n_components=2, a=10, k=5, t=30, mds='classic', knn_dist='
         tic = time.time()
         if verbose:
             print("Building kNN graph and diffusion operator...")
-        pdx = squareform(pdist(M, metric=knn_dist))
-        knn_dist = np.sort(pdx, axis=1)
-        epsilon = knn_dist[:,k] # bandwidth(x) = distance to k-th neighbor of x
-        pdx = (pdx / epsilon).T # autotuning d(x,:) using epsilon(x).
+        try:
+            pdx = squareform(pdist(M, metric=knn_dist))
+            knn_dist = np.sort(pdx, axis=1)
+            epsilon = knn_dist[:,k] # bandwidth(x) = distance to k-th neighbor of x
+            pdx = (pdx / epsilon).T # autotuning d(x,:) using epsilon(x).
+        except RuntimeWarning:
+            raise ValueError('It looks like you have at least k identifical data points. Try removing dupliates.')
 
         gs_ker = np.exp(-1 * ( pdx ** a)) # not really Gaussian kernel
         gs_ker = gs_ker + gs_ker.T #symmetriziation
