@@ -83,10 +83,11 @@ epsilon = knnDST(:,k+1); % bandwidth(x) = distance to k-th neighbor of x
 PDX = bsxfun(@rdivide,PDX,epsilon); % autotuning d(x,:) using epsilon(x)
 GsKer = exp(-PDX.^a); % not really Gaussian kernel
 GsKer=GsKer+GsKer'; % Symmetrization
-DiffDeg = diag(sum(GsKer,2)); % degrees
-DiffOp = DiffDeg^(-1)*GsKer; % row stochastic
+DiffDeg = diag(1./sum(GsKer,2)); % Inverse of degrees
+DiffOp = DiffDeg*GsKer; % row stochastic
+DiffDegSq=sqrt(DiffDeg);
 
-DiffAff = DiffDeg^(-1/2)*GsKer*DiffDeg^(-1/2); % symmetric conjugate affinities
+DiffAff = DiffDegSq*GsKer*DiffDegSq; % symmetric conjugate affinities
 DiffAff = (DiffAff + DiffAff')/2; % clean up numerical inaccuracies to maintain symmetry
 
 % Clear a bit of space for memory
