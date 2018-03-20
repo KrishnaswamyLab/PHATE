@@ -112,17 +112,17 @@ def embed_MDS(X, ndim=2, how='metric', distance_metric='euclidean', njobs=1, see
     if how == 'classic':
         # classical MDS as defined in cmdscale
         #Y = cmdscale(X_dist)[0][:,:ndim]
-        Y = cmdscale_fast(dist,ndim)
+        Y = cmdscale_fast(X_dist,ndim)
     elif how == 'metric':
         # First compute CMDS
-        Y_cmds = cmdscale_fast(dist,ndim)
+        Y_cmds = cmdscale_fast(X_dist,ndim)
         # Metric MDS from sklearn
         Y = MDS(n_components=ndim, metric=True, max_iter=3000, eps=1e-12,
                      dissimilarity="precomputed", random_state=seed, n_jobs=njobs,
                      n_init=1).fit_transform(X_dist,init=Y_cmds)
     elif how == 'nonmetric':
         # First compute CMDS
-        Y_cmds = cmdscale_fast(dist,ndim)
+        Y_cmds = cmdscale_fast(X_dist,ndim)
         # Then compute Metric MDS
         Y_mmds = MDS(n_components=ndim, metric=True, max_iter=3000, eps=1e-12,
                      dissimilarity="precomputed", random_state=seed, n_jobs=njobs,
