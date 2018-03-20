@@ -7,6 +7,20 @@ from scipy.spatial.distance import pdist
 from scipy.spatial.distance import squareform
 import numpy as np
 
+# Fast classical MDS using random svd
+def cmdscale_fast(D, ndim):
+    """
+    Fast CMDS using randomm SVD
+    """
+    D = D**2
+    D - D.mean(axis=0)[:, None]
+    D - D.mean(axis=1)[None, :]
+
+    pca = PCA(n_components=ndim, svd_solver='randomized')
+    Y = pca.fit_transform(D)
+
+    return Y
+
 def cmdscale(D):
     """
     Classical multidimensional scaling (MDS)
@@ -55,34 +69,7 @@ def cmdscale(D):
 
     return Y, evals
 
-
-def fast_cmdscale(D, ndim):
-    """
-    """
-
-    # Number of points
-    n = len(D)
-
-    # Centering matrix
-    H = np.eye(n) - np.ones((n, n))/float(n)
-
-    # YY^T
-    B = -H.dot(D**2).dot(H)/2
-
-    #
-    pca_solver = PCA(n_components=ndim, svd_solver='randomized')
-    data_reduce = pca_solver.fit_transform(B)
-
-    return data_reduce
-
-
-
-
-
-
-
-
-def embed_MDS(X, ndim=2, how='classic', distance_metric='euclidean', njobs=1, seed=None):
+def embed_MDS(X, ndim=2, how='metric', distance_metric='euclidean', njobs=1, seed=None):
     """
     Performs classic, metric, and non-metric MDS
 
@@ -123,20 +110,24 @@ def embed_MDS(X, ndim=2, how='classic', distance_metric='euclidean', njobs=1, se
     X_dist = squareform(pdist(X, distance_metric))
 
     if how == 'classic':
-        #classical MDS as defined in cmdscale
-        Y = cmdscale(X_dist)[0][:,:ndim]
-    elif how == 'fast_classic':
-        Y = fast_cmdscale(X_dist, ndim)
+        # classical MDS as defined in cmdscale
+        #Y = cmdscale(X_dist)[0][:,:ndim]
+        Y = cmdscale_fast(dist,ndim)
     elif how == 'metric':
-        #Metric MDS from sklearn
+        # First compute CMDS
+        Y_cmds = cmdscale_fast(dist,ndim)
+        # Metric MDS from sklearn
         Y = MDS(n_components=ndim, metric=True, max_iter=3000, eps=1e-12,
                      dissimilarity="precomputed", random_state=seed, n_jobs=njobs,
-                     n_init=1).fit_transform(X_dist)
+                     n_init=1).fit_transform(X_dist,init=Y_cmds)
     elif how == 'nonmetric':
+        # First compute CMDS
+        Y_cmds = cmdscale_fast(dist,ndim)
+        # Then compute Metric MDS
         Y_mmds = MDS(n_components=ndim, metric=True, max_iter=3000, eps=1e-12,
                      dissimilarity="precomputed", random_state=seed, n_jobs=njobs,
-                     n_init=1).fit_transform(X_dist)
-        #Nonmetric MDS from sklearn using metric MDS as an initialization
+                     n_init=1).fit_transform(X_dist,init=Y_cmds)
+        # Nonmetric MDS from sklearn using metric MDS as an initialization
         Y = MDS(n_components=ndim, metric=False, max_iter=3000, eps=1e-12,
                      dissimilarity="precomputed", random_state=seed, n_jobs=njobs,
                      n_init=1).fit_transform(X_dist,init=Y_mmds)
