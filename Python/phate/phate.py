@@ -97,7 +97,7 @@ def embed_phate(data, n_components=2, a=10, k=5, t=30, mds='metric', knn_dist='e
         gs_ker = np.exp(-1 * ( pdx ** a)) # not really Gaussian kernel
         gs_ker = gs_ker + gs_ker.T #symmetriziation
         
-        diff_op = diff_op / diff_op.sum(axis=1)[None, :]
+        diff_op = gs_ker / gs_ker.sum(axis=1)[None, :]
         
         #diff_deg = np.diag(np.sum(gs_ker,0)) # degrees
         #diff_op = np.dot(np.diag(np.diag(diff_deg)**(-1)),gs_ker) # row stochastic
