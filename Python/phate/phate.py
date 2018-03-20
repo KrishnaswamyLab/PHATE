@@ -15,7 +15,7 @@ from scipy.spatial.distance import squareform
 #sdfasdf
 from .mds import embed_MDS
 
-def embed_phate(data, n_components=2, a=10, k=5, t=30, mds='classic', knn_dist='euclidean', mds_dist='euclidean', diff_op=None, diff_potential=None, njobs=1, random_state=None, verbose=True):
+def embed_phate(data, n_components=2, a=10, k=5, t=30, mds='metric', knn_dist='euclidean', mds_dist='euclidean', diff_op=None, diff_potential=None, njobs=1, random_state=None, verbose=True):
     """
     Embeds high dimensional single-cell data into two or three dimensions for visualization of biological progressions.
 
@@ -37,7 +37,7 @@ def embed_phate(data, n_components=2, a=10, k=5, t=30, mds='classic', knn_dist='
         power to which the diffusion operator is powered
         sets the level of diffusion
 
-    mds : string, optional, default: 'classic'
+    mds : string, optional, default: 'metric'
         choose from ['classic', 'metric', 'nonmetric']
         which multidimensional scaling algorithm is used for dimensionality reduction
 
@@ -86,19 +86,21 @@ def embed_phate(data, n_components=2, a=10, k=5, t=30, mds='classic', knn_dist='
         tic = time.time()
         if verbose:
             print("Building kNN graph and diffusion operator...")
-        pdx = squareform(pdist(M, metric=knn_dist))
-        knn_dist = np.sort(pdx, axis=1)
-        epsilon = knn_dist[:,k] # bandwidth(x) = distance to k-th neighbor of x
-        pdx = (pdx / epsilon).T # autotuning d(x,:) using epsilon(x).
+        try:
+            pdx = squareform(pdist(M, metric=knn_dist))
+            knn_dist = np.sort(pdx, axis=1)
+            epsilon = knn_dist[:,k] # bandwidth(x) = distance to k-th neighbor of x
+            pdx = (pdx / epsilon).T # autotuning d(x,:) using epsilon(x).
+        except RuntimeWarning:
+            raise ValueError('It looks like you have at least k identifical data points. Try removing dupliates.')
 
         gs_ker = np.exp(-1 * ( pdx ** a)) # not really Gaussian kernel
         gs_ker = gs_ker + gs_ker.T #symmetriziation
-        diff_deg = np.diag(np.sum(gs_ker,0)) # degrees
-
-        diff_op = np.dot(np.diag(np.diag(diff_deg)**(-1)),gs_ker) # row stochastic
+        
+        diff_op = gs_ker / gs_ker.sum(axis=1)[:, None] # row stochastic
 
         #clearing variables for memory
-        gs_ker = pdx = diff_deg = knn_dst = M = None
+        gs_ker = pdx = knn_dst = M = None
         if verbose:
             print("Built graph and diffusion operator in %.2f seconds."%(time.time() - tic))
     else:
@@ -156,7 +158,7 @@ class PHATE(BaseEstimator):
         power to which the diffusion operator is powered
         sets the level of diffusion
 
-    mds : string, optional, default: 'classic'
+    mds : string, optional, default: 'metric'
         choose from ['classic', 'metric', 'nonmetric']
         which MDS algorithm is used for dimensionality reduction
 
@@ -198,7 +200,7 @@ class PHATE(BaseEstimator):
        <http://biorxiv.org/content/early/2017/03/24/120378>`_
     """
 
-    def __init__(self, n_components=2, a=10, k=5, t=30, mds='classic', knn_dist='euclidean', mds_dist='euclidean', njobs=1, random_state=None, verbose=True):
+    def __init__(self, n_components=2, a=10, k=5, t=30, mds='metric', knn_dist='euclidean', mds_dist='euclidean', njobs=1, random_state=None, verbose=True):
         self.ndim = n_components
         self.a = a
         self.k = k
@@ -212,7 +214,7 @@ class PHATE(BaseEstimator):
         self.diff_potential = None
         self.verbose = verbose
 
-    def reset_mds(self, n_components=2, mds="classic", mds_dist="euclidean"):
+    def reset_mds(self, n_components=2, mds="metric", mds_dist="euclidean"):
         self.n_components=n_components
         self.mds=mds
         self.mds_dist=mds_dist
