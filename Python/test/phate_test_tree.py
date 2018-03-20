@@ -15,7 +15,7 @@ def main(argv=None):
     n_drop = 0, rand_multiplier = 2, seed=37, sigma = 4)
 
     #instantiate phate_operator
-    phate_operator = phate.PHATE(n_components=2, a=10, k=5, t=30, mds='classic',
+    phate_operator = phate.PHATE(n_components=2, a=10, k=5, t=30, mds='metric',
     knn_dist='euclidean', mds_dist='euclidean', njobs=-2)
 
     #run phate with classic MDS
