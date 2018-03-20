@@ -27,7 +27,7 @@ def main(argv=None):
 
     #run phate with nonmetric MDS
     phate_operator.reset_mds(mds="nonmetric")
-    Y_nmmds = Y_mmds#phate_operator.fit_transform(M)
+    Y_nmmds = phate_operator.fit_transform(M)
 
     pca = phate.preprocessing.pca_reduce(M, n_components=2)
     tsne = sklearn.manifold.TSNE().fit_transform(M)
