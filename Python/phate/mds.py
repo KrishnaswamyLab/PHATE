@@ -2,6 +2,7 @@
 # (C) 2017 Krishnaswamy Lab GPLv2
 
 from sklearn.manifold import MDS
+from sklearn.decomposition import PCA
 from scipy.spatial.distance import pdist
 from scipy.spatial.distance import squareform
 import numpy as np
@@ -54,6 +55,33 @@ def cmdscale(D):
 
     return Y, evals
 
+
+def fast_cmdscale(D, ndim):
+    """
+    """
+
+    # Number of points
+    n = len(D)
+
+    # Centering matrix
+    H = np.eye(n) - np.ones((n, n))/float(n)
+
+    # YY^T
+    B = -H.dot(D**2).dot(H)/2
+
+    #
+    pca_solver = PCA(n_components=ndim, svd_solver='randomized')
+    data_reduce = pca_solver.fit_transform(B)
+
+    return data_reduce
+
+
+
+
+
+
+
+
 def embed_MDS(X, ndim=2, how='classic', distance_metric='euclidean', njobs=1, seed=None):
     """
     Performs classic, metric, and non-metric MDS
@@ -72,7 +100,7 @@ def embed_MDS(X, ndim=2, how='classic', distance_metric='euclidean', njobs=1, se
         which MDS algorithm is used for dimensionality reduction
 
     distance_metric : string, optional, default: 'euclidean'
-        choose from [‘braycurtis’, ‘canberra’, ‘chebyshev’, ‘cityblock’, ‘correlation’, ‘cosine’, ‘dice’, ‘euclidean’, ‘hamming’, ‘jaccard’, ‘kulsinski’, ‘mahalanobis’, ‘matching’, ‘minkowski’, ‘rogerstanimoto’, ‘russellrao’, ‘seuclidean’, ‘sokalmichener’, ‘sokalsneath’, ‘sqeuclidean’, ‘yule’]
+        choose from [‘cosine’, ‘euclidean’]
         distance metric for MDS
 
     njobs : integer, optional, default: 1
@@ -97,6 +125,8 @@ def embed_MDS(X, ndim=2, how='classic', distance_metric='euclidean', njobs=1, se
     if how == 'classic':
         #classical MDS as defined in cmdscale
         Y = cmdscale(X_dist)[0][:,:ndim]
+    elif how == 'fast_classic':
+        Y = fast_cmdscale(X_dist, ndim)
     elif how == 'metric':
         #Metric MDS from sklearn
         Y = MDS(n_components=ndim, metric=True, max_iter=3000, eps=1e-12,
