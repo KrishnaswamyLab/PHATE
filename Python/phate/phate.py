@@ -15,7 +15,7 @@ from scipy.spatial.distance import squareform
 #sdfasdf
 from .mds import embed_MDS
 
-def embed_phate(data, n_components=2, a=10, k=5, t=30, mds='classic', knn_dist='euclidean', mds_dist='euclidean', diff_op=None, diff_potential=None, njobs=1, random_state=None, verbose=True):
+def embed_phate(data, n_components=2, a=10, k=5, t=30, mds='metric', knn_dist='euclidean', mds_dist='euclidean', diff_op=None, diff_potential=None, njobs=1, random_state=None, verbose=True):
     """
     Embeds high dimensional single-cell data into two or three dimensions for visualization of biological progressions.
 
@@ -37,7 +37,7 @@ def embed_phate(data, n_components=2, a=10, k=5, t=30, mds='classic', knn_dist='
         power to which the diffusion operator is powered
         sets the level of diffusion
 
-    mds : string, optional, default: 'classic'
+    mds : string, optional, default: 'metric'
         choose from ['classic', 'metric', 'nonmetric']
         which multidimensional scaling algorithm is used for dimensionality reduction
 
@@ -159,7 +159,7 @@ class PHATE(BaseEstimator):
         power to which the diffusion operator is powered
         sets the level of diffusion
 
-    mds : string, optional, default: 'classic'
+    mds : string, optional, default: 'metric'
         choose from ['classic', 'metric', 'nonmetric']
         which MDS algorithm is used for dimensionality reduction
 
@@ -201,7 +201,7 @@ class PHATE(BaseEstimator):
        <http://biorxiv.org/content/early/2017/03/24/120378>`_
     """
 
-    def __init__(self, n_components=2, a=10, k=5, t=30, mds='classic', knn_dist='euclidean', mds_dist='euclidean', njobs=1, random_state=None, verbose=True):
+    def __init__(self, n_components=2, a=10, k=5, t=30, mds='metric', knn_dist='euclidean', mds_dist='euclidean', njobs=1, random_state=None, verbose=True):
         self.ndim = n_components
         self.a = a
         self.k = k
@@ -215,7 +215,7 @@ class PHATE(BaseEstimator):
         self.diff_potential = None
         self.verbose = verbose
 
-    def reset_mds(self, n_components=2, mds="classic", mds_dist="euclidean"):
+    def reset_mds(self, n_components=2, mds="metric", mds_dist="euclidean"):
         self.n_components=n_components
         self.mds=mds
         self.mds_dist=mds_dist
