@@ -96,12 +96,14 @@ def embed_phate(data, n_components=2, a=10, k=5, t=30, mds='metric', knn_dist='e
 
         gs_ker = np.exp(-1 * ( pdx ** a)) # not really Gaussian kernel
         gs_ker = gs_ker + gs_ker.T #symmetriziation
-        diff_deg = np.diag(np.sum(gs_ker,0)) # degrees
-
-        diff_op = np.dot(np.diag(np.diag(diff_deg)**(-1)),gs_ker) # row stochastic
+        
+        diff_op = diff_op / diff_op.sum(axis=1)[None, :]
+        
+        #diff_deg = np.diag(np.sum(gs_ker,0)) # degrees
+        #diff_op = np.dot(np.diag(np.diag(diff_deg)**(-1)),gs_ker) # row stochastic
 
         #clearing variables for memory
-        gs_ker = pdx = diff_deg = knn_dst = M = None
+        gs_ker = pdx = knn_dst = M = None
         if verbose:
             print("Built graph and diffusion operator in %.2f seconds."%(time.time() - tic))
     else:
