@@ -13,8 +13,8 @@ def cmdscale_fast(D, ndim):
     Fast CMDS using randomm SVD
     """
     D = D**2
-    D = D - D.mean(axis=0)[:, None]
-    D = D - D.mean(axis=1)[None, :]
+    D = D - D.mean(axis=0)[None, :]
+    D = D - D.mean(axis=1)[:, None]
 
     pca = PCA(n_components=ndim, svd_solver='randomized')
     Y = pca.fit_transform(D)
