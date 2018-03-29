@@ -1,0 +1,47 @@
+%% init
+n_samp = 10000;
+n_dim = 100;
+n_branch = 40;
+sigma = 5;
+rng(7);
+
+%%
+N_vec = [1000 2000 3000 4000 5000];
+runtime_vec_phate = nan(size(N_vec));
+runtime_vec_tsne_0 = nan(size(N_vec));
+runtime_vec_tsne_05 = nan(size(N_vec));
+runtime_vec_tsne_08 = nan(size(N_vec));
+for I=1:length(N_vec)
+    I
+    n_samp = N_vec(I);
+    [M, C] = dla_tree(n_samp, n_dim, n_branch, sigma);
+    % fast PHATE
+    tic;
+    Y_phate = phate_fast(M, 'k', 10, 'ndim', 2, 't', 48, 'npca', 100, 'nsvd', 100, ...
+        'ncluster', 1000, 'pot_method', 'sqrt');
+    runtime_vec_phate(I) = toc
+    % tSNE theta=0
+    tic;
+    Y_tsne = tsne(M,'Algorithm','barneshut','Perplexity',20,'Theta',0,'NumPCAComponents',100);
+    runtime_vec_tsne_0(I) = toc
+    runtime_vec_phate(I) = toc
+    % tSNE theta=0.5
+    tic;
+    Y_tsne = tsne(M,'Algorithm','barneshut','Perplexity',20,'Theta',0.5,'NumPCAComponents',100);
+    runtime_vec_tsne_05(I) = toc
+    runtime_vec_phate(I) = toc
+    % tSNE theta=0.8
+    tic;
+    Y_tsne = tsne(M,'Algorithm','barneshut','Perplexity',20,'Theta',0.8,'NumPCAComponents',100);
+    runtime_vec_tsne_08(I) = toc
+end
+
+%% plot
+figure;
+hold all
+plot(N_vec, runtime_vec_phate, '*-', 'displayname', 'PHATE', 'linewidth', 2, 'markersize', 5);
+plot(N_vec, runtime_vec_tsne_05, '*-', 'displayname', 'tSNE (\theta=0.5)', 'linewidth', 2, 'markersize', 5);
+xlabel 'Number of cell'
+ylabel 'Runtime (seconds)'
+legend('location','NW');
+legend boxoff

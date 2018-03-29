@@ -51,6 +51,7 @@ distfun_mds = 'euclidean';
 pca_method = 'random';
 DiffOp = [];
 DiffOp_t = [];
+pot_method = 'log';
 
 % get input parameters
 for i=1:length(varargin)
@@ -98,6 +99,10 @@ for i=1:length(varargin)
     if(strcmp(varargin{i},'DiffOp_t'))
        DiffOp_t = lower(varargin{i+1});
     end
+    % potential method: log, sqrt
+    if(strcmp(varargin{i},'pot_method'))
+       pot_method = lower(varargin{i+1});
+    end
 end
 
 disp '======= PHATE ======='
@@ -132,8 +137,15 @@ end
 X = DiffOp_t;
 
 disp 'potential recovery'
-X(X<=eps)=eps;
-X = -log(X);
+switch pot_method
+    case 'log'
+        X(X<=eps)=eps;
+        X = -log(X);
+    case 'sqrt'
+        X = sqrt(X);
+    otherwise
+        disp 'potential method unknown'
+end
 disp(['MDS distfun: ' distfun_mds])
 if strcmp(distfun_mds, 'euclidean')
     X = svdpca(X, npca, pca_method); % to make pdist faster
