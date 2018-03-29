@@ -14,11 +14,10 @@ from scipy.spatial.distance import pdist
 from scipy.spatial.distance import squareform
 from scipy.linalg import svd
 
-# sdfasdf
 from .mds import embed_MDS
 
 
-def calculate_kernel(M, knn_dist, k, a, verbose=True):
+def calculate_kernel(M, a=10, k=5, knn_dist='euclidean', verbose=True):
     if verbose:
         print("Building kNN graph and diffusion operator...")
     try:
@@ -37,11 +36,11 @@ def calculate_kernel(M, knn_dist, k, a, verbose=True):
     return gs_ker
 
 
-def calculate_potential(data, a=10, k=5, t=30, knn_dist='euclidean',
-                        gs_ker=None, diff_op=None,
-                        diff_potential=None, njobs=1, verbose=True):
+def calculate_operator(data, a=10, k=5, knn_dist='euclidean',
+                       gs_ker=None, diff_op=None,
+                       njobs=1, verbose=True):
     """
-    Calculate the diffusion potential
+    Calculate the diffusion operator
 
     Parameters
     ----------
@@ -54,10 +53,6 @@ def calculate_potential(data, a=10, k=5, t=30, knn_dist='euclidean',
     k : int, optional, default: 5
         used to set epsilon while autotuning kernel bandwidth
 
-    t : int, optional, default: 30
-        power to which the diffusion operator is powered
-        sets the level of diffusion
-
     knn_dist : string, optional, default: 'euclidean'
         recommended values: 'euclidean' and 'cosine'
         Any metric from scipy.spatial.distance can be used
@@ -68,9 +63,6 @@ def calculate_potential(data, a=10, k=5, t=30, knn_dist='euclidean',
 
     diff_op : ndarray, optional [n, n], default: None
         Precomputed diffusion operator
-
-    diff_potential : ndarray, optional [n, n], default: None
-        Precomputed diffusion potential
 
     verbose : boolean, optional, default: True
         Print updates during PHATE embedding
@@ -83,21 +75,13 @@ def calculate_potential(data, a=10, k=5, t=30, knn_dist='euclidean',
 
     diff_op : array-like, shape [n_samples, n_samples]
         The diffusion operator fit on the input data
-
-    diff_potential : array-like, shape [n_samples, n_samples]
-        Precomputed diffusion potential
     """
     # print('Imported numpy: %s'%np.__file__)
-    # if nothing is precomputed
-    if (gs_ker is None and
-            (diff_op is not None or diff_potential is not None)) \
-            or (diff_op is None and diff_potential is not None):
-        print("Warning: incomplete precomputed matrices provided, recomputing.")
-        diff_op = None
-        diff_potential = None
+
     tic = time.time()
     if gs_ker is None:
-        gs_ker = calculate_kernel(data, knn_dist, k, a, verbose=verbose)
+        diff_op = None  # can't use precomputed operator
+        gs_ker = calculate_kernel(data, a, k, knn_dist, verbose=verbose)
     if diff_op is None:
         diff_op = gs_ker / gs_ker.sum(axis=1)[:, None]  # row stochastic
         if verbose:
@@ -107,7 +91,61 @@ def calculate_potential(data, a=10, k=5, t=30, knn_dist='euclidean',
         if verbose:
             print("Using precomputed diffusion operator...")
 
+    return gs_ker, diff_op
+
+
+def embed_mds(diff_op, t=30, n_components=2, diff_potential=None,
+              embedding=None, mds='metric', mds_dist='euclidean', njobs=1,
+              random_state=None, verbose=True):
+    """
+    Create the MDS embedding from the diffusion potential
+
+    Parameters
+    ----------
+
+    diff_op : array-like, shape [n_samples, n_samples]
+        The diffusion operator fit on the input data
+
+    t : int, optional, default: 30
+        power to which the diffusion operator is powered
+        sets the level of diffusion
+
+    n_components : int, optional, default: 2
+        number of dimensions in which the data will be embedded
+
+    diff_potential : ndarray, optional [n, n], default: None
+        Precomputed diffusion potential
+
+    mds : string, optional, default: 'metric'
+        choose from ['classic', 'metric', 'nonmetric']
+        which multidimensional scaling algorithm is used for dimensionality
+        reduction
+
+    mds_dist : string, optional, default: 'euclidean'
+        recommended values: 'euclidean' and 'cosine'
+        Any metric from scipy.spatial.distance can be used
+        distance metric for MDS
+
+    random_state : integer or numpy.RandomState, optional
+        The generator used to initialize SMACOF (metric, nonmetric) MDS
+        If an integer is given, it fixes the seed
+        Defaults to the global numpy random number generator
+
+    verbose : boolean, optional, default: True
+        Print updates during PHATE embedding
+
+    Returns
+    -------
+
+    diff_potential : array-like, shape [n_samples, n_samples]
+        Precomputed diffusion potential
+
+    embedding : ndarray [n_samples, n_components]
+        PHATE embedding in low dimensional space.
+    """
+
     if diff_potential is None:
+        embedding = None  # can't use precomputed embedding
         tic = time.time()
         if verbose:
             print("Calculating diffusion potential...")
@@ -130,142 +168,19 @@ def calculate_potential(data, a=10, k=5, t=30, knn_dist='euclidean',
         if verbose:
             print("Using precomputed diffusion potential...")
 
-    return gs_ker, diff_op, diff_potential
-
-
-def embed_mds(diff_potential, n_components=2, mds='metric',
-              mds_dist='euclidean', njobs=1, random_state=None, verbose=True):
-    """
-    Create the MDS embedding from the diffusion potential
-
-    Parameters
-    ----------
-    diff_potential : ndarray, optional [n, n], default: None
-        Diffusion potential
-
-    n_components : int, optional, default: 2
-        number of dimensions in which the data will be embedded
-
-    mds : string, optional, default: 'metric'
-        choose from ['classic', 'metric', 'nonmetric']
-        which multidimensional scaling algorithm is used for dimensionality
-        reduction
-
-    mds_dist : string, optional, default: 'euclidean'
-        recommended values: 'euclidean' and 'cosine'
-        Any metric from scipy.spatial.distance can be used
-        distance metric for MDS
-
-    random_state : integer or numpy.RandomState, optional
-        The generator used to initialize SMACOF (metric, nonmetric) MDS
-        If an integer is given, it fixes the seed
-        Defaults to the global numpy random number generator
-
-    verbose : boolean, optional, default: True
-        Print updates during PHATE embedding
-
-    Returns
-    -------
-    embedding : ndarray [n_samples, n_components]
-        PHATE embedding in low dimensional space.
-    """
-
     tic = time.time()
     if verbose:
         print("Embedding data using %s MDS..." % (mds))
-    embedding = embed_MDS(diff_potential, ndim=n_components, how=mds,
-                          distance_metric=mds_dist, njobs=njobs,
-                          seed=random_state)
-    if verbose:
-        print("Embedded data in %.2f seconds." % (time.time() - tic))
-    return embedding
-
-
-def embed_phate(data, n_components=2, a=10, k=5, t=30, mds='metric',
-                knn_dist='euclidean', mds_dist='euclidean', diff_op=None,
-                gs_ker=None, diff_deg=None, diff_potential=None, njobs=1,
-                random_state=None, verbose=True):
-    """
-    Embeds high dimensional single-cell data into two or three dimensions for
-    visualization of biological progressions.
-
-    Parameters
-    ----------
-    data : ndarray [n, p]
-        2 dimensional input data array with n cells and p dimensions
-
-    n_components : int, optional, default: 2
-        number of dimensions in which the data will be embedded
-
-    a : int, optional, default: 10
-        sets decay rate of kernel tails
-
-    k : int, optional, default: 5
-        used to set epsilon while autotuning kernel bandwidth
-
-    t : int, optional, default: 30
-        power to which the diffusion operator is powered
-        sets the level of diffusion
-
-    mds : string, optional, default: 'metric'
-        choose from ['classic', 'metric', 'nonmetric']
-        which multidimensional scaling algorithm is used for dimensionality
-        reduction
-
-    knn_dist : string, optional, default: 'euclidean'
-        recommended values: 'euclidean' and 'cosine'
-        Any metric from scipy.spatial.distance can be used
-        distance metric for building kNN graph
-
-    mds_dist : string, optional, default: 'euclidean'
-        recommended values: 'euclidean' and 'cosine'
-        Any metric from scipy.spatial.distance can be used
-        distance metric for MDS
-
-    diff_op : ndarray, optional [n, n], default: None
-        Precomputed diffusion operator
-
-    diff_potential : ndarray, optional [n, n], default: None
-        Precomputed diffusion potential
-
-    random_state : integer or numpy.RandomState, optional
-        The generator used to initialize SMACOF (metric, nonmetric) MDS
-        If an integer is given, it fixes the seed
-        Defaults to the global numpy random number generator
-
-    verbose : boolean, optional, default: True
-        Print updates during PHATE embedding
-
-    Returns
-    -------
-    embedding : ndarray [n_samples, n_components]
-        PHATE embedding in low dimensional space.
-
-    gs_ker : array-like, shape [n_samples, n_samples]
-        The graph kernel built on the input data
-        Only necessary for calculating Von Neumann Entropy
-
-    diff_op : array-like, shape [n_samples, n_samples]
-        The diffusion operator fit on the input data
-
-    diff_potential : array-like, shape [n_samples, n_samples]
-        Precomputed diffusion potential
-
-    References
-    ----------
-    .. [1] `Moon KR, van Dijk D, Zheng W, et al. (2017). "PHATE: A
-       Dimensionality Reduction Method for Visualizing Trajectory Structures in
-       High-Dimensional Biological Data". Biorxiv.
-       <http://biorxiv.org/content/early/2017/03/24/120378>`_
-    """
-    gs_ker, diff_op, diff_potential = calculate_potential(
-        data, a=a, k=k, t=t, knn_dist=knn_dist, gs_ker=gs_ker,
-        diff_op=diff_op, diff_potential=diff_potential,
-        njobs=njobs, verbose=verbose)
-    embedding = embed_mds(
-        diff_potential, n_components=n_components, mds=mds, mds_dist=mds_dist,
-        njobs=njobs, random_state=random_state, verbose=verbose)
-    return embedding, gs_ker, diff_op, diff_potential
+    if embedding is None:
+        embedding = embed_MDS(diff_potential, ndim=n_components, how=mds,
+                              distance_metric=mds_dist, njobs=njobs,
+                              seed=random_state)
+        if verbose:
+            print("Embedded data in %.2f seconds." % (time.time() - tic))
+    else:
+        if verbose:
+            print("Using precomputed embedding...")
+    return embedding, diff_potential
 
 
 class PHATE(BaseEstimator):
@@ -399,14 +314,15 @@ class PHATE(BaseEstimator):
             self.diff_potential = None
             self.embedding = None
         self.X = X
-        self.gs_ker, self.diff_op, self.diff_potential = calculate_potential(
-            X, a=self.a, k=self.k, t=self.t, knn_dist=self.knn_dist,
+        if self.gs_ker is None or self.diff_op is None:
+            self.diff_potential = None  # can't use precomputed potential
+        self.gs_ker, self.diff_op = calculate_operator(
+            X, a=self.a, k=self.k, knn_dist=self.knn_dist,
             njobs=self.njobs, gs_ker=self.gs_ker,
-            diff_op=self.diff_op, diff_potential=self.diff_potential,
-            verbose=self.verbose)
+            diff_op=self.diff_op, verbose=self.verbose)
         return self
 
-    def transform(self, X=None):
+    def transform(self, X=None, t=None):
         """
         Computes the position of the cells in the embedding space
 
@@ -414,6 +330,10 @@ class PHATE(BaseEstimator):
         ----------
         X : array, shape=[n_samples, n_features]
             Input data.
+
+        t : int, optional, default: 30
+            power to which the diffusion operator is powered
+            sets the level of diffusion
 
         Returns
         -------
@@ -430,17 +350,22 @@ class PHATE(BaseEstimator):
             raise RuntimeWarning("Pre-fit PHATE cannot be used to transform a "
                                  "new data matrix. Please fit PHATE to the new"
                                  " data by running 'fit' with the new data.")
-        if self.diff_potential is None:
+        if self.diff_op is None:
             raise NotFittedError("This PHATE instance is not fitted yet. Call "
                                  "'fit' with appropriate arguments before "
                                  "using this method.")
-        self.embedding = embed_mds(
-            self.diff_potential, n_components=self.ndim,
+        if t is None:
+            t = self.t
+        else:
+            self.t = t
+        self.embedding, self.diff_potential = embed_mds(
+            self.diff_op, t=t, n_components=self.ndim,
+            diff_potential=self.diff_potential, embedding=self.embedding,
             mds=self.mds, mds_dist=self.mds_dist, njobs=self.njobs,
             random_state=self.random_state, verbose=self.verbose)
         return self.embedding
 
-    def fit_transform(self, X):
+    def fit_transform(self, X, t=None):
         """
         Computes the diffusion operator and the position of the cells in the
         embedding space
@@ -460,7 +385,7 @@ class PHATE(BaseEstimator):
         """
         start = time.time()
         self.fit(X)
-        self.transform()
+        self.transform(t=t)
         if self.verbose:
             print("Finished PHATE embedding in %.2f seconds.\n" %
                   (time.time() - start))
