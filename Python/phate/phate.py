@@ -481,10 +481,8 @@ class PHATE(BaseEstimator):
             raise NotFittedError("This PHATE instance is not fitted yet. Call "
                                  "'fit' with appropriate arguments before "
                                  "using this method.")
-        diff_deg = np.diagonal(np.sum(self.gs_ker, axis=0))
         diff_aff = np.diagflat(
-            np.power(np.diagonal(diff_deg), 1 / 2))
-        diff_deg = None  # clear memory
+            np.power(np.sum(self.gs_ker, axis=0), 1 / 2))
         diff_aff = np.matmul(np.matmul(diff_aff, self.gs_ker),
                              diff_aff)
         diff_aff = (diff_aff + diff_aff.T) / 2
