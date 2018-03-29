@@ -10,6 +10,7 @@ mds_method = 'mmds';
 distfun = 'euclidean';
 distfun_mds = 'euclidean';
 pot_method = 'log';
+P = [];
 
 % get input parameters
 for i=1:length(varargin)
@@ -53,14 +54,20 @@ for i=1:length(varargin)
     if(strcmp(varargin{i},'pot_method'))
        pot_method = lower(varargin{i+1});
     end
+    % operator
+    if(strcmp(varargin{i},'operator'))
+       P = lower(varargin{i+1});
+    end
 end
 
 % PCA
 disp 'Doing PCA'
 pc = svdpca(data, npca, 'random');
 
-% diffusion operator
-P = compute_operator_fast(pc, 'k', k, 'distfun', distfun);
+if isempty(operator)
+    % diffusion operator
+    P = compute_operator_fast(pc, 'k', k, 'distfun', distfun);
+end
 
 % spectral cluster for landmarks
 disp 'Spectral clustering for landmarks'

@@ -4,7 +4,7 @@ n_dim = 100;
 n_branch = 25;
 sigma = 5;
 rng(7);
-out_base = '~/Dropbox/PHATE/figures/fast_phate_runtime/';
+out_base = '~/Dropbox/PHATE/figures/fast_phate_runtime/March29/';
 mkdir(out_base)
 
 %% tree
