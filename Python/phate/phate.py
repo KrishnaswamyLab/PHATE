@@ -29,11 +29,11 @@ def calculate_kernel(M, knn_dist, k, a, verbose=True):
         pdx = (pdx / epsilon).T  # autotuning d(x,:) using epsilon(x).
     except RuntimeWarning:
         raise ValueError(
-            'It looks like you have at least k identifical data points.'
-            ' Try removing dupliates.')
+            'It looks like you have at least k identical data points. '
+            'Try removing duplicates.')
 
     gs_ker = np.exp(-1 * (pdx ** a))  # not really Gaussian kernel
-    gs_ker = gs_ker + gs_ker.T  # symmetriziation
+    gs_ker = gs_ker + gs_ker.T  # symmetrization
     return gs_ker
 
 
@@ -59,7 +59,7 @@ def calculate_potential(data, a=10, k=5, t=30, knn_dist='euclidean',
         sets the level of diffusion
 
     knn_dist : string, optional, default: 'euclidean'
-        reccomended values: 'eucliean' and 'cosine'
+        recommended values: 'euclidean' and 'cosine'
         Any metric from scipy.spatial.distance can be used
         distance metric for building kNN graph
 
@@ -152,7 +152,7 @@ def embed_mds(diff_potential, n_components=2, mds='metric',
         reduction
 
     mds_dist : string, optional, default: 'euclidean'
-        reccomended values: 'eucliean' and 'cosine'
+        recommended values: 'euclidean' and 'cosine'
         Any metric from scipy.spatial.distance can be used
         distance metric for MDS
 
@@ -213,12 +213,12 @@ def embed_phate(data, n_components=2, a=10, k=5, t=30, mds='metric',
         reduction
 
     knn_dist : string, optional, default: 'euclidean'
-        reccomended values: 'eucliean' and 'cosine'
+        recommended values: 'euclidean' and 'cosine'
         Any metric from scipy.spatial.distance can be used
         distance metric for building kNN graph
 
     mds_dist : string, optional, default: 'euclidean'
-        reccomended values: 'eucliean' and 'cosine'
+        recommended values: 'euclidean' and 'cosine'
         Any metric from scipy.spatial.distance can be used
         distance metric for MDS
 
@@ -296,12 +296,12 @@ class PHATE(BaseEstimator):
         which MDS algorithm is used for dimensionality reduction
 
     knn_dist : string, optional, default: 'euclidean'
-        reccomended values: 'eucliean' and 'cosine'
+        recommended values: 'euclidean' and 'cosine'
         Any metric from scipy.spatial.distance can be used
         distance metric for building kNN graph
 
     mds_dist : string, optional, default: 'euclidean'
-        reccomended values: 'eucliean' and 'cosine'
+        recommended values: 'euclidean' and 'cosine'
         Any metric from scipy.spatial.distance can be used
         distance metric for MDS
 
