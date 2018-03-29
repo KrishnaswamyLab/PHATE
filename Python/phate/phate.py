@@ -359,6 +359,7 @@ class PHATE(BaseEstimator):
         self.diff_op = None
         self.diff_potential = None
         self.embedding = None
+        self.X = None
 
     def reset_mds(self, n_components=None, mds=None, mds_dist=None):
         if n_components is not None:
@@ -388,6 +389,15 @@ class PHATE(BaseEstimator):
         phate : PHATE
         The estimator object
         """
+        if self.X is not None and not np.all(X == self.X):
+            """
+            If the same data is used, we can reuse existing kernel and
+            diffusion matrices. Otherwise we have to recompute.
+            """
+            self.gs_ker = None
+            self.diff_op = None
+            self.diff_potential = None
+            self.embedding = None
         self.X = X
         self.gs_ker, self.diff_op, self.diff_potential = calculate_potential(
             X, a=self.a, k=self.k, t=self.t, knn_dist=self.knn_dist,
@@ -410,7 +420,7 @@ class PHATE(BaseEstimator):
         embedding : array, shape=[n_samples, n_dimensions]
         The cells embedded in a lower dimensional space using PHATE
         """
-        if X is not None and not np.all(X == self.X):
+        if self.X is not None and X is not None and not np.all(X == self.X):
             """
             sklearn.BaseEstimator assumes out-of-sample transformations are
             possible. We explicitly test for this in case the user is not aware
@@ -419,8 +429,7 @@ class PHATE(BaseEstimator):
             """
             raise RuntimeWarning("Pre-fit PHATE cannot be used to transform a "
                                  "new data matrix. Please fit PHATE to the new"
-                                 " data by running 'reset_diffusion' and then "
-                                 "'fit' with the new data.")
+                                 " data by running 'fit' with the new data.")
         if self.diff_potential is None:
             raise NotFittedError("This PHATE instance is not fitted yet. Call "
                                  "'fit' with appropriate arguments before "
