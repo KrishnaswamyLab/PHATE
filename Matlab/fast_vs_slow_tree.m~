@@ -1,0 +1,8 @@
+%% init
+n_samp = 5;
+n_dim = 100;
+n_branch = 40;
+sigma = 5;
+rng(7);
+out_base = '~/Dropbox/PHATE/figures/fast_phate_runtime/';
+mkdir(out_base)

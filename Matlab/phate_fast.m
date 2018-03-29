@@ -13,7 +13,7 @@ pot_method = 'log';
 
 % get input parameters
 for i=1:length(varargin)
-    % k for knn
+    % k for knn adaptive sigma
     if(strcmp(varargin{i},'k'))
        k = lower(varargin{i+1});
     end
