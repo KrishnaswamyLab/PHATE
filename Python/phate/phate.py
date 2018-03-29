@@ -29,16 +29,16 @@ def calculate_kernel(M, knn_dist, k, a, verbose=True):
         pdx = (pdx / epsilon).T  # autotuning d(x,:) using epsilon(x).
     except RuntimeWarning:
         raise ValueError(
-            'It looks like you have at least k identical data points. '
-            'Try removing duplicates.')
+            'It looks like you have at least k identifical data points.'
+            ' Try removing dupliates.')
 
-    gs_ker = np.exp(-1 * (pdx ** a))  # not really a Gaussian kernel
-    gs_ker = gs_ker + gs_ker.T  # symmetrization
+    gs_ker = np.exp(-1 * (pdx ** a))  # not really Gaussian kernel
+    gs_ker = gs_ker + gs_ker.T  # symmetriziation
     return gs_ker
 
 
 def calculate_potential(data, a=10, k=5, t=30, knn_dist='euclidean',
-                        diff_op=None, gs_ker=None, diff_deg=None,
+                        gs_ker=None, diff_op=None,
                         diff_potential=None, njobs=1, verbose=True):
     """
     Calculate the diffusion potential
@@ -63,6 +63,9 @@ def calculate_potential(data, a=10, k=5, t=30, knn_dist='euclidean',
         Any metric from scipy.spatial.distance can be used
         distance metric for building kNN graph
 
+    gs_ker : array-like, shape [n_samples, n_samples]
+        Precomputed graph kernel
+
     diff_op : ndarray, optional [n, n], default: None
         Precomputed diffusion operator
 
@@ -78,10 +81,6 @@ def calculate_potential(data, a=10, k=5, t=30, knn_dist='euclidean',
         The graph kernel built on the input data
         Only necessary for calculating Von Neumann Entropy
 
-    diff_deg : array-like, shape [n_samples]
-        The degree of each sample on the graph
-        Only necessary for calculating Von Neumann Entropy
-
     diff_op : array-like, shape [n_samples, n_samples]
         The diffusion operator fit on the input data
 
@@ -90,14 +89,17 @@ def calculate_potential(data, a=10, k=5, t=30, knn_dist='euclidean',
     """
     # print('Imported numpy: %s'%np.__file__)
     # if nothing is precomputed
-    if diff_op is None:
-        tic = time.time()
+    if (gs_ker is None and
+            (diff_op is not None or diff_potential is not None)) \
+            or (diff_op is None and diff_potential is not None):
+        print("Warning: incomplete precomputed matrices provided, recomputing.")
+        diff_op = None
+        diff_potential = None
+    tic = time.time()
+    if gs_ker is None:
         gs_ker = calculate_kernel(data, knn_dist, k, a, verbose=verbose)
-        diff_deg = np.diag(np.sum(gs_ker, 0))  # degrees
-
-        diff_op = np.dot(np.diag(np.diag(diff_deg)**(-1)),
-                         gs_ker)  # row stochastic
-
+    if diff_op is None:
+        diff_op = gs_ker / gs_ker.sum(axis=1)[:, None]  # row stochastic
         if verbose:
             print("Built graph and diffusion operator in %.2f seconds." %
                   (time.time() - tic))
@@ -128,10 +130,10 @@ def calculate_potential(data, a=10, k=5, t=30, knn_dist='euclidean',
         if verbose:
             print("Using precomputed diffusion potential...")
 
-    return gs_ker, diff_deg, diff_op, diff_potential
+    return gs_ker, diff_op, diff_potential
 
 
-def embed_mds(diff_potential, n_components=2, mds='classic',
+def embed_mds(diff_potential, n_components=2, mds='metric',
               mds_dist='euclidean', njobs=1, random_state=None, verbose=True):
     """
     Create the MDS embedding from the diffusion potential
@@ -144,7 +146,7 @@ def embed_mds(diff_potential, n_components=2, mds='classic',
     n_components : int, optional, default: 2
         number of dimensions in which the data will be embedded
 
-    mds : string, optional, default: 'classic'
+    mds : string, optional, default: 'metric'
         choose from ['classic', 'metric', 'nonmetric']
         which multidimensional scaling algorithm is used for dimensionality
         reduction
@@ -179,7 +181,7 @@ def embed_mds(diff_potential, n_components=2, mds='classic',
     return embedding
 
 
-def embed_phate(data, n_components=2, a=10, k=5, t=30, mds='classic',
+def embed_phate(data, n_components=2, a=10, k=5, t=30, mds='metric',
                 knn_dist='euclidean', mds_dist='euclidean', diff_op=None,
                 gs_ker=None, diff_deg=None, diff_potential=None, njobs=1,
                 random_state=None, verbose=True):
@@ -205,7 +207,7 @@ def embed_phate(data, n_components=2, a=10, k=5, t=30, mds='classic',
         power to which the diffusion operator is powered
         sets the level of diffusion
 
-    mds : string, optional, default: 'classic'
+    mds : string, optional, default: 'metric'
         choose from ['classic', 'metric', 'nonmetric']
         which multidimensional scaling algorithm is used for dimensionality
         reduction
@@ -239,8 +241,15 @@ def embed_phate(data, n_components=2, a=10, k=5, t=30, mds='classic',
     embedding : ndarray [n_samples, n_components]
         PHATE embedding in low dimensional space.
 
-    diff_op : ndarray [n_samples, n_samples]
-        PHATE embedding in low dimensional space.
+    gs_ker : array-like, shape [n_samples, n_samples]
+        The graph kernel built on the input data
+        Only necessary for calculating Von Neumann Entropy
+
+    diff_op : array-like, shape [n_samples, n_samples]
+        The diffusion operator fit on the input data
+
+    diff_potential : array-like, shape [n_samples, n_samples]
+        Precomputed diffusion potential
 
     References
     ----------
@@ -249,14 +258,14 @@ def embed_phate(data, n_components=2, a=10, k=5, t=30, mds='classic',
        High-Dimensional Biological Data". Biorxiv.
        <http://biorxiv.org/content/early/2017/03/24/120378>`_
     """
-    gs_ker, diff_deg, diff_op, diff_potential = calculate_potential(
+    gs_ker, diff_op, diff_potential = calculate_potential(
         data, a=a, k=k, t=t, knn_dist=knn_dist, gs_ker=gs_ker,
-        diff_deg=diff_deg, diff_op=diff_op, diff_potential=diff_potential,
+        diff_op=diff_op, diff_potential=diff_potential,
         njobs=njobs, verbose=verbose)
     embedding = embed_mds(
         diff_potential, n_components=n_components, mds=mds, mds_dist=mds_dist,
         njobs=njobs, random_state=random_state, verbose=verbose)
-    return embedding, gs_ker, diff_deg, diff_op, diff_potential
+    return embedding, gs_ker, diff_op, diff_potential
 
 
 class PHATE(BaseEstimator):
@@ -282,7 +291,7 @@ class PHATE(BaseEstimator):
         power to which the diffusion operator is powered
         sets the level of diffusion
 
-    mds : string, optional, default: 'classic'
+    mds : string, optional, default: 'metric'
         choose from ['classic', 'metric', 'nonmetric']
         which MDS algorithm is used for dimensionality reduction
 
@@ -314,6 +323,10 @@ class PHATE(BaseEstimator):
     embedding : array-like, shape [n_samples, n_dimensions]
         Stores the position of the dataset in the embedding space
 
+    gs_ker : array-like, shape [n_samples, n_samples]
+        The graph kernel built on the input data
+        Only necessary for calculating Von Neumann Entropy
+
     diff_op : array-like, shape [n_samples, n_samples]
         The diffusion operator fit on the input data
 
@@ -328,7 +341,7 @@ class PHATE(BaseEstimator):
        <http://biorxiv.org/content/early/2017/03/24/120378>`_
     """
 
-    def __init__(self, n_components=2, a=10, k=5, t=30, mds='classic',
+    def __init__(self, n_components=2, a=10, k=5, t=30, mds='metric',
                  knn_dist='euclidean', mds_dist='euclidean', njobs=1,
                  random_state=None, verbose=True):
         self.ndim = n_components
@@ -342,7 +355,6 @@ class PHATE(BaseEstimator):
         self.random_state = random_state
         self.verbose = verbose
 
-        self.diff_deg = None
         self.gs_ker = None
         self.diff_op = None
         self.diff_potential = None
@@ -361,9 +373,6 @@ class PHATE(BaseEstimator):
         if t is not None:
             self.t = t
         self.diff_potential = None
-        self.diff_op = None
-        self.diff_deg = None
-        self.gs_ker = None
 
     def fit(self, X):
         """
@@ -380,9 +389,9 @@ class PHATE(BaseEstimator):
         The estimator object
         """
         self.X = X
-        self.gs_ker, self.diff_deg, self.diff_op, self.diff_potential = calculate_potential(
+        self.gs_ker, self.diff_op, self.diff_potential = calculate_potential(
             X, a=self.a, k=self.k, t=self.t, knn_dist=self.knn_dist,
-            njobs=self.njobs, gs_ker=self.gs_ker, diff_deg=self.diff_deg,
+            njobs=self.njobs, gs_ker=self.gs_ker,
             diff_op=self.diff_op, diff_potential=self.diff_potential,
             verbose=self.verbose)
         return self
@@ -468,12 +477,14 @@ class PHATE(BaseEstimator):
         entropy : array, shape=[t_max]
         The entropy of the diffusion affinities for each value of t
         """
-        if self.diff_deg is None:
+        if self.gs_ker is None:
             raise NotFittedError("This PHATE instance is not fitted yet. Call "
                                  "'fit' with appropriate arguments before "
                                  "using this method.")
+        diff_deg = np.diagonal(np.sum(self.gs_ker, axis=0))
         diff_aff = np.diagflat(
-            np.power(np.diagonal(self.diff_deg), 1 / 2))
+            np.power(np.diagonal(diff_deg), 1 / 2))
+        diff_deg = None  # clear memory
         diff_aff = np.matmul(np.matmul(diff_aff, self.gs_ker),
                              diff_aff)
         diff_aff = (diff_aff + diff_aff.T) / 2
