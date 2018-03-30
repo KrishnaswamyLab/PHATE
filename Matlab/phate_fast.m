@@ -64,7 +64,7 @@ end
 disp 'Doing PCA'
 pc = svdpca(data, npca, 'random');
 
-if isempty(operator)
+if isempty(P)
     % diffusion operator
     P = compute_operator_fast(pc, 'k', k, 'distfun', distfun);
 end
