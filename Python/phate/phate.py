@@ -120,7 +120,7 @@ def calculate_operator(data, a=10, k=5, knn_dist='euclidean',
     return gs_ker, diff_op
 
 
-def embed_mds(diff_op, t=30, n_components=2, diff_potential=None,
+def embed_mds(diff_op, t=30, n_components=2, diff_potential=None, calc_pot='log',
               embedding=None, mds='metric', mds_dist='euclidean', njobs=1,
               random_state=None, verbose=True, n_landmark=None, n_svd=100):
     """
@@ -141,6 +141,8 @@ def embed_mds(diff_op, t=30, n_components=2, diff_potential=None,
 
     diff_potential : ndarray, optional [n, n], default: None
         Precomputed diffusion potential
+
+    calc_pot : ['log', 'sqrt']
 
     mds : string, optional, default: 'metric'
         choose from ['classic', 'metric', 'nonmetric']
@@ -205,7 +207,13 @@ def embed_mds(diff_op, t=30, n_components=2, diff_potential=None,
         X[X == 0] = np.finfo(float).eps  # handling zeros
         X[X <= np.finfo(float).eps] = np.finfo(
             float).eps  # handling small values
-        diff_potential = -1 * np.log(X)  # diffusion potential
+
+        if calc_pot == 'log':
+            diff_potential = -1 * np.log(X)  # diffusion potential
+        elif calc_pot == 'sqrt':
+            diff_potential = np.sqrt(X)  # diffusion potential
+        else:
+            raise ValueError('potential method unknown')
         if verbose:
             print("Calculated diffusion potential in %.2f seconds." %
                   (time.time() - tic))
@@ -306,7 +314,7 @@ class PHATE(BaseEstimator):
        <http://biorxiv.org/content/early/2017/03/24/120378>`_
     """
 
-    def __init__(self, n_components=2, a=10, k=5, t=30, mds='metric',
+    def __init__(self, n_components=2, a=10, k=5, t=30, calc_pot='log', mds='metric',
                  knn_dist='euclidean', mds_dist='euclidean', njobs=1,
                  random_state=None, verbose=True, n_landmark=1000,
                  alpha_decay=None):
@@ -315,6 +323,7 @@ class PHATE(BaseEstimator):
         self.k = k
         self.t = t
         self.n_landmark = n_landmark
+        self.calc_pot = calc_pot
         self.mds = mds
         self.knn_dist = knn_dist
         self.mds_dist = mds_dist
@@ -421,7 +430,8 @@ class PHATE(BaseEstimator):
             self.t = t
         self.embedding, self.diff_potential = embed_mds(
             self.diff_op, t=t, n_components=self.ndim,
-            diff_potential=self.diff_potential, embedding=self.embedding,
+            diff_potential=self.diff_potential, calc_pot=self.calc_pot,
+            embedding=self.embedding,
             mds=self.mds, mds_dist=self.mds_dist, njobs=self.njobs,
             random_state=self.random_state, verbose=self.verbose,
             n_landmark=self.n_landmark)
