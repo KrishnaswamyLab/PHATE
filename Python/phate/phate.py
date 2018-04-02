@@ -7,38 +7,62 @@ Potential of Heat-diffusion for Affinity-based Trajectory Embedding (PHATE)
 
 import time
 import numpy as np
-import sys
 from sklearn.base import BaseEstimator
 from sklearn.exceptions import NotFittedError
+from sklearn.neighbors import NearestNeighbors
+from sklearn.cluster import MiniBatchKMeans
 from scipy.spatial.distance import pdist
 from scipy.spatial.distance import squareform
 from scipy.linalg import svd
+from scipy import sparse
+from sklearn.preprocessing import normalize
+from sklearn.decomposition import PCA
 
 from .mds import embed_MDS
 
 
-def calculate_kernel(M, a=10, k=5, knn_dist='euclidean', verbose=True):
+def calculate_kernel(M, a=10, k=5, knn_dist='euclidean', verbose=True,
+                     alpha_decay=True, ndim=100):
     if verbose:
         print("Building kNN graph and diffusion operator...")
-    try:
-        pdx = squareform(pdist(M, metric=knn_dist))
-        knn_dist = np.sort(pdx, axis=1)
-        # bandwidth(x) = distance to k-th neighbor of x
-        epsilon = knn_dist[:, k]
-        pdx = (pdx / epsilon).T  # autotuning d(x,:) using epsilon(x).
-    except RuntimeWarning:
-        raise ValueError(
-            'It looks like you have at least k identical data points. '
-            'Try removing duplicates.')
-
-    gs_ker = np.exp(-1 * (pdx ** a))  # not really Gaussian kernel
+    precomputed = isinstance(knn_dist, list) or \
+        isinstance(knn_dist, np.ndarray)
+    if not precomputed and ndim < M.shape[1]:
+        pca = PCA(ndim, svd_solver='randomized')
+        M = pca.fit_transform(M)
+    if alpha_decay:
+        try:
+            if precomputed:
+                pdx = knn_dist
+            else:
+                pdx = squareform(pdist(M, metric=knn_dist))
+            knn_dist = np.partition(pdx, k, axis=1)[:, :k]
+            # bandwidth(x) = distance to k-th neighbor of x
+            epsilon = np.max(knn_dist, axis=1)
+            pdx = (pdx / epsilon).T  # autotuning d(x,:) using epsilon(x).
+        except RuntimeWarning:
+            raise ValueError(
+                'It looks like you have at least k identical data points. '
+                'Try removing duplicates.')
+        gs_ker = np.exp(-1 * (pdx ** a))  # not really Gaussian kernel
+    else:
+        if precomputed:
+            pdx = knn_dist
+            knn_idx = np.argpartition(pdx, k, axis=1)[:, :k]
+        else:
+            knn = NearestNeighbors(n_neighbors=k - 1).fit(M)
+            _, knn_idx = knn.kneighbors(M)
+        ind_ptr = np.arange(knn_idx.shape[0] + 1) * knn_idx.shape[1]
+        col_ind = knn_idx.reshape(-1)
+        data = np.repeat(1., len(col_ind))
+        gs_ker = sparse.csr_matrix((data, col_ind, ind_ptr))
     gs_ker = gs_ker + gs_ker.T  # symmetrization
     return gs_ker
 
 
 def calculate_operator(data, a=10, k=5, knn_dist='euclidean',
                        gs_ker=None, diff_op=None,
-                       njobs=1, verbose=True):
+                       njobs=1, verbose=True, alpha_decay=True):
     """
     Calculate the diffusion operator
 
@@ -81,9 +105,11 @@ def calculate_operator(data, a=10, k=5, knn_dist='euclidean',
     tic = time.time()
     if gs_ker is None:
         diff_op = None  # can't use precomputed operator
-        gs_ker = calculate_kernel(data, a, k, knn_dist, verbose=verbose)
+        gs_ker = calculate_kernel(data, a, k, knn_dist,
+                                  verbose=verbose,
+                                  alpha_decay=alpha_decay)
     if diff_op is None:
-        diff_op = gs_ker / gs_ker.sum(axis=1)[:, None]  # row stochastic
+        diff_op = normalize(gs_ker, norm='l1', axis=1)  # row stochastic
         if verbose:
             print("Built graph and diffusion operator in %.2f seconds." %
                   (time.time() - tic))
@@ -96,7 +122,7 @@ def calculate_operator(data, a=10, k=5, knn_dist='euclidean',
 
 def embed_mds(diff_op, t=30, n_components=2, diff_potential=None,
               embedding=None, mds='metric', mds_dist='euclidean', njobs=1,
-              random_state=None, verbose=True):
+              random_state=None, verbose=True, n_landmark=None, n_svd=100):
     """
     Create the MDS embedding from the diffusion potential
 
@@ -149,12 +175,33 @@ def embed_mds(diff_op, t=30, n_components=2, diff_potential=None,
         tic = time.time()
         if verbose:
             print("Calculating diffusion potential...")
-        # transforming X
-        # print('Diffusion operator • %s:'%t)
-        # print(diff_op)
+
+        is_sparse = sparse.issparse(diff_op)
+        if n_landmark is not None and n_landmark < diff_op.shape[0]:
+            U, S, _ = sparse.linalg.svds(diff_op, n_svd)
+            kmeans = MiniBatchKMeans(n_landmark, init_size=3 * n_landmark)
+            clusters = kmeans.fit_predict(np.matmul(U, np.diagflat(S)))
+            landmarks = np.unique(clusters)
+
+            if is_sparse:
+                pnm = sparse.hstack(
+                    [sparse.csr_matrix(diff_op[:, clusters == i].sum(axis=1)) for i in landmarks])
+                pmn = sparse.vstack(
+                    [sparse.csr_matrix(diff_op[clusters == i, :].sum(axis=0)) for i in landmarks])
+            else:
+                pnm = np.array([np.sum(
+                    diff_op[:, clusters == i], axis=1).T for i in landmarks]).transpose()
+                pmn = np.array([np.sum(
+                    diff_op[clusters == i, :], axis=0) for i in landmarks])
+            # row normalize
+            pmn = normalize(pmn, norm='l1', axis=1)
+            diff_op = pmn @ pnm  # sparsity agnostic matrix multiplication
+            # landmark operator is doing diffusion twice
+            t = np.floor(t / 2).astype(np.int16)
+
+        if is_sparse:
+            diff_op = diff_op.todense()
         X = np.linalg.matrix_power(diff_op, t)  # diffused diffusion operator
-        # print('X:')
-        # print(X)
         X[X == 0] = np.finfo(float).eps  # handling zeros
         X[X <= np.finfo(float).eps] = np.finfo(
             float).eps  # handling small values
@@ -175,6 +222,9 @@ def embed_mds(diff_op, t=30, n_components=2, diff_potential=None,
         embedding = embed_MDS(diff_potential, ndim=n_components, how=mds,
                               distance_metric=mds_dist, njobs=njobs,
                               seed=random_state)
+        if n_landmark is not None:
+            # return to ambient space
+            embedding = pnm @ embedding
         if verbose:
             print("Embedded data in %.2f seconds." % (time.time() - tic))
     else:
@@ -258,17 +308,20 @@ class PHATE(BaseEstimator):
 
     def __init__(self, n_components=2, a=10, k=5, t=30, mds='metric',
                  knn_dist='euclidean', mds_dist='euclidean', njobs=1,
-                 random_state=None, verbose=True):
+                 random_state=None, verbose=True, n_landmark=1000,
+                 alpha_decay=None):
         self.ndim = n_components
         self.a = a
         self.k = k
         self.t = t
+        self.n_landmark = n_landmark
         self.mds = mds
         self.knn_dist = knn_dist
         self.mds_dist = mds_dist
         self.njobs = 1
         self.random_state = random_state
         self.verbose = verbose
+        self.alpha_decay = alpha_decay
 
         self.gs_ker = None
         self.diff_op = None
@@ -314,12 +367,20 @@ class PHATE(BaseEstimator):
             self.diff_potential = None
             self.embedding = None
         self.X = X
+        if self.alpha_decay is None:
+            if self.n_landmark is not None and len(self.X) > self.n_landmark:
+                alpha_decay = False
+            else:
+                alpha_decay = True
+        else:
+            alpha_decay = self.alpha_decay
         if self.gs_ker is None or self.diff_op is None:
             self.diff_potential = None  # can't use precomputed potential
         self.gs_ker, self.diff_op = calculate_operator(
             X, a=self.a, k=self.k, knn_dist=self.knn_dist,
             njobs=self.njobs, gs_ker=self.gs_ker,
-            diff_op=self.diff_op, verbose=self.verbose)
+            diff_op=self.diff_op, verbose=self.verbose,
+            alpha_decay=alpha_decay)
         return self
 
     def transform(self, X=None, t=None):
@@ -362,7 +423,8 @@ class PHATE(BaseEstimator):
             self.diff_op, t=t, n_components=self.ndim,
             diff_potential=self.diff_potential, embedding=self.embedding,
             mds=self.mds, mds_dist=self.mds_dist, njobs=self.njobs,
-            random_state=self.random_state, verbose=self.verbose)
+            random_state=self.random_state, verbose=self.verbose,
+            n_landmark=self.n_landmark)
         return self.embedding
 
     def fit_transform(self, X, t=None):
@@ -415,13 +477,20 @@ class PHATE(BaseEstimator):
             raise NotFittedError("This PHATE instance is not fitted yet. Call "
                                  "'fit' with appropriate arguments before "
                                  "using this method.")
-        diff_aff = np.diagflat(
-            np.power(np.sum(self.gs_ker, axis=0), 1 / 2))
-        diff_aff = np.matmul(np.matmul(diff_aff, self.gs_ker),
-                             diff_aff)
+        is_sparse = sparse.issparse(self.gs_ker)
+        diff_aff = np.power(self.gs_ker.sum(axis=0), 1 / 2)
+        if is_sparse:
+            diff_aff = sparse.diags(np.array(diff_aff)[0])
+        else:
+            diff_aff = np.diagflat(diff_aff)
+        diff_aff = diff_aff @ self.gs_ker @ diff_aff
         diff_aff = (diff_aff + diff_aff.T) / 2
 
-        _, eigenvalues, _ = svd(diff_aff)
+        if is_sparse:
+            _, eigenvalues, _ = sparse.linalg.svds(
+                diff_aff, diff_aff.shape[0] - 1)
+        else:
+            _, eigenvalues, _ = svd(diff_aff)
         entropy = []
         eigenvalues_t = np.copy(eigenvalues)
         for _ in range(t_max):
