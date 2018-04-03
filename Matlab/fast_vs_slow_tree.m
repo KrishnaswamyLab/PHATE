@@ -4,17 +4,18 @@ n_dim = 100;
 n_branch = 25;
 sigma = 5;
 rng(7);
-out_base = '~/Dropbox/PHATE/figures/fast_phate_runtime/March29/';
+out_base = '~/Dropbox/PHATE/figures/fast_phate_runtime/april3/';
 mkdir(out_base)
 
 %% tree
+rng(7)
 [M, C] = dla_tree(n_samp, n_dim, n_branch, sigma);
 
 %% fast PHATE
 rng(7)
 tic;
-Y_mmds_fast = phate_fast(M, 'k', 10, 'ndim', 2, 't', 48, 'npca', 100, 'nsvd', 100, ...
-    'ncluster', 1000, 'pot_method', 'sqrt');
+Y_mmds_fast = phate_fast(M, 'k', 10, 'ndim', 2, 't', [], 'npca', 100, 'nsvd', 100, ...
+    'ncluster', 100, 'pot_method', 'sqrt', 't_max', 100);
 toc
 
 %% slow PHATE

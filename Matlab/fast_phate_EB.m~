@@ -13,7 +13,7 @@ data = sqrt(data);
 %% fast PHATE
 rng(7)
 tic;
-Y_mmds_fast = phate_fast(data, 'k', 7, 'ndim', 2, 't', [], 'npca', 100, 'nsvd', 100, ...
+Y_mmds_fast = phate_fast(data, 'k', 7, 'ndim', 2, 't', [], 'npca', 100, 'nsvd', 10, ...
     'ncluster', 1000, 'pot_method', 'log');
 toc
 [~,Y_mmds_fast] = procrustes(Ymet2, Y_mmds_fast);

@@ -5,12 +5,13 @@ k = 10;
 nsvd = 100;
 ncluster = 1000;
 ndim = 2;
-t = 12;
+t = [];
 mds_method = 'mmds';
 distfun = 'euclidean';
 distfun_mds = 'euclidean';
 pot_method = 'log';
 P = [];
+t_max = 100;
 
 % get input parameters
 for i=1:length(varargin)
@@ -21,6 +22,10 @@ for i=1:length(varargin)
     % diffusion time
     if(strcmp(varargin{i},'t'))
        t = lower(varargin{i+1});
+    end
+    % t_max for VNE
+    if(strcmp(varargin{i},'t_max'))
+       t_max = lower(varargin{i+1});
     end
     % Number of pca components
     if(strcmp(varargin{i},'npca'))
@@ -60,13 +65,14 @@ for i=1:length(varargin)
     end
 end
 
-% PCA
-disp 'Doing PCA'
-pc = svdpca(data, npca, 'random');
-
 if isempty(P)
+    % PCA
+    disp 'Doing PCA'
+    pc = svdpca(data, npca, 'random');
     % diffusion operator
     P = compute_operator_fast(pc, 'k', k, 'distfun', distfun);
+else
+    disp 'Using supplied operator'
 end
 
 % spectral cluster for landmarks
@@ -81,14 +87,24 @@ m = max(IDX);
 Pnm = nan(n,m);
 Pmn = nan(m,n);
 for I=1:m
+    I
     Pnm(:,I) = sum(P(:,IDX==I),2);
     Pmn(I,:) = sum(P(IDX==I,:),1);
 end
 Pmn = bsxfun(@rdivide, Pmn, sum(Pmn,2));
 
+% Pmm
+Pmm = Pmn * Pnm;
+
+% VNE
+disp 'Finding optimal t using VNE'
+if isempty(t)
+    t = vne_optimal_t(Pmm, t_max);
+end
+
 % diffuse
 disp 'Diffusing landmark operators'
-P_t = (Pmn * Pnm)^t;
+P_t = Pmm^t;
 
 % potential distances
 disp 'Computing potential distances'
