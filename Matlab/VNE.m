@@ -84,7 +84,6 @@ PDX = bsxfun(@rdivide,PDX,epsilon); % autotuning d(x,:) using epsilon(x)
 GsKer = exp(-PDX.^a); % not really Gaussian kernel
 GsKer=GsKer+GsKer'; % Symmetrization
 DiffDeg = diag(sum(GsKer,2)); % degrees
-DiffOp = DiffDeg^(-1)*GsKer; % row stochastic
 
 DiffAff = DiffDeg^(-1/2)*GsKer*DiffDeg^(-1/2); % symmetric conjugate affinities
 DiffAff = (DiffAff + DiffAff')/2; % clean up numerical inaccuracies to maintain symmetry
