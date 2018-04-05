@@ -163,7 +163,7 @@ def calculate_operator(data, a=10, k=5, knn_dist='euclidean',
     return diff_op, landmark_transitions
 
 
-def embed_mds(diff_op, t=30, n_components=2, diff_potential=None,
+def embed_mds(diff_op, t=30, n_components=2, diff_potential=None, calc_pot='log',
               embedding=None, mds='metric', mds_dist='euclidean', njobs=1,
               potential_method='log', random_state=None, verbose=True,
               landmark_transitions=None):
@@ -185,6 +185,8 @@ def embed_mds(diff_op, t=30, n_components=2, diff_potential=None,
 
     diff_potential : ndarray, optional [n, n], default: None
         Precomputed diffusion potential
+
+    calc_pot : ['log', 'sqrt']
 
     mds : string, optional, default: 'metric'
         choose from ['classic', 'metric', 'nonmetric']
@@ -344,6 +346,7 @@ class PHATE(BaseEstimator):
         self.k = k
         self.t = t
         self.n_landmark = n_landmark
+        self.calc_pot = calc_pot
         self.mds = mds
         self.knn_dist = knn_dist
         self.mds_dist = mds_dist
