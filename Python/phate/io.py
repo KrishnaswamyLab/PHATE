@@ -1,8 +1,10 @@
 # author: Daniel Burkhardt <daniel.burkhardt@yale.edu>
 # (C) 2017 Krishnaswamy Lab GPLv2
 
+from __future__ import print_function, division
 import pandas as pd
 import scipy.io as sio
+
 
 def load_10X(data_dir, gene_labels='id'):
     """Basic IO for 10X data produced from the 10X Cellranger pipeline.
@@ -27,22 +29,24 @@ def load_10X(data_dir, gene_labels='id'):
         raise ValueError("gene_labels not in ['id', 'symbol']")
 
     try:
-        m =  sio.mmread(data_dir + "/matrix.mtx")
+        m = sio.mmread(data_dir + "/matrix.mtx")
         data = pd.DataFrame(m.toarray().T)
     except FileNotFoundError:
-        raise FileNotFoundError("'matrix.mtx', 'genes.tsv', and 'barcodes.tsv' must be present in data_dir")
+        raise FileNotFoundError(
+            "'matrix.mtx', 'genes.tsv', and 'barcodes.tsv' must be present in data_dir")
     try:
-        genes = pd.read_csv(data_dir + "/genes.tsv", delimiter='\t', header=None)
+        genes = pd.read_csv(data_dir + "/genes.tsv",
+                            delimiter='\t', header=None)
         genes.columns = pd.Index(['id', 'symbol'])
-        barcodes = pd.read_csv(data_dir + "/barcodes.tsv", delimiter='\t', header=None)
+        barcodes = pd.read_csv(data_dir + "/barcodes.tsv",
+                               delimiter='\t', header=None)
     except OSError:
-        raise FileNotFoundError("'matrix.mtx', 'genes.tsv', and 'barcodes.tsv' must be present in data_dir")
-
+        raise FileNotFoundError(
+            "'matrix.mtx', 'genes.tsv', and 'barcodes.tsv' must be present in data_dir")
 
     data.columns = pd.Index(genes[gene_labels])
     data.index = pd.Index(barcodes[0])
 
-
-
-    print("Imported data matrix with %s cells and %s genes."%(data.shape[0], data.shape[1]))
+    print("Imported data matrix with %s cells and %s genes." %
+          (data.shape[0], data.shape[1]))
     return data

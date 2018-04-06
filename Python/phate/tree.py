@@ -2,6 +2,7 @@
 # (C) 2017 Krishnaswamy Lab GPLv2
 
 # Generating random fractal tree via DLA
+from __future__ import print_function, division
 import numpy as np
 
 # random tree via diffusion limited aggregation

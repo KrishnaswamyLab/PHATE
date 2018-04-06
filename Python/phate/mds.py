@@ -1,6 +1,7 @@
 # author: Daniel Burkhardt <daniel.burkhardt@yale.edu>
 # (C) 2017 Krishnaswamy Lab GPLv2
 
+from __future__ import print_function, division
 from sklearn.manifold import MDS
 from sklearn.decomposition import PCA
 from scipy.spatial.distance import pdist
@@ -32,7 +33,8 @@ def embed_MDS(X, ndim=2, how='metric', distance_metric='euclidean', njobs=1, see
     ----------
     X: ndarray [n_samples, n_samples]
         2 dimensional input data array with n_samples
-        embed_MDS does not check for matrix squareness, but this is nescessary for PHATE
+        embed_MDS does not check for matrix squareness,
+        but this is necessary for PHATE
 
     n_dim : int, optional, default: 2
         number of dimensions in which the data will be embedded
@@ -42,13 +44,15 @@ def embed_MDS(X, ndim=2, how='metric', distance_metric='euclidean', njobs=1, see
         which MDS algorithm is used for dimensionality reduction
 
     distance_metric : string, optional, default: 'euclidean'
-        choose from [‘cosine’, ‘euclidean’]
+        choose from ['cosine', 'euclidean']
         distance metric for MDS
 
     njobs : integer, optional, default: 1
         The number of jobs to use for the computation.
-        If -1 all CPUs are used. If 1 is given, no parallel computing code is used at all, which is useful for debugging.
-        For n_jobs below -1, (n_cpus + 1 + n_jobs) are used. Thus for n_jobs = -2, all CPUs but one are used
+        If -1 all CPUs are used. If 1 is given, no parallel computing code is
+        used at all, which is useful for debugging.
+        For n_jobs below -1, (n_cpus + 1 + n_jobs) are used. Thus for
+        n_jobs = -2, all CPUs but one are used
 
     seed: integer or numpy.RandomState, optional
         The generator used to initialize SMACOF (metric, nonmetric) MDS
@@ -66,7 +70,7 @@ def embed_MDS(X, ndim=2, how='metric', distance_metric='euclidean', njobs=1, see
 
     if how == 'classic':
         # classical MDS as defined in cmdscale
-        #Y = cmdscale(X_dist)[0][:,:ndim]
+        # Y = cmdscale(X_dist)[0][:,:ndim]
         Y = cmdscale_fast(X_dist, ndim)
     elif how == 'metric':
         # First compute CMDS

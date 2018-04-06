@@ -1,10 +1,12 @@
 # author: Daniel Burkhardt <daniel.burkhardt@yale.edu>
 # (C) 2017 Krishnaswamy Lab GPLv2
 
+from __future__ import print_function, division
 import sklearn.preprocessing
 import sklearn.decomposition
 import numpy as np
 import scipy.sparse as sp
+
 
 def pca_reduce(data, n_components=100, solver='sparse', verbose=False):
     """PCA dimensionality reduction
@@ -32,7 +34,9 @@ def pca_reduce(data, n_components=100, solver='sparse', verbose=False):
         input data reduced to desired number of dimensions
     """
 
-    if verbose: print('Running PCA to %s dimensions using %s PCA...'%(n_components, solver))
+    if verbose:
+        print('Running PCA to %s dimensions using %s PCA...' %
+              (n_components, solver))
     if solver == 'sparse':
         if not sp.issparse(data):
             try:
@@ -40,13 +44,16 @@ def pca_reduce(data, n_components=100, solver='sparse', verbose=False):
             except TypeError:
                 raise TypeError("Input data must be castable as np.array().")
 
-        pca_solver = sklearn.decomposition.TruncatedSVD(n_components=n_components)
+        pca_solver = sklearn.decomposition.TruncatedSVD(
+            n_components=n_components)
         data_reduced = pca_solver.fit_transform(data)
     else:
-        pca_solver = sklearn.decomposition.PCA(n_components=n_components, svd_solver=solver)
+        pca_solver = sklearn.decomposition.PCA(
+            n_components=n_components, svd_solver=solver)
         data_reduced = pca_solver.fit_transform(data)
 
     return data_reduced
+
 
 def library_size_normalize(data, verbose=False):
     """Performs L1 normalization on input data
@@ -64,10 +71,11 @@ def library_size_normalize(data, verbose=False):
     data_norm : ndarray [n, p]
         2 dimensional array with normalized gene expression values
     """
-    if verbose: print("Normalizing library sizes for %s cells"%(data.shape[0]))
-    data_norm = sklearn.preprocessing.normalize(data, norm = 'l1', axis = 1)
-    #norm = 'l1' computes the L1 norm which computes the
-    #axis = 1 independently normalizes each sample
+    if verbose:
+        print("Normalizing library sizes for %s cells" % (data.shape[0]))
+    data_norm = sklearn.preprocessing.normalize(data, norm='l1', axis=1)
+    # norm = 'l1' computes the L1 norm which computes the
+    # axis = 1 independently normalizes each sample
 
     median_transcript_count = np.median(data.sum(axis=1))
     data_norm = data_norm * median_transcript_count

@@ -4,6 +4,7 @@ Potential of Heat-diffusion for Affinity-based Trajectory Embedding (PHATE)
 
 # author: Daniel Burkhardt <daniel.burkhardt@yale.edu>
 # (C) 2017 Krishnaswamy Lab GPLv2
+from __future__ import print_function, division, absolute_import
 
 import time
 import numpy as np
@@ -13,23 +14,24 @@ from sklearn.neighbors import NearestNeighbors
 from sklearn.cluster import MiniBatchKMeans
 from scipy.spatial.distance import pdist
 from scipy.spatial.distance import squareform
-from scipy.linalg import svd
 from sklearn.utils.extmath import randomized_svd
 from scipy import sparse
 from sklearn.preprocessing import normalize
 from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
 
 from .mds import embed_MDS
+from .vne import compute_von_neumann_entropy, find_knee_point
 
 
 def calculate_kernel(M, a=10, k=5, knn_dist='euclidean', verbose=True,
-                     alpha_decay=True, ndim=100):
+                     alpha_decay=True, ndim=100, random_state=None):
     if verbose:
         print("Building kNN graph and diffusion operator...")
     precomputed = isinstance(knn_dist, list) or \
         isinstance(knn_dist, np.ndarray)
     if not precomputed and ndim < M.shape[1]:
-        pca = PCA(ndim, svd_solver='randomized')
+        pca = PCA(ndim, svd_solver='randomized', random_state=random_state)
         M = pca.fit_transform(M)
     if alpha_decay:
         try:
@@ -61,41 +63,44 @@ def calculate_kernel(M, a=10, k=5, knn_dist='euclidean', verbose=True,
     return gs_ker
 
 
-def calculate_landmark_operator(diff_op, n_landmark=1000, n_svd=100):
-    is_sparse = sparse.issparse(diff_op)
-    if n_landmark is not None and n_landmark < diff_op.shape[0]:
+def calculate_landmark_operator(gs_ker, n_landmark=1000, n_svd=100,
+                                random_state=None):
+    is_sparse = sparse.issparse(gs_ker)
+    diff_op = normalize(gs_ker, norm='l1', axis=1)  # row stochastic
+    if n_landmark is not None and n_landmark < gs_ker.shape[0]:
         # spectral clustering
         U, S, _ = randomized_svd(diff_op,
-                                 n_components=n_svd)
-        kmeans = MiniBatchKMeans(n_landmark, init_size=3 * n_landmark)
+                                 n_components=n_svd,
+                                 random_state=random_state)
+        kmeans = MiniBatchKMeans(n_landmark, init_size=3 * n_landmark,
+                                 random_state=random_state)
         clusters = kmeans.fit_predict(np.matmul(U, np.diagflat(S)))
         landmarks = np.unique(clusters)
 
         # transition matrices
         if is_sparse:
-            pnm = sparse.hstack(
-                [sparse.csr_matrix(diff_op[:, clusters == i].sum(axis=1)) for i in landmarks])
             pmn = sparse.vstack(
-                [sparse.csr_matrix(diff_op[clusters == i, :].sum(axis=0)) for i in landmarks])
+                [sparse.csr_matrix(gs_ker[clusters == i, :].sum(axis=0)) for i in landmarks])
         else:
-            pnm = np.array([np.sum(
-                diff_op[:, clusters == i], axis=1).T for i in landmarks]).transpose()
             pmn = np.array([np.sum(
-                diff_op[clusters == i, :], axis=0) for i in landmarks])
+                gs_ker[clusters == i, :], axis=0) for i in landmarks])
         # row normalize
+        pnm = pmn.transpose()
         pmn = normalize(pmn, norm='l1', axis=1)
-        diff_op = pmn @ pnm  # sparsity agnostic matrix multiplication
-        if is_sparse:
-            diff_op = diff_op.todense()
+        pnm = normalize(pnm, norm='l1', axis=1)
+        diff_op = pmn.dot(pnm)  # sparsity agnostic matrix multiplication
     else:
         pnm = None
+    if is_sparse:
+        diff_op = diff_op.todense()
     return diff_op, pnm
 
 
 def calculate_operator(data, a=10, k=5, knn_dist='euclidean',
                        diff_op=None, landmark_transitions=None,
                        njobs=1, verbose=True, alpha_decay=True,
-                       n_landmark=1000, n_svd=100):
+                       n_landmark=1000, n_svd=100,
+                       random_state=None):
     """
     Calculate the diffusion operator
 
@@ -149,10 +154,11 @@ def calculate_operator(data, a=10, k=5, knn_dist='euclidean',
     if diff_op is None:
         gs_ker = calculate_kernel(data, a, k, knn_dist,
                                   verbose=verbose,
-                                  alpha_decay=alpha_decay)
-        diff_op = normalize(gs_ker, norm='l1', axis=1)  # row stochastic
+                                  alpha_decay=alpha_decay,
+                                  random_state=random_state)
         diff_op, landmark_transitions = calculate_landmark_operator(
-            diff_op, n_landmark)
+            gs_ker, n_landmark,
+            random_state=random_state)
         if verbose:
             print("Built graph and diffusion operator in %.2f seconds." %
                   (time.time() - tic))
@@ -163,7 +169,7 @@ def calculate_operator(data, a=10, k=5, knn_dist='euclidean',
     return diff_op, landmark_transitions
 
 
-def embed_mds(diff_op, t=30, n_components=2, diff_potential=None, calc_pot='log',
+def embed_mds(diff_op, t=30, n_components=2, diff_potential=None,
               embedding=None, mds='metric', mds_dist='euclidean', njobs=1,
               potential_method='log', random_state=None, verbose=True,
               landmark_transitions=None):
@@ -186,7 +192,8 @@ def embed_mds(diff_op, t=30, n_components=2, diff_potential=None, calc_pot='log'
     diff_potential : ndarray, optional [n, n], default: None
         Precomputed diffusion potential
 
-    calc_pot : ['log', 'sqrt']
+    potential_method : string, optional, default: 'log'
+        choose from ['log', 'sqrt']
 
     mds : string, optional, default: 'metric'
         choose from ['classic', 'metric', 'nonmetric']
@@ -255,7 +262,7 @@ def embed_mds(diff_op, t=30, n_components=2, diff_potential=None, calc_pot='log'
                               seed=random_state)
         if landmark_transitions is not None:
             # return to ambient space
-            embedding = landmark_transitions @ embedding
+            embedding = landmark_transitions.dot(embedding)
         if verbose:
             print("Embedded data in %.2f seconds." % (time.time() - tic))
     else:
@@ -337,7 +344,7 @@ class PHATE(BaseEstimator):
        <http://biorxiv.org/content/early/2017/03/24/120378>`_
     """
 
-    def __init__(self, n_components=2, a=None, k=5, t=30, mds='metric',
+    def __init__(self, n_components=2, a=None, k=5, t='auto', mds='metric',
                  knn_dist='euclidean', mds_dist='euclidean', njobs=1,
                  random_state=None, verbose=True, n_landmark=1000,
                  alpha_decay=None, potential_method='log'):
@@ -346,7 +353,6 @@ class PHATE(BaseEstimator):
         self.k = k
         self.t = t
         self.n_landmark = n_landmark
-        self.calc_pot = calc_pot
         self.mds = mds
         self.knn_dist = knn_dist
         self.mds_dist = mds_dist
@@ -412,10 +418,10 @@ class PHATE(BaseEstimator):
             njobs=self.njobs, n_landmark=self.n_landmark,
             diff_op=self.diff_op, verbose=self.verbose,
             landmark_transitions=self.landmark_transitions,
-            alpha_decay=self.alpha_decay)
+            alpha_decay=self.alpha_decay, random_state=self.random_state)
         return self
 
-    def transform(self, X=None, t=None):
+    def transform(self, X=None, t_max=100, plot_optimal_t=False, ax=None):
         """
         Computes the position of the cells in the embedding space
 
@@ -447,19 +453,26 @@ class PHATE(BaseEstimator):
             raise NotFittedError("This PHATE instance is not fitted yet. Call "
                                  "'fit' with appropriate arguments before "
                                  "using this method.")
-        if t is None:
-            t = self.t
+        if self.t == 'auto':
+            t = self.optimal_t(t_max=t_max, plot=plot_optimal_t, ax=ax)
+            print("Automatically selected t = {}".format(t))
         else:
-            self.t = t
+            t = self.t
         self.embedding, self.diff_potential = embed_mds(
-            self.diff_op, t=t, landmark_transitions=self.landmark_transitions,
-            n_components=self.ndim, diff_potential=self.diff_potential,
-            embedding=self.embedding, mds=self.mds, mds_dist=self.mds_dist,
-            njobs=self.njobs, random_state=self.random_state, verbose=self.verbose,
+            self.diff_op,
+            t=t,
+            landmark_transitions=self.landmark_transitions,
+            n_components=self.ndim,
+            diff_potential=self.diff_potential,
+            embedding=self.embedding,
+            mds=self.mds, mds_dist=self.mds_dist,
+            njobs=self.njobs,
+            random_state=self.random_state,
+            verbose=self.verbose,
             potential_method=self.potential_method)
         return self.embedding
 
-    def fit_transform(self, X, t=None):
+    def fit_transform(self, X, **kwargs):
         """
         Computes the diffusion operator and the position of the cells in the
         embedding space
@@ -479,7 +492,7 @@ class PHATE(BaseEstimator):
         """
         start = time.time()
         self.fit(X)
-        self.transform(t=t)
+        self.transform(**kwargs)
         if self.verbose:
             print("Finished PHATE embedding in %.2f seconds.\n" %
                   (time.time() - start))
@@ -512,14 +525,28 @@ class PHATE(BaseEstimator):
         if self.landmark_transitions is not None:
             # landmark operator is doing diffusion twice
             t_max = np.floor(t_max / 2).astype(np.int16)
-        _, eigenvalues, _ = svd(self.diff_op)
-        entropy = []
-        eigenvalues_t = np.copy(eigenvalues)
-        for _ in range(t_max):
-            prob = eigenvalues_t / np.sum(eigenvalues_t)
-            prob = prob + np.finfo(float).eps
-            entropy.append(-np.sum(prob * np.log(prob)))
-            eigenvalues_t = eigenvalues_t * eigenvalues
-        entropy = np.array(entropy)
+            t = np.arange(t_max) * 2 + 1
+        else:
+            t = np.arange(t_max)
 
-        return np.array(entropy)
+        return t, compute_von_neumann_entropy(self.diff_op, t_max=t_max)
+
+    def optimal_t(self, t_max=100, plot=False, ax=None):
+
+        t, h = self.von_neumann_entropy(t_max=t_max)
+        t_opt = find_knee_point(y=h, x=t)
+
+        if plot:
+            if ax is None:
+                fig, ax = plt.subplots()
+                show = True
+            else:
+                show = False
+            ax.plot(t, h)
+            ax.scatter(t_opt, h[t == t_opt], marker='*', c='k', s=50)
+            ax.set_xlabel("t")
+            ax.set_ylabel("Von Neumann Entropy")
+            if show:
+                plt.show()
+
+        return t_opt
