@@ -14,5 +14,8 @@
 .. autoclass:: phate.python.phate.phate.calculate_kernel
    :members:
 
+.. autoclass:: phate.python.phate.phate.calculate_kernel
+   :members:
+   
 .. autofunction:: phate.calculate_kernel
    :members:
