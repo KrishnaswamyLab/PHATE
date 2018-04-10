@@ -12,8 +12,17 @@ import numpy as np
 
 
 def cmdscale_fast(D, ndim):
-    """
-    Fast CMDS using randomm SVD
+    """Fast CMDS using random SVD
+
+    Parameters
+    ----------
+    D : array-like, input data [n_samples, n_dimensions]
+
+    ndim : int, number of dimensions in which to embed `D`
+
+    Returns
+    -------
+    Y : array-like, embedded data [n_sample, ndim]
     """
     D = D**2
     D = D - D.mean(axis=0)[None, :]
@@ -26,8 +35,9 @@ def cmdscale_fast(D, ndim):
 
 
 def embed_MDS(X, ndim=2, how='metric', distance_metric='euclidean', njobs=1, seed=None):
-    """
-    Performs classic, metric, and non-metric MDS
+    """Performs classic, metric, and non-metric MDS
+
+    Metric MDS is initialized using classic MDS, non-metric MDS is initialized using metric MDS.
 
     Parameters
     ----------
