@@ -33,7 +33,6 @@
 # ones.
 extensions = ['sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
-    'numpydoc',
     'sphinx.ext.doctest',
     'sphinx.ext.coverage',
     'sphinx.ext.viewcode',
