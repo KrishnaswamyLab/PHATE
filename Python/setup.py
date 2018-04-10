@@ -16,7 +16,7 @@ setup(name='phate',
       packages=['phate', ],
       license='GNU General Public License Version 2',
       install_requires=['numpy>=1.10.0', 'pandas>=0.18.0', 'scipy>=0.14.0',
-                        'matplotlib', 'sklearn', 'future'],
+                        'matplotlib', 'sklearn', 'future', 'numpydoc'],
       long_description=open('README.md').read(),
       )
 
