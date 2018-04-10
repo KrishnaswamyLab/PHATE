@@ -9,4 +9,6 @@ Hello, world!!
    :maxdepth: 2
 
    api
-   ...
+
+.. autoclass:: phate.phate.PHATE
+   :members:
