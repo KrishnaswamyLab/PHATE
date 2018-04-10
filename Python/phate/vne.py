@@ -9,6 +9,21 @@ from scipy.linalg import svd
 
 
 def compute_von_neumann_entropy(data, t_max=100):
+    """
+    Determines the Von Neumann entropy of data
+    at varying matrix powers. The user should select a value of t
+    around the "knee" of the entropy curve.
+
+    Parameters
+    ----------
+    t_max : int
+        Maximum value of t to test
+
+    Returns
+    -------
+    entropy : array, shape=[t_max]
+        The entropy of the diffusion affinities for each value of t
+    """
     _, eigenvalues, _ = svd(data)
     entropy = []
     eigenvalues_t = np.copy(eigenvalues)
@@ -22,7 +37,25 @@ def compute_von_neumann_entropy(data, t_max=100):
     return np.array(entropy)
 
 
-def find_knee_point(y, x=None, use_absolute_dev_p=True):
+def find_knee_point(y, x=None):
+    """
+    Returns the x-location of a (single) knee of curve y=f(x)
+
+    Parameters
+    ----------
+
+    y : array, shape=[n]
+        data for which to find the knee point
+
+    x : array, optional, shape=[n], default=np.arange(len(y))
+        indices of the data points of y,
+        if these are not in order and evenly spaced
+
+    Returns
+    -------
+    knee_point : int
+    The index (or x value) of the knee point on y
+    """
     try:
         y.shape
     except AttributeError:
@@ -69,20 +102,14 @@ def find_knee_point(y, x=None, use_absolute_dev_p=True):
 
     # figure out the sum of per-point errors for left- and right- of-knee fits
     error_curve = np.full_like(y, np.float('nan'))
-    for breakpt in np.arange(1, len(y)):
+    for breakpt in np.arange(1, len(y) - 1):
         delsfwd = (mfwd[breakpt - 1] * x[:breakpt + 1] +
                    bfwd[breakpt - 1]) - y[:breakpt + 1]
         delsbck = (mbck[breakpt - 1] * x[breakpt:] +
                    bbck[breakpt - 1]) - y[breakpt:]
 
-        if use_absolute_dev_p:
-            # error_curve(breakpt) = sum(abs(delsfwd))/sqrt(len(delsfwd)) +
-            # sum(abs(delsbck))/sqrt(len(delsbck))
-            error_curve[breakpt] = np.sum(np.abs(delsfwd)) + \
-                np.sum(np.abs(delsbck))
-        else:
-            error_curve[breakpt] = np.sqrt(np.sum(delsfwd * delsfwd)) + \
-                np.sqrt(np.sum(delsbck * delsbck))
+        error_curve[breakpt] = np.sum(np.abs(delsfwd)) + \
+            np.sum(np.abs(delsbck))
 
     # find location of the min of the error curve
     loc = np.argmin(error_curve[1:-1]) + 1

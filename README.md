@@ -6,19 +6,19 @@ PHATE is a tool for visualizing high dimensional single-cell data with natural p
 [Kevin R. Moon, David van Dijk, Zheng Wang, et al. **PHATE: A Dimensionality Reduction Method for Visualizing Trajectory Structures in High-Dimensional Biological Data**. 2017. *BioRxiv*](http://biorxiv.org/content/early/2017/03/24/120378)
 
 
-PHATE has been implemented in Python3 and Matlab.
+PHATE has been implemented in Python (2.7 and >=3.5) and Matlab.
 
 
 ### Getting started
 
 #### Python installation and dependencies
-1. The Python3 version of PHATE can be installed using:
+1. The Python version of PHATE can be installed using:
 
         $ git clone git://github.com/SmitaKrishnaswamy/PHATE.git
         $ cd PHATE/Python
-        $ python3 setup.py install --user
+        $ python setup.py install --user
 
-2. PHATE depends on a number of `python3` packages available on pypi and these dependencies are listed in `setup.py`
+2. PHATE depends on a number of `python` packages available on pypi and these dependencies are listed in `setup.py`
 All the dependencies will be automatically installed using the above commands
 
 #### MATLAB installation
@@ -33,7 +33,7 @@ All the dependencies will be automatically installed using the above commands
 
 1. The R version of PHATE can be accessed [here](https://github.com/KrishnaswamyLab/phater).
 2. The R version can also be accessed with this repository by adding the following steps after cloning:
-        
+
         $ git submodule init
         $ git submodule update
         $ cd phater
