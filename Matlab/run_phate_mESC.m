@@ -2,7 +2,7 @@
 rseed = 7;
 
 %% load mESC data Klein et al. 2015 (doi:10.1016/j.cell.2015.04.044)
-file_name = 'GSM1599499_ES_d7_LIFminus.csv';
+file_name = '../data/GSM1599499_ES_d7_LIFminus.csv';
 fid = fopen(file_name);
 line1 = strsplit(fgetl(fid),',');
 ncol = length(line1); % get number of cols

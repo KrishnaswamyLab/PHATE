@@ -2,7 +2,7 @@
 rseed = 8;
 
 %% Load tree data generated in GenerateTree.m. See paper for details in how this data is generated
-load TreeData.mat
+load('../data/TreeData.mat')
 
 %% PCA
 Y_PCA = svdpca(M, 2, 'random');
