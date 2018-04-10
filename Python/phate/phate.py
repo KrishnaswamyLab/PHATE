@@ -569,7 +569,7 @@ class PHATE(BaseEstimator):
             alpha_decay=self.alpha_decay, random_state=self.random_state)
         return self
 
-    def transform(self, X=None, t_max=100, plot_optimal_t=False, ax=None):
+    def transform(self, X=None, t_max=200, plot_optimal_t=False, ax=None):
         """
         Computes the position of the cells in the embedding space
 
@@ -579,7 +579,7 @@ class PHATE(BaseEstimator):
             Input data. Not required, since PHATE does not currently embed
             cells not given in the input matrix to `PHATE.fit()`
 
-        t_max : int, optional, default=100
+        t_max : int, optional, default=200
             maximum t to test if `t` is set to 'auto'
 
         plot_optimal_t : boolean, optional, default=False
@@ -653,7 +653,7 @@ class PHATE(BaseEstimator):
                   (time.time() - start))
         return self.embedding
 
-    def von_neumann_entropy(self, t_max=100):
+    def von_neumann_entropy(self, t_max=200):
         """
         Determines the Von Neumann entropy of the diffusion affinities
         at varying levels of t. The user should select a value of t
@@ -665,7 +665,7 @@ class PHATE(BaseEstimator):
 
         Parameters
         ----------
-        t_max : int, default: 100
+        t_max : int, default: 200
             Maximum value of t to test
 
         Returns
@@ -686,14 +686,14 @@ class PHATE(BaseEstimator):
 
         return t, compute_von_neumann_entropy(self.diff_op, t_max=t_max)
 
-    def optimal_t(self, t_max=100, plot=False, ax=None):
+    def optimal_t(self, t_max=200, plot=False, ax=None):
         """
         Selects the optimal value of t based on the knee point of the
         Von Neumann Entropy of the diffusion operator.
 
         Parameters
         ----------
-        t_max : int, default: 100
+        t_max : int, default: 200
             Maximum value of t to test
 
         plot : boolean, default: False
