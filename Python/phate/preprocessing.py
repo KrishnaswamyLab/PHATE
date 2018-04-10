@@ -2,10 +2,15 @@
 # (C) 2017 Krishnaswamy Lab GPLv2
 
 from __future__ import print_function, division
-import sklearn.preprocessing
+from sklearn.preprocessing import normalize
 import sklearn.decomposition
 import numpy as np
 import scipy.sparse as sp
+
+try:
+    import pandas as pd
+except ModuleNotFoundError:
+    pass
 
 def library_size_normalize(data, verbose=False):
     """Performs L1 normalization on input data
@@ -25,10 +30,19 @@ def library_size_normalize(data, verbose=False):
     """
     if verbose:
         print("Normalizing library sizes for %s cells" % (data.shape[0]))
-    data_norm = sklearn.preprocessing.normalize(data, norm='l1', axis=1)
+
+    median_transcript_count = np.median(data.sum(axis=1))
+    try:
+        if isinstance(data, pd.core.sparse.frame.SparseDataFrame):
+            data_norm = normalize(data.to_coo(), norm='l1', axis=1)
+        else:
+            data_norm = sklearn.preprocessing.normalize(data, norm='l1', axis=1)
+    except NameError:
+        data_norm = sklearn.preprocessing.normalize(data, norm='l1', axis=1)
+
+
     # norm = 'l1' computes the L1 norm which computes the
     # axis = 1 independently normalizes each sample
 
-    median_transcript_count = np.median(data.sum(axis=1))
     data_norm = data_norm * median_transcript_count
     return data_norm

@@ -14,7 +14,7 @@ from sklearn.neighbors import NearestNeighbors
 from sklearn.cluster import KMeans
 from sklearn.utils.extmath import randomized_svd
 from sklearn.preprocessing import normalize
-from sklearn.decomposition import PCA
+from sklearn.decomposition import PCA, TruncatedSVD
 from scipy import sparse
 from scipy.spatial.distance import pdist
 from scipy.spatial.distance import squareform
@@ -72,8 +72,12 @@ def calculate_kernel(data, k=5, a=10, alpha_decay=True, knn_dist='euclidean',
     precomputed = isinstance(knn_dist, list) or \
         isinstance(knn_dist, np.ndarray)
     if not precomputed and ndim < data.shape[1]:
-        pca = PCA(ndim, svd_solver='randomized', random_state=random_state)
-        data = pca.fit_transform(data)
+        if sparse.issparse(data):
+            tSVD = TruncatedSVD(ndim + 50, random_state=random_state)
+            data = tSVD.fit(data).transform(data)
+        else:
+            pca = PCA(ndim, svd_solver='randomized', random_state=random_state)
+            data = pca.fit_transform(data)
     if alpha_decay:
         try:
             if precomputed:
