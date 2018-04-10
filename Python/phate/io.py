@@ -6,7 +6,7 @@ import pandas as pd
 import scipy.io as sio
 
 
-def load_10X(data_dir, gene_labels='id'):
+def load_10X(data_dir, sparse=True, gene_labels='id'):
     """Basic IO for 10X data produced from the 10X Cellranger pipeline.
 
     A default run of the `cellranger count` command will generate gene-barcode matricies for secondary analysis. For both "raw" and "filtered" output, directories are created containing three files: 'matrix.mtx', 'barcodes.tsv', 'genes.tsv'. Running `phate.io.load_10X(data_dir)` will return a Pandas DataFrame will genes as columns and cells as rows. The returned DataFrame will be ready to use with PHATE.
@@ -16,6 +16,8 @@ def load_10X(data_dir, gene_labels='id'):
     data_dir : string
         path to input data directory
         expects 'matrix.mtx', 'genes.tsv', 'barcodes.csv' to be present and will raise and error otherwise
+    sparse : boolean
+        If True, a sparse Pandas DataFrame is returned.
     gene_labels : string, 'id' or 'symbol', optional, default: 'id'
         Whether the columns of the dataframe should contain gene ids or gene symbols
 
@@ -46,6 +48,9 @@ def load_10X(data_dir, gene_labels='id'):
 
     data.columns = pd.Index(genes[gene_labels])
     data.index = pd.Index(barcodes[0])
+
+    if sparse:
+        data = data.to_sparse(fill_value=0)
 
     print("Imported data matrix with %s cells and %s genes." %
           (data.shape[0], data.shape[1]))

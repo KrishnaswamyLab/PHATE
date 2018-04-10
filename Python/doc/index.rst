@@ -3,7 +3,7 @@ Welcome to PHATE's documentation
 =================================
 
 
-Hello, world!
+Hello, world!!
 
 .. automodule:: phate
     :members:
@@ -18,11 +18,11 @@ Hello, world!
     :show-inheritance:
 
 
-.. autoclass:: phate.calculate_kernel
+.. autoclass:: phate.phate.calculate_kernel
    :members:
 
 .. autoclass:: phate.python.phate.phate.calculate_kernel
    :members:
 
-.. autofunction:: phate.calculate_kernel
+.. autofunction:: phate.phate.calculate_kernel
    :members:
