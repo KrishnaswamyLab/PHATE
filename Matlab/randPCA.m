@@ -228,7 +228,7 @@ if(m >= n)
 % Apply A to a random matrix, obtaining H.
 %
   %rand('seed',rand('seed'));
-  rng('default');
+  %rng('default');
 
   if(isreal(A))
     H = A*(2*rand(n,l)-ones(n,l));
@@ -239,7 +239,7 @@ if(m >= n)
   end
 
   %rand('twister',rand('twister'));
-  rng('default');
+  %rng('default');
 
 %
 % Initialize F to its final size and fill its leftmost block with H.
@@ -294,7 +294,7 @@ if(m < n)
 % Apply A' to a random matrix, obtaining H.
 %
   %rand('seed',rand('seed'));
-  rng('default');
+  %rng('default');
 
   if(isreal(A))
     H = ((2*rand(l,m)-ones(l,m))*A)';
@@ -305,7 +305,7 @@ if(m < n)
   end
 
   %rand('twister',rand('twister'));
-  rng('default');
+  %rng('default');
 
 %
 % Initialize F to its final size and fill its leftmost block with H.

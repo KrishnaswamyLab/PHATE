@@ -1,4 +1,4 @@
-function Y = svdpca(X, k, method)
+function [pc,U,S] = svdpca(X, k, method)
 
 if ~exist('method','var')
     method = 'svd';
@@ -9,14 +9,15 @@ X = bsxfun(@minus, X, mean(X));
 switch method
     case 'svd'
         disp 'PCA using SVD'
-        [U,~,~] = svds(X', k);
-        Y = X * U;
+        [U,S,~] = svds(X', k);
+        pc = X * U;
     case 'random'
         disp 'PCA using random SVD'
-        [U,~,~] = randPCA(X', k);
-        Y = X * U;
+        [U,S,~] = randPCA(X', k);
+        pc = X * U;
+        S = diag(S);
     case 'none'
         disp 'No PCA performed'
-        Y = X;
+        pc = X;
 end
 

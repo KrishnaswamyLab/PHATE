@@ -6,7 +6,7 @@ import pandas as pd
 import scipy.io as sio
 
 
-def load_10X(data_dir, sparse=True, gene_labels='id'):
+def load_10X(data_dir, sparse=True, gene_labels='symbol'):
     """Basic IO for 10X data produced from the 10X Cellranger pipeline.
 
     A default run of the `cellranger count` command will generate gene-barcode matricies for secondary analysis. For both "raw" and "filtered" output, directories are created containing three files: 'matrix.mtx', 'barcodes.tsv', 'genes.tsv'. Running `phate.io.load_10X(data_dir)` will return a Pandas DataFrame will genes as columns and cells as rows. The returned DataFrame will be ready to use with PHATE.
