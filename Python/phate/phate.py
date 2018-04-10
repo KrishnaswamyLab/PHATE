@@ -11,7 +11,7 @@ import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.exceptions import NotFittedError
 from sklearn.neighbors import NearestNeighbors
-from sklearn.cluster import MiniBatchKMeans
+from sklearn.cluster import KMeans
 from scipy.spatial.distance import pdist
 from scipy.spatial.distance import squareform
 from sklearn.utils.extmath import randomized_svd
@@ -20,8 +20,8 @@ from sklearn.preprocessing import normalize
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 
-from mds import embed_MDS
-from vne import compute_von_neumann_entropy, find_knee_point
+from phate.mds import embed_MDS
+from phate.vne import compute_von_neumann_entropy, find_knee_point
 
 
 def calculate_kernel(data, k=5, a=10, alpha_decay=True, knn_dist='euclidean',
@@ -145,8 +145,8 @@ def calculate_landmark_operator(gs_ker, n_landmark=1000,
         U, S, _ = randomized_svd(diff_op,
                                  n_components=n_svd,
                                  random_state=random_state)
-        kmeans = MiniBatchKMeans(n_landmark, init_size=3 * n_landmark,
-                                 random_state=random_state)
+        kmeans = KMeans(n_landmark,
+                        random_state=random_state)
         clusters = kmeans.fit_predict(np.matmul(U, np.diagflat(S)))
         landmarks = np.unique(clusters)
 
@@ -324,7 +324,7 @@ def embed_mds(diff_op, t=30, n_components=2, diff_potential=None,
             print("Calculating diffusion potential...")
         if landmark_transitions is not None:
             # landmark operator is doing diffusion twice
-            t = np.floor(t / 2).astype(np.int8)
+            t = np.floor(t / 2).astype(np.int16)
 
         X = np.linalg.matrix_power(diff_op, t)  # diffused diffusion operator
 
@@ -569,7 +569,7 @@ class PHATE(BaseEstimator):
             alpha_decay=self.alpha_decay, random_state=self.random_state)
         return self
 
-    def transform(self, X=None, t_max=100, plot_optimal_t=False, ax=None):
+    def transform(self, X=None, t_max=200, plot_optimal_t=False, ax=None):
         """
         Computes the position of the cells in the embedding space
 
@@ -579,7 +579,7 @@ class PHATE(BaseEstimator):
             Input data. Not required, since PHATE does not currently embed
             cells not given in the input matrix to `PHATE.fit()`
 
-        t_max : int, optional, default=100
+        t_max : int, optional, default=200
             maximum t to test if `t` is set to 'auto'
 
         plot_optimal_t : boolean, optional, default=False
@@ -653,7 +653,7 @@ class PHATE(BaseEstimator):
                   (time.time() - start))
         return self.embedding
 
-    def von_neumann_entropy(self, t_max=100):
+    def von_neumann_entropy(self, t_max=200):
         """
         Determines the Von Neumann entropy of the diffusion affinities
         at varying levels of t. The user should select a value of t
@@ -665,7 +665,7 @@ class PHATE(BaseEstimator):
 
         Parameters
         ----------
-        t_max : int, default: 100
+        t_max : int, default: 200
             Maximum value of t to test
 
         Returns
@@ -686,14 +686,14 @@ class PHATE(BaseEstimator):
 
         return t, compute_von_neumann_entropy(self.diff_op, t_max=t_max)
 
-    def optimal_t(self, t_max=100, plot=False, ax=None):
+    def optimal_t(self, t_max=200, plot=False, ax=None):
         """
         Selects the optimal value of t based on the knee point of the
         Von Neumann Entropy of the diffusion operator.
 
         Parameters
         ----------
-        t_max : int, default: 100
+        t_max : int, default: 200
             Maximum value of t to test
 
         plot : boolean, default: False
@@ -721,6 +721,7 @@ class PHATE(BaseEstimator):
             ax.scatter(t_opt, h[t == t_opt], marker='*', c='k', s=50)
             ax.set_xlabel("t")
             ax.set_ylabel("Von Neumann Entropy")
+            ax.set_title("Optimal t = {}".format(t_opt))
             if show:
                 plt.show()
 
