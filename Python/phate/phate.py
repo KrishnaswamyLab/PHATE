@@ -12,14 +12,13 @@ from sklearn.base import BaseEstimator
 from sklearn.exceptions import NotFittedError
 from sklearn.neighbors import NearestNeighbors
 from sklearn.cluster import KMeans
-from scipy.spatial.distance import pdist
-from scipy.spatial.distance import squareform
 from sklearn.utils.extmath import randomized_svd
 from sklearn.preprocessing import normalize
 from sklearn.decomposition import PCA
 from scipy import sparse
 from scipy.spatial.distance import pdist
 from scipy.spatial.distance import squareform
+
 
 import matplotlib.pyplot as plt
 
