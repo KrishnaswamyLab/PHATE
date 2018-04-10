@@ -20,8 +20,8 @@ from sklearn.preprocessing import normalize
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 
-from mds import embed_MDS
-from vne import compute_von_neumann_entropy, find_knee_point
+from phate.mds import embed_MDS
+from phate.vne import compute_von_neumann_entropy, find_knee_point
 
 
 def calculate_kernel(data, k=5, a=10, alpha_decay=True, knn_dist='euclidean',
