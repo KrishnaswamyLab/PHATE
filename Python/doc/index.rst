@@ -27,4 +27,5 @@ To run PHATE on your dataset, create a PHATE operator and run `fit_transform`. H
     phate_operator = phate.PHATE()
     tree_phate = phate_operator.fit_transform(tree_data)
 
-.. autoclass:: phate.phate.PHATE
+.. autoclass:: phate.PHATE
+    :noindex:
