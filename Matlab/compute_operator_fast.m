@@ -2,13 +2,10 @@ function W = compute_operator_fast(data, varargin)
 % W = compute_operator(data, varargin)
 %   computes diffusion operator W
 % varargin:
-%   'npca' (default = 20)
+%   'npca' (default = [])
 %       perform fast random PCA before computing distances
 %   'k' (default = 10)
 %       k of kNN graph
-%   'epsilon' (default = 1)
-%       kernel bandwith, if epsilon = 0 kernel will be uniform, i.e.
-%       unweighted kNN graph (ka will be ignored)
 
 % set up default parameters
 k = 10;

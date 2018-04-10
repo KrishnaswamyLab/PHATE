@@ -1,3 +1,6 @@
+%% init
+rseed = 7;
+
 %% load mESC data Klein et al. 2015 (doi:10.1016/j.cell.2015.04.044)
 file_name = 'GSM1599499_ES_d7_LIFminus.csv';
 fid = fopen(file_name);
@@ -17,123 +20,135 @@ size(M)
 libsize  = sum(M,2);
 M = bsxfun(@rdivide, M, libsize) * median(libsize);
 
-%% log transform (some data requires log transform)
+%% log/sqrt transform (some data requires transform)
 %M = log(M + 0.1); % 0.1 pseudocount
-
-%% gene to color embeddings by
-ind = ismember(genes, 'Actb');
-C = log(M(:,ind) + 0.1);
-%C = M(:,ind)
+%M = sqrt(M);
 
 %% PCA
-Y_pca = svdpca(M, 2, 'random');
+Y_PCA = svdpca(M, 2, 'random');
 
 %% Plot the embedding colored by gene
+gene = 'Actb';
+ind = ismember(genes, gene);
+C = log(M(:,ind) + 0.1);
 figure;
-scatter(Y_pca(:,1),Y_pca(:,2),20,C,'filled')
+scatter(Y_PCA(:,1),Y_PCA(:,2),20,C,'filled')
 axis tight
 xlabel('PCA 1')
 ylabel('PCA 2')
 set(gca,'xtick',[])
 set(gca,'ytick',[])
 title 'PCA'
+h = colorbar;
+ylabel(h, gene);
 
-%% Run PHATE using CMDS (faster but less accurate)
-t = 25;
-a = 50;
-k = 4;
-pca_method = 'random'; % fast PCA
-mds_method = 'cmds_fast'; % fast CMDS using random PCA
-distfun_mds = 'cosine';
-%symm = 'pdist';
-ndim = 2;
-Y_cmds = phate(M,'t',t,'k',k,'a',a,'pca_method',pca_method,'mds_method',mds_method,'ndim',ndim,'distfun_mds',distfun_mds);
+%% PHATE 2D
+tic;
+Y_PHATE_2D = phate(M);
+toc
 
-% Plot the embedding colored by gene
+%% Plot PHATE 2D
+gene = 'Actb';
+ind = ismember(genes, gene);
+C = log(M(:,ind) + 0.1);
 figure;
-scatter(Y_cmds(:,1),Y_cmds(:,2),20,C,'filled')
+scatter(Y_PHATE_2D(:,1),Y_PHATE_2D(:,2),20,C,'filled')
 axis tight
 xlabel('PHATE 1')
 ylabel('PHATE 2')
-set(gca,'xtick',[])
-set(gca,'ytick',[])
-title 'PHATE using cosine CMDS'
+set(gca,'xticklabel',[])
+set(gca,'yticklabel',[])
+title 'PHATE 2D'
+h = colorbar;
+ylabel(h, gene);
 
-%% Run PHATE using NMMDS with Euclidean mds distance (slower but more accurate)
-t = 25;
-a = 50;
-k = 4;
-pca_method = 'random'; % fast PCA
-mds_method = 'nmmds';
-distfun_mds = 'euclidean';
-ndim = 2;
-Y_nmmds = phate(M,'t',t,'k',k,'a',a,'pca_method',pca_method,'mds_method',mds_method,'ndim',ndim,'distfun_mds',distfun_mds);
+%% PHATE 3D
+tic;
+Y_PHATE_3D = phate(M, 'ndim', 3);
+toc
 
-% Plot the embedding colored by gene
+%% Plot PHATE 3D
+gene = 'Actb';
+ind = ismember(genes, gene);
+C = log(M(:,ind) + 0.1);
 figure;
-scatter(Y_nmmds(:,1),Y_nmmds(:,2),20,C,'filled')
+scatter3(Y_PHATE_3D(:,1),Y_PHATE_3D(:,2),Y_PHATE_3D(:,3),20,C,'filled')
 axis tight
 xlabel('PHATE 1')
 ylabel('PHATE 2')
-set(gca,'xtick',[])
-set(gca,'ytick',[])
-title 'PHATE using NMMDS Euclidean'
+ylabel('PHATE 3')
+set(gca,'xticklabel',[])
+set(gca,'yticklabel',[])
+set(gca,'zticklabel',[])
+title 'PHATE 3D'
+h = colorbar;
+ylabel(h, gene);
 
-%% Run PHATE using NMMDS and Cosine distance
-t = 25;
-a = 50;
-k = 4;
-pca_method = 'random'; % fast PCA
-mds_method = 'nmmds';
-distfun_mds = 'cosine'; % <--- different mds distance
-ndim = 2;
-Y_nmmds2 = phate(M,'t',t,'k',k,'a',a,'pca_method',pca_method,'mds_method',mds_method,'ndim',ndim,'distfun_mds',distfun_mds);
+%% tSNE
+tic;
+Y_tSNE = tsne(M,'Theta',0.5,'NumPCAComponents',100,'Verbose',2, 'perplexity', 20);
+toc
 
-% Plot the embedding colored by gene
+%% Plot tSNE
+gene = 'Actb';
+ind = ismember(genes, gene);
+C = log(M(:,ind) + 0.1);
 figure;
-scatter(Y_nmmds2(:,1),Y_nmmds2(:,2),20,C,'filled')
+scatter(Y_tSNE(:,1),Y_tSNE(:,2),20,C,'filled')
 axis tight
-xlabel('PHATE 1')
-ylabel('PHATE 2')
-set(gca,'xtick',[])
-set(gca,'ytick',[])
-title 'PHATE using NMMDS with Cosine MDS distance'
+xlabel('tSNE 1')
+ylabel('tSNE 2')
+set(gca,'xticklabel',[])
+set(gca,'yticklabel',[])
+title 'tSNE'
+h = colorbar;
+ylabel(h, gene);
 
-%% plot all embeddings combined
+
+%% plot combined
+gene = 'Actb';
+ind = ismember(genes, gene);
+C = log(M(:,ind) + 0.1);
+
 figure;
 
 subplot(2,2,1);
-scatter(Y_pca(:,1),Y_pca(:,2),10,C,'filled')
+scatter(Y_PCA(:,1), Y_PCA(:,2), 10, C, 'filled');
+set(gca,'xticklabel',[]);
+set(gca,'yticklabel',[]);
 axis tight
-xlabel('PCA 1')
-ylabel('PCA 2')
-set(gca,'xtick',[])
-set(gca,'ytick',[])
+xlabel 'PCA1'
+ylabel 'PCA2'
 title 'PCA'
 
 subplot(2,2,2);
-scatter(Y_cmds(:,1),Y_cmds(:,2),10,C,'filled')
+scatter(Y_tSNE(:,1), Y_tSNE(:,2), 10, C, 'filled');
+set(gca,'xticklabel',[]);
+set(gca,'yticklabel',[]);
 axis tight
-xlabel('PHATE 1')
-ylabel('PHATE 2')
-set(gca,'xtick',[])
-set(gca,'ytick',[])
-title 'PHATE using CMDS (X*Xt)'
+xlabel 'tSNE1'
+ylabel 'tSNE2'
+title 'tSNE'
 
 subplot(2,2,3);
-scatter(Y_nmmds(:,1),Y_nmmds(:,2),10,C,'filled')
+scatter(Y_PHATE_2D(:,1), Y_PHATE_2D(:,2), 10, C, 'filled');
+set(gca,'xticklabel',[]);
+set(gca,'yticklabel',[]);
 axis tight
-xlabel('PHATE 1')
-ylabel('PHATE 2')
-set(gca,'xtick',[])
-set(gca,'ytick',[])
-title 'PHATE using NMMDS (pdist)'
+xlabel 'PHATE1'
+ylabel 'PHATE2'
+title 'PHATE'
 
 subplot(2,2,4);
-scatter(Y_nmmds2(:,1),Y_nmmds2(:,2),10,C,'filled')
+scatter3(Y_PHATE_3D(:,1), Y_PHATE_3D(:,2), Y_PHATE_3D(:,3), 10, C, 'filled');
+set(gca,'xticklabel',[]);
+set(gca,'yticklabel',[]);
+set(gca,'zticklabel',[]);
 axis tight
-xlabel('PHATE 1')
-ylabel('PHATE 2')
-set(gca,'xtick',[])
-set(gca,'ytick',[])
-title 'PHATE using NMMDS (X*Xt)'
+xlabel 'PHATE1'
+ylabel 'PHATE2'
+zlabel 'PHATE3'
+title 'PHATE'
+view([165 35]);
+
+

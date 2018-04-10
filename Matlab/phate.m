@@ -3,7 +3,11 @@ function Y = phate(data, varargin)
 %   Y = phate(data) runs PHATE on data (rows: samples, columns: features)
 %   with default parameter settings and returns a 2 dimensional embedding.
 %
-%   [...] = phate(..., 'PARAM1',val1, 'PARAM2',val2, ...) allows you to
+%   If data is sparse PCA without mean centering will be done to maintain
+%   low memory footprint. If data is dense then normal PCA (with mean
+%   centering) is done.
+%
+%   Y = phate(data, 'PARAM1',val1, 'PARAM2',val2, ...) allows you to
 %   specify optional parameter name/value pairs that control further details
 %   of PHATE.  Parameters are:
 %
@@ -37,7 +41,8 @@ function Y = phate(data, varargin)
 %
 %       'log' - -log(P + eps). (default)
 %
-%       'sqrt' - sqrt(P).
+%       'sqrt' - sqrt(P). (not default but often produces superior
+%       embeddings)
 %
 %   'n_landmarks' - number of landmarks for fast and scalable PHATE. [] or
 %   n_landmarks = npoints does no landmarking, which is slower. More
@@ -49,7 +54,8 @@ function Y = phate(data, varargin)
 %
 %   'operator' - user supplied operator. If not given ([]) operator is
 %   computed from the supplied data. Supplied operator should be a square
-%   row stochastic samples by samples affinity matrix. Deafults to [].
+%   row stochastic (samples by samples) affinity matrix. If operator is
+%   supplied input data can be empty ([]). Deafults to [].
 
 npca = 100;
 k = 10;
@@ -118,10 +124,15 @@ for i=1:length(varargin)
 end
 
 if isempty(P)
-    if ~isempty(npca)
+    if ~isempty(npca) && size(data,2) > npca
         % PCA
         disp 'Doing PCA'
-        pc = svdpca(data, npca, 'random');
+        if issparse(data)
+            disp 'Data is sparse, doing sparse PCA (svd without mean centering)'
+            pc = svdpca_sparse(data, npca, 'random');
+        else
+            pc = svdpca(data, npca, 'random');
+        end
     else
         pc = data;
     end
@@ -163,7 +174,7 @@ if isempty(t)
 end
 
 % diffuse
-disp 'Diffusing landmark operators'
+disp 'Diffusing operator'
 P_t = Pmm^t;
 
 % potential distances
