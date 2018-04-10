@@ -4,6 +4,7 @@
 # Generating random fractal tree via DLA
 from __future__ import print_function, division
 import numpy as np
+from scipy.io import loadmat
 
 # random tree via diffusion limited aggregation
 
@@ -27,3 +28,8 @@ def gen_dla(n_dim=100, n_branch=20, branch_length=100,
     C = np.array([i // n_branch for i in range(n_branch * branch_length)])
 
     return M, C
+
+
+def artificial_tree():
+    tree = loadmat("../../data/TreeData.mat")
+    return tree['M'], tree['C']
