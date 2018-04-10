@@ -27,3 +27,12 @@ Data Preprocessing
     :undoc-members:
     :inherited-members:
     :show-inheritance:
+
+Example Data
+------------
+
+.. automodule:: phate.tree
+    :members:
+    :undoc-members:
+    :inherited-members:
+    :show-inheritance:
