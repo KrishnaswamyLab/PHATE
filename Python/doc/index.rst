@@ -1,5 +1,5 @@
 
-.. include:: ../README.rst
+.. mdinclude:: ../../README.md
 
 
 .. include:: api.inc
