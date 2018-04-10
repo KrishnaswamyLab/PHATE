@@ -3,7 +3,7 @@ Welcome to PHATE's documentation
 =================================
 
 
-Hello, world!
+Hello, world!!
 
 .. automodule:: phate
     :members:
