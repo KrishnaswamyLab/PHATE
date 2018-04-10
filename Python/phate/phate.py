@@ -26,8 +26,7 @@ from phate.vne import compute_von_neumann_entropy, find_knee_point
 
 def calculate_kernel(data, k=5, a=10, alpha_decay=True, knn_dist='euclidean',
                      verbose=True, ndim=100, random_state=None):
-    """
-    Calculate the alpha-decay or KNN kernel
+    """Calculate the alpha-decay or KNN kernel
 
     Parameters
     ----------
@@ -366,7 +365,9 @@ def embed_mds(diff_op, t=30, n_components=2, diff_potential=None,
 
 
 class PHATE(BaseEstimator):
-    """Potential of Heat-diffusion for Affinity-based Trajectory Embedding (PHATE)
+    """Potential of Heat-diffusion for Affinity-based Trajectory Embedding
+    (PHATE)[1]
+
     Embeds high dimensional single-cell data into two or three dimensions for
     visualization of biological progressions.
 
@@ -405,12 +406,12 @@ class PHATE(BaseEstimator):
 
     knn_dist : string, optional, default: 'euclidean'
         recommended values: 'euclidean' and 'cosine'
-        Any metric from scipy.spatial.distance can be used
+        Any metric from `scipy.spatial.distance` can be used
         distance metric for building kNN graph
 
     mds_dist : string, optional, default: 'euclidean'
         recommended values: 'euclidean' and 'cosine'
-        Any metric from scipy.spatial.distance can be used
+        Any metric from `scipy.spatial.distance` can be used
         distance metric for MDS
 
     mds : string, optional, default: 'metric'
