@@ -1,178 +1,214 @@
-function [Y, DiffOp, DiffOp_t] = phate(data, varargin)
-% Runs PHATE on input data. data must have cells on the rows and genes on the columns
+function Y = phate(data, varargin)
+% phate  Run PHATE for visualizing noisy non-linear data in lower dimensions
+%   Y = phate(data) runs PHATE on data (rows: samples, columns: features)
+%   with default parameter settings and returns a 2 dimensional embedding.
 %
-% Authors: Kevin Moon, David van Dijk
-% Created: March 2017
+%   [...] = phate(..., 'PARAM1',val1, 'PARAM2',val2, ...) allows you to
+%   specify optional parameter name/value pairs that control further details
+%   of PHATE.  Parameters are:
+%
+%   'ndim' - number of (output) embedding dimensions. Common values are 2
+%   or 3. Deafults to 2.
+%
+%   'k' - number of nearest neighbors of the knn graph. Deafults to 10.
+%
+%   't' - number of diffusion steps. Defaults to [] wich autmatically picks
+%   the optimal t.
+%
+%   't_max' - maximum t for finding optimal t. if t = [] optimal t will be
+%   computed by computing Von Neumann Entropy for each t <= t_max and then
+%   picking the kneepoint.
+%
+%   'npca' - number of pca components for computing distances. Defaults to
+%   100.
+%
+%   'mds_method' - method of multidimensional scaling. Choices are:
+%
+%       'mmds' - metric MDS (default)
+%       'cmds' - classical MDS
+%       'nmmds' - non-metric MDS
+%
+%   'distfun' - distance function. Deafult is 'euclidean'.
+%
+%   'distfun_mds' - distance function for MDS. Deafult is 'euclidean'.
+%
+%   'pot_method' - method of computing the PHATE potential dstance. Choices
+%   are:
+%
+%       'log' - -log(P + eps). (default)
+%
+%       'sqrt' - sqrt(P).
+%
+%   'n_landmarks' - number of landmarks for fast and scalable PHATE. [] or
+%   n_landmarks = npoints does no landmarking, which is slower. More
+%   landmarks is more accurate but comes at the cost of speed and memory.
+%   Defaults to 1000.
+%
+%   'nsvd' - number of singular vectors for spectral clustering (for
+%   computing landmarks). Defaults to 100.
+%
+%   'operator' - user supplied operator. If not given ([]) operator is
+%   computed from the supplied data. Supplied operator should be a square
+%   row stochastic samples by samples affinity matrix. Deafults to [].
 
-% OUTPUT
-%       Y = the PHATE embedding
-%       DiffOp = the diffusion operator which can be used as optional input with another run
-%       DiffOp_t = DiffOp^t
-
-% INPUT
-%       data = data matrix. Must have cells on the rows and genes on the columns
-% varargin:
-%   't' (default = 20)
-%       Diffusion time scale
-%   'k' (default = 5)
-%       k for the adaptive kernel bandwidth
-%   'a' (default = 10)
-%       The alpha parameter in the exponent of the kernel function. Determines the kernel decay rate
-%   'ndim' (default = 2)
-%       The number of desired PHATE dimensions in the output Y. 2 or 3 is best for visualization. A higher number can be used for
-%       running other analyses on the PHATE dimensions.
-%   'pca_method' (default = 'random')
-%       The desired method for implementing pca for preprocessing the data. Options include 'svd', 'random', and 'none' (no pca)
-%   'npca' (default = 100)
-%       The number of PCA components for preprocessing the data
-%   'mds_method' (default = 'cmds_fast')
-%       Method for implementing MDS. Choices are 'cmds' (built-in matlab function), 'cmds_fast' (uses fast PCA), and 'nmmds'
-%   'distfun' (default = 'euclidean')
-%       The desired distance function for calculating pairwise distances on the data.
-%   'distfun_mds' (default = 'euclidean')
-%       The desired distance function for MDS. Choices are 'euclidean',
-%       'cosine'.
-%   'DiffOp' (default = [])
-%       If the diffusion operator has been computed on a prior run with the desired parameters, then this option can be used to
-%       directly input the diffusion operator to save on computational time.
-%   'DiffOp_t' (default = [])
-%       Same as for 'DiffOp', if the powered diffusion operator has been computed on a prior run with the desired parameters,
-%       then this option can be used to directly input the diffusion operator to save on computational time.
-
-% set up default parameters
-k = 5;
-a = 10;
 npca = 100;
-t = 20;
+k = 10;
+nsvd = 100;
+n_landmarks = 1000;
 ndim = 2;
-mds_method = 'cmds_fast';
+t = [];
+mds_method = 'mmds';
 distfun = 'euclidean';
 distfun_mds = 'euclidean';
-pca_method = 'random';
-DiffOp = [];
-DiffOp_t = [];
 pot_method = 'log';
+P = [];
+Pnm = [];
+t_max = 100;
 
 % get input parameters
 for i=1:length(varargin)
-    % adaptive k-nn bandwidth
+    % k for knn adaptive sigma
     if(strcmp(varargin{i},'k'))
-       k =  lower(varargin{i+1});
-    end
-    % alpha parameter for kernel decay rate
-    if(strcmp(varargin{i},'a'))
-       a =  lower(varargin{i+1});
+       k = lower(varargin{i+1});
     end
     % diffusion time
     if(strcmp(varargin{i},'t'))
-       t =  lower(varargin{i+1});
+       t = lower(varargin{i+1});
+    end
+    % t_max for VNE
+    if(strcmp(varargin{i},'t_max'))
+       t_max = lower(varargin{i+1});
     end
     % Number of pca components
     if(strcmp(varargin{i},'npca'))
-       npca =  lower(varargin{i+1});
+       npca = lower(varargin{i+1});
     end
     % Number of dimensions for the PHATE embedding
     if(strcmp(varargin{i},'ndim'))
-       ndim =  lower(varargin{i+1});
+       ndim = lower(varargin{i+1});
     end
     % Method for MDS
     if(strcmp(varargin{i},'mds_method'))
-       mds_method =  lower(varargin{i+1});
+       mds_method =  varargin{i+1};
     end
     % Distance function for the inputs
     if(strcmp(varargin{i},'distfun'))
-       distfun =  lower(varargin{i+1});
+       distfun = lower(varargin{i+1});
     end
     % distfun for MDS
     if(strcmp(varargin{i},'distfun_mds'))
        distfun_mds =  lower(varargin{i+1});
     end
-    % Method for PCA
-    if(strcmp(varargin{i},'pca_method'))
-       pca_method =  lower(varargin{i+1});
+    % nsvd for spectral clustering
+    if(strcmp(varargin{i},'nsvd'))
+       nsvd = lower(varargin{i+1});
     end
-    % Use precomputed diffusion operator?
-    if(strcmp(varargin{i},'DiffOp'))
-       DiffOp = lower(varargin{i+1});
-    end
-    % Use precomputed powered diffusion operator?
-    if(strcmp(varargin{i},'DiffOp_t'))
-       DiffOp_t = lower(varargin{i+1});
+    % n_landmarks for spectral clustering
+    if(strcmp(varargin{i},'n_landmarks'))
+       n_landmarks = lower(varargin{i+1});
     end
     % potential method: log, sqrt
     if(strcmp(varargin{i},'pot_method'))
        pot_method = lower(varargin{i+1});
     end
+    % operator
+    if(strcmp(varargin{i},'operator'))
+       P = lower(varargin{i+1});
+    end
 end
 
-disp '======= PHATE ======='
-
-% Check to see if precomputed DiffOp or DiffOp_t are given
-
-if(isempty(DiffOp)&isempty(DiffOp_t))
-    M = svdpca(data, npca, pca_method);
-
-    disp 'computing distances'
-    PDX = squareform(pdist(M, distfun));
-    [~, knnDST] = knnsearch(M,M,'K',k+1,'dist',distfun);
-
-    disp 'computing kernel and operator'
-    epsilon = knnDST(:,k+1); % bandwidth(x) = distance to k-th neighbor of x
-    PDX = bsxfun(@rdivide,PDX,epsilon); % autotuning d(x,:) using epsilon(x)
-    GsKer = exp(-PDX.^a); % not really Gaussian kernel
-    GsKer=GsKer+GsKer'; % symmetrization
-    DiffDeg = diag(1./sum(GsKer,2)); % Inverse of degrees
-    DiffOp = DiffDeg*GsKer; % row stochastic
-
-    % Clear a bit of space for memory
-    clear GsKer PDX DiffDeg
+if isempty(P)
+    if ~isempty(npca)
+        % PCA
+        disp 'Doing PCA'
+        pc = svdpca(data, npca, 'random');
+    else
+        pc = data;
+    end
+    % diffusion operator
+    P = compute_operator_fast(pc, 'k', k, 'distfun', distfun);
+else
+    disp 'Using supplied operator'
 end
 
-% Check to see if pre computed DiffOp_t is given
-if(isempty(DiffOp_t))
-    disp 'diffusing operator'
-    DiffOp_t = DiffOp^t;
+if ~isempty(n_landmarks) && n_landmarks < size(pc,1)
+    % spectral cluster for landmarks
+    disp 'Spectral clustering for landmarks'
+    [U,S,~] = randPCA(P, nsvd);
+    IDX = kmeans(U*S, n_landmarks);
+    
+    % create landmark operators
+    disp 'Computing landmark operators'
+    n = size(P,1);
+    m = max(IDX);
+    Pnm = nan(n,m);
+    Pmn = nan(m,n);
+    for I=1:m
+        Pnm(:,I) = sum(P(:,IDX==I),2);
+        Pmn(I,:) = sum(P(IDX==I,:),1);
+    end
+    Pmn = bsxfun(@rdivide, Pmn, sum(Pmn,2));
+    
+    % Pmm
+    Pmm = Pmn * Pnm;
+else
+    disp 'Running PHATE without landmarking'
+    Pmm = P;
 end
 
-X = DiffOp_t;
+% VNE
+disp 'Finding optimal t using VNE'
+if isempty(t)
+    t = vne_optimal_t(Pmm, t_max);
+end
 
-disp 'potential recovery'
+% diffuse
+disp 'Diffusing landmark operators'
+P_t = Pmm^t;
+
+% potential distances
+disp 'Computing potential distances'
 switch pot_method
     case 'log'
-        X(X<=eps)=eps;
-        X = -log(X);
+        P_t(P_t<=eps) = eps;
+        Pot = -log(P_t);
     case 'sqrt'
-        X = sqrt(X);
+        Pot = sqrt(P_t);
     otherwise
         disp 'potential method unknown'
 end
-disp(['MDS distfun: ' distfun_mds])
-if strcmp(distfun_mds, 'euclidean')
-    X = svdpca(X, npca, pca_method); % to make pdist faster
-end
-X = squareform(pdist(X, distfun_mds));
+PDX = squareform(pdist(Pot, distfun_mds));
 
-switch mds_method
-    % CMDS using fast pca
-    case 'cmds_fast'
-        disp 'Fast CMDS'
-        Y = randmds(X, ndim);
-    % built-in MATLAB version of CMDS
-    case 'cmds'
-        disp 'CMDS'
-        Y = cmdscale(X, ndim);
-    % built-in MATLAB version of NMMDS
-    case 'nmmds'
-        disp 'NMMDS'
-        opt = statset('display', 'iter');
-        Y_start = randmds(X, ndim);
-        Y = mdscale(X, ndim, 'options', opt, 'start', Y_start);
-    % built-in MATLAB version of MMDS
-    case 'mmds'
-        disp 'MMDS'
-        opt=statset('display','iter');
-        Y_start = randmds(X,ndim);
-        Y = mdscale(X,ndim,'options',opt,'start',Y_start,'Criterion','metricstress');
+% CMDS
+disp 'Doing classical MDS'
+Y = randmds(PDX, ndim);
+
+% MMDS
+if strcmpi(mds_method, 'mmds')
+    disp 'Doing metric MDS:'
+    opt = statset('display','iter');
+    Y = mdscale(PDX,ndim,'options',opt,'start',Y,'Criterion','metricstress');
 end
 
-disp 'done.'
+% NMMDS
+if strcmpi(mds_method, 'nmmds')
+    disp 'Doing non-metric MDS:'
+    opt = statset('display','iter');
+    Y = mdscale(PDX,ndim,'options',opt,'start',Y,'Criterion','stress');
+end
+
+if ~isempty(Pnm)
+    % out of sample extension from landmarks to all points
+    disp 'Out of sample extension from landmakrs to all points'
+    Y = Pnm * Y;
+end
+
+disp 'Done.'
+
+end
+
+
+
+
+
+

@@ -27,3 +27,5 @@ end
 
 plot([t t], [vne(t) vne(t)], '*k', 'markersize', 15, 'linewidth', 2);
 title(['VNE optimal t = ' num2str(t)]);
+xlabel 't'
+ylabel 'Von Neumann Entropy'
