@@ -1,3 +1,7 @@
-.. mdinclude:: ../../README.rst
+===========================================================================
+PHATE - Potential of Heat-diffusion for Affinity-based Trajectory Embedding
+===========================================================================
 
-.. include:: api.inc
+.. include:: include/introduction.inc
+
+.. include:: include/api.inc
