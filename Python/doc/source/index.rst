@@ -5,13 +5,13 @@ Welcome to PHATE's documentation
 
 Hello, world!
 
-.. automodule:: phate.phate
+.. automodule:: phate.python.phate
     :members:
     :undoc-members:
     :inherited-members:
     :show-inheritance:
 
-.. automodule:: phate.mds
+.. automodule:: PHATE.Python.phate
     :members:
     :undoc-members:
     :inherited-members:
