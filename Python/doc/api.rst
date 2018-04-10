@@ -1,3 +1,6 @@
+API Reference
+*************
+
 .. automodule:: phate
     :undoc-members:
     :inherited-members:

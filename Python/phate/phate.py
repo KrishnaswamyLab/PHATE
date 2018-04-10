@@ -50,7 +50,7 @@ def calculate_kernel(data, k=5, a=10, alpha_decay=True, knn_dist='euclidean',
     verbose : boolean, optional, default: True
         If true, print status messages
 
-    ndim : int, optional, default=100
+    ndim : int, optional, default: 100
         Number of principal components to use for KNN calculation
 
     random_state : integer or numpy.RandomState, optional
@@ -61,7 +61,7 @@ def calculate_kernel(data, k=5, a=10, alpha_decay=True, knn_dist='euclidean',
     Returns
     -------
 
-    gs_ker : array-like [n_samples, n_samples]
+    kernel : array-like [n_samples, n_samples]
         kernel matrix built from the input data
     """
     if verbose:
@@ -85,7 +85,7 @@ def calculate_kernel(data, k=5, a=10, alpha_decay=True, knn_dist='euclidean',
             raise ValueError(
                 'It looks like you have at least k identical data points. '
                 'Try removing duplicates.')
-        gs_ker = np.exp(-1 * (pdx ** a))  # not really Gaussian kernel
+        kernel = np.exp(-1 * (pdx ** a))  # not really Gaussian kernel
     else:
         if precomputed:
             pdx = knn_dist
@@ -99,20 +99,20 @@ def calculate_kernel(data, k=5, a=10, alpha_decay=True, knn_dist='euclidean',
         ind_ptr = np.arange(knn_idx.shape[0] + 1) * knn_idx.shape[1]
         col_ind = knn_idx.reshape(-1)
         ones = np.repeat(1., len(col_ind))
-        gs_ker = sparse.csr_matrix((ones, col_ind, ind_ptr),
+        kernel = sparse.csr_matrix((ones, col_ind, ind_ptr),
                                    shape=[data.shape[0], data.shape[0]])
-    gs_ker = gs_ker + gs_ker.T  # symmetrization
-    return gs_ker
+    kernel = kernel + kernel.T  # symmetrization
+    return kernel
 
 
-def calculate_landmark_operator(gs_ker, n_landmark=1000,
+def calculate_landmark_operator(kernel, n_landmark=1000,
                                 random_state=None, n_svd=100):
     """
     Calculate the landmark operator
 
     Parameters
     ----------
-    gs_ker : array-like [n_samples, n_samples]
+    kernel : array-like [n_samples, n_samples]
         kernel matrix built from the input data
 
     landmark_transitions : array-like, shape=[n_samples, n_landmarks], default: None
@@ -123,7 +123,7 @@ def calculate_landmark_operator(gs_ker, n_landmark=1000,
         If an integer is given, it fixes the seed
         Defaults to the global numpy random number generator
 
-    n_svd : int, optional, default=100
+    n_svd : int, optional, default: 100
         Number of singular vectors to compute for spectral clustering
         if landmarks are used
 
@@ -137,9 +137,9 @@ def calculate_landmark_operator(gs_ker, n_landmark=1000,
         Transition matrix between input data and landmarks,
         if `n_landmark` is set, otherwise `None`
     """
-    is_sparse = sparse.issparse(gs_ker)
-    diff_op = normalize(gs_ker, norm='l1', axis=1)  # row stochastic
-    if n_landmark is not None and n_landmark < gs_ker.shape[0]:
+    is_sparse = sparse.issparse(kernel)
+    diff_op = normalize(kernel, norm='l1', axis=1)  # row stochastic
+    if n_landmark is not None and n_landmark < kernel.shape[0]:
         # spectral clustering
         U, S, _ = randomized_svd(diff_op,
                                  n_components=n_svd,
@@ -152,10 +152,10 @@ def calculate_landmark_operator(gs_ker, n_landmark=1000,
         # transition matrices
         if is_sparse:
             pmn = sparse.vstack(
-                [sparse.csr_matrix(gs_ker[clusters == i, :].sum(axis=0)) for i in landmarks])
+                [sparse.csr_matrix(kernel[clusters == i, :].sum(axis=0)) for i in landmarks])
         else:
             pmn = np.array([np.sum(
-                gs_ker[clusters == i, :], axis=0) for i in landmarks])
+                kernel[clusters == i, :], axis=0) for i in landmarks])
         # row normalize
         pnm = pmn.transpose()
         pmn = normalize(pmn, norm='l1', axis=1)
@@ -215,7 +215,7 @@ def calculate_operator(data, k=5, a=10, alpha_decay=True, n_landmark=1000,
     verbose : boolean, optional, default: True
         If true, print status messages
 
-    n_svd : int, optional, default=100
+    n_svd : int, optional, default: 100
         Number of singular vectors to compute for spectral clustering
         if landmarks are used
 
@@ -243,12 +243,12 @@ def calculate_operator(data, k=5, a=10, alpha_decay=True, n_landmark=1000,
         else:
             alpha_decay = True
     if diff_op is None:
-        gs_ker = calculate_kernel(data, a=a, k=k, knn_dist=knn_dist,
+        kernel = calculate_kernel(data, a=a, k=k, knn_dist=knn_dist,
                                   verbose=verbose,
                                   alpha_decay=alpha_decay,
                                   random_state=random_state)
         diff_op, landmark_transitions = calculate_landmark_operator(
-            gs_ker, n_landmark=n_landmark,
+            kernel, n_landmark=n_landmark,
             random_state=random_state)
         if verbose:
             print("Built graph and diffusion operator in %.2f seconds." %
@@ -580,10 +580,10 @@ class PHATE(BaseEstimator):
             Input data. Not required, since PHATE does not currently embed
             cells not given in the input matrix to `PHATE.fit()`
 
-        t_max : int, optional, default=200
+        t_max : int, optional, default: 200
             maximum t to test if `t` is set to 'auto'
 
-        plot_optimal_t : boolean, optional, default=False
+        plot_optimal_t : boolean, optional, default: False
             If true and `t` is set to 'auto', plot the Von Neumann
             entropy used to select t
 
@@ -657,22 +657,22 @@ class PHATE(BaseEstimator):
     def von_neumann_entropy(self, t_max=200):
         """
         Determines the Von Neumann entropy of the diffusion affinities
-        at varying levels of t. The user should select a value of t
+        at varying levels of `t`. The user should select a value of `t`
         around the "knee" of the entropy curve.
 
-        We require that 'fit' stores the values of gs_ker and diff_deg
+        We require that 'fit' stores the value of `PHATE.diff_op`
         in order to calculate the Von Neumann entropy. Alternatively,
-        we could recalculate them here.
+        we could recalculate it here, but that is less desirable.
 
         Parameters
         ----------
         t_max : int, default: 200
-            Maximum value of t to test
+            Maximum value of `t` to test
 
         Returns
         -------
         entropy : array, shape=[t_max]
-            The entropy of the diffusion affinities for each value of t
+            The entropy of the diffusion affinities for each value of `t`
         """
         if self.diff_op is None:
             raise NotFittedError("This PHATE instance is not fitted yet. Call "
