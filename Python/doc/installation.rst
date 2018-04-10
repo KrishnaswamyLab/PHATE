@@ -26,9 +26,11 @@ MATLAB installation
 R installation
 --------------
 
-1. The R version of PHATE can be accessed [here](https://github.com/KrishnaswamyLab/phater).
+1. The R version of PHATE can be accessed here_.
 2. The R version can also be accessed with this repository by adding the following steps after cloning:
 
     $ git submodule init
     $ git submodule update
     $ cd phater
+
+.. _here: https://github.com/KrishnaswamyLab/phater
