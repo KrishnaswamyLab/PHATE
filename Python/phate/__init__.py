@@ -1,6 +1,7 @@
 
-import phate
 from .phate import PHATE
-from . import tree
-from . import preprocessing
-from . import io
+from .tree import *
+from .io import *
+from .preprocessing import *
+from .mds import *
+from .vne import *

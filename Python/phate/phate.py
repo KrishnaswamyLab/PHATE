@@ -4,58 +4,306 @@ Potential of Heat-diffusion for Affinity-based Trajectory Embedding (PHATE)
 
 # author: Daniel Burkhardt <daniel.burkhardt@yale.edu>
 # (C) 2017 Krishnaswamy Lab GPLv2
+from __future__ import print_function, division, absolute_import
 
 import time
 import numpy as np
-import sklearn
 from sklearn.base import BaseEstimator
+from sklearn.exceptions import NotFittedError
+from sklearn.neighbors import NearestNeighbors
+from sklearn.cluster import KMeans
+from sklearn.utils.extmath import randomized_svd
+from sklearn.preprocessing import normalize
+from sklearn.decomposition import PCA, TruncatedSVD
+from scipy import sparse
 from scipy.spatial.distance import pdist
 from scipy.spatial.distance import squareform
 
-#sdfasdf
-from .mds import embed_MDS
 
-def embed_phate(data, n_components=2, a=10, k=5, t=30, mds='metric', knn_dist='euclidean', mds_dist='euclidean', diff_op=None, diff_potential=None, njobs=1, random_state=None, verbose=True):
+import matplotlib.pyplot as plt
+
+from phate.mds import embed_MDS
+from phate.vne import compute_von_neumann_entropy, find_knee_point
+
+
+def calculate_kernel(data, k=5, a=10, alpha_decay=True, knn_dist='euclidean',
+                     verbose=True, ndim=100, random_state=None):
     """
-    Embeds high dimensional single-cell data into two or three dimensions for visualization of biological progressions.
+    Calculate the alpha-decay or KNN kernel
 
     Parameters
     ----------
-    data : ndarray [n, p]
+    data : array-like [n_samples, n_dimensions]
         2 dimensional input data array with n cells and p dimensions
-
-    n_components : int, optional, default: 2
-        number of dimensions in which the data will be embedded
-
-    a : int, optional, default: 10
-        sets decay rate of kernel tails
 
     k : int, optional, default: 5
         used to set epsilon while autotuning kernel bandwidth
+
+    a : int, optional, default: 10
+        sets decay rate of kernel tails.
+
+    alpha_decay : boolean, default: True
+        If true, use the alpha decaying kernel
+
+    knn_dist : string, optional, default: 'euclidean'
+        recommended values: 'euclidean' and 'cosine'
+        Any metric from scipy.spatial.distance can be used
+        distance metric for building kNN graph
+
+    verbose : boolean, optional, default: True
+        If true, print status messages
+
+    ndim : int, optional, default=100
+        Number of principal components to use for KNN calculation
+
+    random_state : integer or numpy.RandomState, optional
+        The generator used to initialize SMACOF (metric, nonmetric) MDS
+        If an integer is given, it fixes the seed
+        Defaults to the global numpy random number generator
+
+    Returns
+    -------
+
+    gs_ker : array-like [n_samples, n_samples]
+        kernel matrix built from the input data
+    """
+    if verbose:
+        print("Building kNN graph and diffusion operator...")
+    precomputed = isinstance(knn_dist, list) or \
+        isinstance(knn_dist, np.ndarray)
+    if not precomputed and ndim < data.shape[1]:
+        if sparse.issparse(data):
+            tSVD = TruncatedSVD(ndim + 50, random_state=random_state)
+            data = tSVD.fit(data).transform(data)
+        else:
+            pca = PCA(ndim, svd_solver='randomized', random_state=random_state)
+            data = pca.fit_transform(data)
+    if alpha_decay:
+        try:
+            if precomputed:
+                pdx = knn_dist
+            else:
+                pdx = squareform(pdist(data, metric=knn_dist))
+            knn_dist = np.partition(pdx, k, axis=1)[:, :k]
+            # bandwidth(x) = distance to k-th neighbor of x
+            epsilon = np.max(knn_dist, axis=1)
+            pdx = (pdx / epsilon).T  # autotuning d(x,:) using epsilon(x).
+        except RuntimeWarning:
+            raise ValueError(
+                'It looks like you have at least k identical data points. '
+                'Try removing duplicates.')
+        gs_ker = np.exp(-1 * (pdx ** a))  # not really Gaussian kernel
+    else:
+        if precomputed:
+            pdx = knn_dist
+            knn_idx = np.argpartition(pdx, k, axis=1)[:, :k]
+        else:
+            knn = NearestNeighbors(n_neighbors=k - 1).fit(data)
+            _, knn_idx = knn.kneighbors(data)
+            # make everything its own neighbor
+            knn_idx = np.hstack(
+                [knn_idx, np.arange(data.shape[0])[:, np.newaxis]])
+        ind_ptr = np.arange(knn_idx.shape[0] + 1) * knn_idx.shape[1]
+        col_ind = knn_idx.reshape(-1)
+        ones = np.repeat(1., len(col_ind))
+        gs_ker = sparse.csr_matrix((ones, col_ind, ind_ptr),
+                                   shape=[data.shape[0], data.shape[0]])
+    gs_ker = gs_ker + gs_ker.T  # symmetrization
+    return gs_ker
+
+
+def calculate_landmark_operator(gs_ker, n_landmark=1000,
+                                random_state=None, n_svd=100):
+    """
+    Calculate the landmark operator
+
+    Parameters
+    ----------
+    gs_ker : array-like [n_samples, n_samples]
+        kernel matrix built from the input data
+
+    landmark_transitions : array-like, shape=[n_samples, n_landmarks], default: None
+        Precomputed transition matrix between input data and landmarks
+
+    random_state : integer or numpy.RandomState, optional
+        The generator used to initialize SMACOF (metric, nonmetric) MDS
+        If an integer is given, it fixes the seed
+        Defaults to the global numpy random number generator
+
+    n_svd : int, optional, default=100
+        Number of singular vectors to compute for spectral clustering
+        if landmarks are used
+
+    Returns
+    -------
+
+    diff_op : array-like, shape [n_samples, n_samples]
+        The diffusion operator fit on the input data
+
+    landmark_transitions : array-like, shape=[n_samples, n_landmarks]
+        Transition matrix between input data and landmarks,
+        if `n_landmark` is set, otherwise `None`
+    """
+    is_sparse = sparse.issparse(gs_ker)
+    diff_op = normalize(gs_ker, norm='l1', axis=1)  # row stochastic
+    if n_landmark is not None and n_landmark < gs_ker.shape[0]:
+        # spectral clustering
+        U, S, _ = randomized_svd(diff_op,
+                                 n_components=n_svd,
+                                 random_state=random_state)
+        kmeans = KMeans(n_landmark,
+                        random_state=random_state)
+        clusters = kmeans.fit_predict(np.matmul(U, np.diagflat(S)))
+        landmarks = np.unique(clusters)
+
+        # transition matrices
+        if is_sparse:
+            pmn = sparse.vstack(
+                [sparse.csr_matrix(gs_ker[clusters == i, :].sum(axis=0)) for i in landmarks])
+        else:
+            pmn = np.array([np.sum(
+                gs_ker[clusters == i, :], axis=0) for i in landmarks])
+        # row normalize
+        pnm = pmn.transpose()
+        pmn = normalize(pmn, norm='l1', axis=1)
+        pnm = normalize(pnm, norm='l1', axis=1)
+        diff_op = pmn.dot(pnm)  # sparsity agnostic matrix multiplication
+    else:
+        pnm = None
+    if is_sparse:
+        diff_op = diff_op.todense()
+    return diff_op, pnm
+
+
+def calculate_operator(data, k=5, a=10, alpha_decay=True, n_landmark=1000,
+                       knn_dist='euclidean', diff_op=None,
+                       landmark_transitions=None, njobs=1,
+                       random_state=None, verbose=True, n_svd=100):
+    """
+    Calculate the diffusion operator
+
+    Parameters
+    ----------
+    data : array-like [n_samples, n_dimensions]
+        2 dimensional input data array with n cells and p dimensions
+
+    k : int, optional, default: 5
+        used to set epsilon while autotuning kernel bandwidth
+
+    a : int, optional, default: 10
+        sets decay rate of kernel tails.
+
+    alpha_decay : boolean, default: True
+        If true, use the alpha decaying kernel
+
+    knn_dist : string, optional, default: 'euclidean'
+        recommended values: 'euclidean' and 'cosine'
+        Any metric from scipy.spatial.distance can be used
+        distance metric for building kNN graph
+
+    diff_op : array-like, optional shape=[n_samples, n_samples], default: None
+        Precomputed diffusion operator
+
+    landmark_transitions : array-like, shape=[n_samples, n_landmarks], default: None
+        Precomputed transition matrix between input data and landmarks
+
+    njobs : integer, optional, default: 1
+        The number of jobs to use for the computation.
+        If -1 all CPUs are used. If 1 is given, no parallel computing code is
+        used at all, which is useful for debugging.
+        For n_jobs below -1, (n_cpus + 1 + n_jobs) are used. Thus for
+        n_jobs = -2, all CPUs but one are used
+
+    random_state : integer or numpy.RandomState, optional
+        The generator used to initialize SMACOF (metric, nonmetric) MDS
+        If an integer is given, it fixes the seed
+        Defaults to the global numpy random number generator
+
+    verbose : boolean, optional, default: True
+        If true, print status messages
+
+    n_svd : int, optional, default=100
+        Number of singular vectors to compute for spectral clustering
+        if landmarks are used
+
+    Returns
+    -------
+
+    diff_op : array-like, shape [n_samples, n_samples]
+        The diffusion operator fit on the input data
+
+    landmark_transitions : array-like, shape=[n_samples, n_landmarks]
+        Transition matrix between input data and landmarks,
+        if `n_landmark` is set, otherwise `None`
+    """
+    # print('Imported numpy: %s'%np.__file__)
+
+    tic = time.time()
+    if alpha_decay is None:
+        if n_landmark is not None and len(data) > n_landmark:
+            alpha_decay = False
+            if a is not None:
+                print("Warning: a is set, but alpha decay is not used "
+                      "as n_landmark < len(X). To override this behavior,"
+                      " set alpha_decay=True (increases memory requirements)"
+                      " or n_landmark=None (increases memory and CPU requirements.)")
+        else:
+            alpha_decay = True
+    if diff_op is None:
+        gs_ker = calculate_kernel(data, a=a, k=k, knn_dist=knn_dist,
+                                  verbose=verbose,
+                                  alpha_decay=alpha_decay,
+                                  random_state=random_state)
+        diff_op, landmark_transitions = calculate_landmark_operator(
+            gs_ker, n_landmark=n_landmark,
+            random_state=random_state)
+        if verbose:
+            print("Built graph and diffusion operator in %.2f seconds." %
+                  (time.time() - tic))
+    else:
+        if verbose:
+            print("Using precomputed diffusion operator...")
+
+    return diff_op, landmark_transitions
+
+
+def embed_mds(diff_op, t=30, n_components=2, diff_potential=None,
+              embedding=None, mds='metric', mds_dist='euclidean', njobs=1,
+              potential_method='log', random_state=None, verbose=True,
+              landmark_transitions=None):
+    """
+    Create the MDS embedding from the diffusion potential
+
+    Parameters
+    ----------
+
+    diff_op : array-like, shape [n_samples, n_samples]
+        The diffusion operator fit on the input data
 
     t : int, optional, default: 30
         power to which the diffusion operator is powered
         sets the level of diffusion
 
-    mds : string, optional, default: 'metric'
-        choose from ['classic', 'metric', 'nonmetric']
-        which multidimensional scaling algorithm is used for dimensionality reduction
-
-    knn_dist : string, optional, default: 'euclidean'
-        reccomended values: 'eucliean' and 'cosine'
-        Any metric from scipy.spatial.distance can be used
-        distance metric for building kNN graph
-
-    mds_dist : string, optional, default: 'euclidean'
-        reccomended values: 'eucliean' and 'cosine'
-        Any metric from scipy.spatial.distance can be used
-        distance metric for MDS
-
-    diff_op : ndarray, optional [n, n], default: None
-        Precomputed diffusion operator
+    n_components : int, optional, default: 2
+        number of dimensions in which the data will be embedded
 
     diff_potential : ndarray, optional [n, n], default: None
         Precomputed diffusion potential
+
+    potential_method : string, optional, default: 'log'
+        choose from ['log', 'sqrt']
+        which transformation of the diffusional operator is used
+        to compute the diffusion potential
+
+    mds : string, optional, default: 'metric'
+        choose from ['classic', 'metric', 'nonmetric']
+        which multidimensional scaling algorithm is used for dimensionality
+        reduction
+
+    mds_dist : string, optional, default: 'euclidean'
+        recommended values: 'euclidean' and 'cosine'
+        Any metric from scipy.spatial.distance can be used
+        distance metric for MDS
 
     random_state : integer or numpy.RandomState, optional
         The generator used to initialize SMACOF (metric, nonmetric) MDS
@@ -67,197 +315,420 @@ def embed_phate(data, n_components=2, a=10, k=5, t=30, mds='metric', knn_dist='e
 
     Returns
     -------
+
+    diff_potential : array-like, shape [n_samples, n_samples]
+        Precomputed diffusion potential
+
     embedding : ndarray [n_samples, n_components]
         PHATE embedding in low dimensional space.
-
-    diff_op : ndarray [n_samples, n_samples]
-        PHATE embedding in low dimensional space.
-
-    References
-    ----------
-    .. [1] `Moon KR, van Dijk D, Zheng W, et al. (2017). "PHATE: A Dimensionality Reduction Method for Visualizing Trajectory Structures in High-Dimensional Biological Data". Biorxiv.
-       <http://biorxiv.org/content/early/2017/03/24/120378>`_
     """
-    start = time.time()
-    #print('Imported numpy: %s'%np.__file__)
-    M = data
-    #if nothing is precomputed
-    if diff_op is None:
-        tic = time.time()
-        if verbose:
-            print("Building kNN graph and diffusion operator...")
-        try:
-            pdx = squareform(pdist(M, metric=knn_dist))
-            knn_dist = np.sort(pdx, axis=1)
-            epsilon = knn_dist[:,k] # bandwidth(x) = distance to k-th neighbor of x
-            pdx = (pdx / epsilon).T # autotuning d(x,:) using epsilon(x).
-        except RuntimeWarning:
-            raise ValueError('It looks like you have at least k identifical data points. Try removing dupliates.')
-
-        gs_ker = np.exp(-1 * ( pdx ** a)) # not really Gaussian kernel
-        gs_ker = gs_ker + gs_ker.T #symmetriziation
-        
-        diff_op = gs_ker / gs_ker.sum(axis=1)[:, None] # row stochastic
-
-        #clearing variables for memory
-        gs_ker = pdx = knn_dst = M = None
-        if verbose:
-            print("Built graph and diffusion operator in %.2f seconds."%(time.time() - tic))
-    else:
-        if verbose:
-            print("Using precomputed diffusion operator...")
 
     if diff_potential is None:
+        embedding = None  # can't use precomputed embedding
         tic = time.time()
         if verbose:
             print("Calculating diffusion potential...")
-        #transforming X
-        #print('Diffusion operator • %s:'%t)
-        #print(diff_op)
-        X = np.linalg.matrix_power(diff_op,t) #diffused diffusion operator
-        #print('X:')
-        #print(X)
-        X[X == 0] = np.finfo(float).eps #handling zeros
-        X[X <= np.finfo(float).eps] = np.finfo(float).eps #handling small values
-        diff_potential = -1*np.log(X) #diffusion potential
+        if landmark_transitions is not None:
+            # landmark operator is doing diffusion twice
+            t = np.floor(t / 2).astype(np.int16)
+
+        X = np.linalg.matrix_power(diff_op, t)  # diffused diffusion operator
+
+        if potential_method == 'log':
+            X[X <= np.finfo(float).eps] = np.finfo(
+                float).eps  # handling small values
+            diff_potential = -1 * np.log(X)  # diffusion potential
+        elif potential_method == 'sqrt':
+            diff_potential = np.sqrt(X)  # diffusion potential
+        else:
+            raise ValueError("Allowable 'potential_method' values: 'log' or "
+                             "'sqrt'. '%s' was passed." % (potential_method))
+
         if verbose:
-            print("Calculated diffusion potential in %.2f seconds."%(time.time() - tic))
-    #if diffusion potential is precomputed (i.e. 'mds' or 'mds_dist' has changed on PHATE object)
+            print("Calculated diffusion potential in %.2f seconds." %
+                  (time.time() - tic))
+    # if diffusion potential is precomputed (i.e. 'mds' or 'mds_dist' has
+    # changed on PHATE object)
     else:
         if verbose:
             print("Using precomputed diffusion potential...")
 
     tic = time.time()
     if verbose:
-            print("Embedding data using %s MDS..."%(mds))
-    embedding = embed_MDS(diff_potential, ndim=n_components, how=mds, distance_metric=mds_dist, njobs=njobs, seed=random_state)
-    if verbose:
-        print("Embedded data in %.2f seconds."%(time.time() - tic))
-        print("Finished PHATE embedding in %.2f seconds.\n"%(time.time() - start))
-    return embedding, diff_op, diff_potential
+        print("Embedding data using %s MDS..." % (mds))
+    if embedding is None:
+        embedding = embed_MDS(diff_potential, ndim=n_components, how=mds,
+                              distance_metric=mds_dist, njobs=njobs,
+                              seed=random_state)
+        if landmark_transitions is not None:
+            # return to ambient space
+            embedding = landmark_transitions.dot(embedding)
+        if verbose:
+            print("Embedded data in %.2f seconds." % (time.time() - tic))
+    else:
+        if verbose:
+            print("Using precomputed embedding...")
+    return embedding, diff_potential
+
 
 class PHATE(BaseEstimator):
     """Potential of Heat-diffusion for Affinity-based Trajectory Embedding (PHATE)
-    Embeds high dimensional single-cell data into two or three dimensions for visualization of biological progressions.
+    Embeds high dimensional single-cell data into two or three dimensions for
+    visualization of biological progressions.
 
     Parameters
     ----------
-    data : ndarray [n, p]
-        2 dimensional input data array with n cells and p dimensions
+    data : array-like [n_samples, n_dimensions]
+        2 dimensional input data array with
+        n_samples samples and n_dimensions dimensions
 
     n_components : int, optional, default: 2
         number of dimensions in which the data will be embedded
 
-    a : int, optional, default: 10
-        sets decay rate of kernel tails
-
     k : int, optional, default: 5
-        used to set epsilon while autotuning kernel bandwidth
+        used to set epsilon while auto-tuning kernel bandwidth
 
-    t : int, optional, default: 30
+    a : int, optional, default: None
+        sets decay rate of kernel tails.
+        If None, alpha decaying kernel is not used
+
+    alpha_decay : boolean, default: None
+        forces the use of alpha decaying kernel
+        If None, alpha decaying kernel is used for small inputs
+        (n_samples < n_landmark) and not used otherwise
+
+    n_landmark : int, optional, default: 1000
+        number of landmarks to use in fast PHATE
+
+    t : int, optional, default: 'auto'
         power to which the diffusion operator is powered
         sets the level of diffusion
+
+    potential_method : string, optional, default: 'log'
+        choose from ['log', 'sqrt']
+        which transformation of the diffusional operator is used
+        to compute the diffusion potential
+
+    knn_dist : string, optional, default: 'euclidean'
+        recommended values: 'euclidean' and 'cosine'
+        Any metric from scipy.spatial.distance can be used
+        distance metric for building kNN graph
+
+    mds_dist : string, optional, default: 'euclidean'
+        recommended values: 'euclidean' and 'cosine'
+        Any metric from scipy.spatial.distance can be used
+        distance metric for MDS
 
     mds : string, optional, default: 'metric'
         choose from ['classic', 'metric', 'nonmetric']
         which MDS algorithm is used for dimensionality reduction
 
-    knn_dist : string, optional, default: 'euclidean'
-        reccomended values: 'eucliean' and 'cosine'
-        Any metric from scipy.spatial.distance can be used
-        distance metric for building kNN graph
-
-    mds_dist : string, optional, default: 'euclidean'
-        reccomended values: 'eucliean' and 'cosine'
-        Any metric from scipy.spatial.distance can be used
-        distance metric for MDS
-
     njobs : integer, optional, default: 1
         The number of jobs to use for the computation.
-        If -1 all CPUs are used. If 1 is given, no parallel computing code is used at all, which is useful for debugging.
-        For n_jobs below -1, (n_cpus + 1 + n_jobs) are used. Thus for n_jobs = -2, all CPUs but one are used
+        If -1 all CPUs are used. If 1 is given, no parallel computing code is
+        used at all, which is useful for debugging.
+        For n_jobs below -1, (n_cpus + 1 + n_jobs) are used. Thus for
+        n_jobs = -2, all CPUs but one are used
 
     random_state : integer or numpy.RandomState, optional
         The generator used to initialize SMACOF (metric, nonmetric) MDS
         If an integer is given, it fixes the seed
         Defaults to the global numpy random number generator
 
+    verbose : boolean, optional
+        If true, print status messages
+
     Attributes
     ----------
 
-    embedding : array-like, shape [n_samples, n_dimensions]
+    X : array-like, shape=[n_samples, n_dimensions]
+
+    embedding : array-like, shape=[n_samples, n_components]
         Stores the position of the dataset in the embedding space
 
-    diff_op : array-like, shape [n_samples, n_samples]
+    diff_op : array-like, shape=[n_samples, n_samples] or [n_landmarks, n_landmarks]
         The diffusion operator fit on the input data
 
-    diff_potential : array-like, shape [n_samples, n_samples]
+    diff_potential : array-like, shape=[n_samples, n_samples]
         Precomputed diffusion potential
+
+    landmark_transitions : array-like, shape=[n_samples, n_landmarks]
+        Transition matrix between input data and landmarks,
+        if `n_landmark` is set, otherwise `None`
 
     References
     ----------
-    .. [1] `Moon KR, van Dijk D, Zheng W, et al. (2017). "PHATE: A Dimensionality Reduction Method for Visualizing Trajectory Structures in High-Dimensional Biological Data". Biorxiv.
+    .. [1] `Moon KR, van Dijk D, Zheng W, et al. (2017). "PHATE: A
+       Dimensionality Reduction Method for Visualizing Trajectory Structures in
+       High-Dimensional Biological Data". Biorxiv.
        <http://biorxiv.org/content/early/2017/03/24/120378>`_
     """
 
-    def __init__(self, n_components=2, a=10, k=5, t=30, mds='metric', knn_dist='euclidean', mds_dist='euclidean', njobs=1, random_state=None, verbose=True):
+    def __init__(self, n_components=2, k=5, a=None, alpha_decay=None,
+                 n_landmark=1000, t='auto', potential_method='log',
+                 knn_dist='euclidean', mds_dist='euclidean',
+                 mds='metric', njobs=1, random_state=None, verbose=True):
         self.ndim = n_components
         self.a = a
         self.k = k
         self.t = t
+        self.n_landmark = n_landmark
         self.mds = mds
         self.knn_dist = knn_dist
         self.mds_dist = mds_dist
         self.njobs = 1
         self.random_state = random_state
-        self.diff_op = None
-        self.diff_potential = None
         self.verbose = verbose
+        self.potential_method = potential_method
 
-    def reset_mds(self, n_components=2, mds="metric", mds_dist="euclidean"):
-        self.n_components=n_components
-        self.mds=mds
-        self.mds_dist=mds_dist
+        if a is None:
+            alpha_decay = False
+        self.alpha_decay = alpha_decay
 
-    def reset_diffusion(self, t=30):
-        self.t = t
+        self.diff_op = None
+        self.landmark_transitions = None
         self.diff_potential = None
+        self.embedding = None
+        self.X = None
 
+    def reset_mds(self, n_components=None, mds=None, mds_dist=None):
+        """
+        Reset parameters related to multidimensional scaling
+
+        Parameters
+        ----------
+        n_components : int, optional, default: None
+            If given, sets number of dimensions in which the data
+            will be embedded
+
+        mds : string, optional, default: None
+            choose from ['classic', 'metric', 'nonmetric']
+            If given, sets which MDS algorithm is used for
+            dimensionality reduction
+
+        mds_dist : string, optional, default: None
+            recommended values: 'euclidean' and 'cosine'
+            Any metric from scipy.spatial.distance can be used
+            If given, sets the distance metric for MDS
+        """
+        if n_components is not None:
+            self.n_components = n_components
+        if mds is not None:
+            self.mds = mds
+        if mds_dist is not None:
+            self.mds_dist = mds_dist
+        self.embedding = None
+
+    def reset_potential(self, t=None, potential_method=None):
+        """
+        Reset parameters related to the diffusion potential
+
+        Parameters
+        ----------
+        t : int or 'auto', optional, default: None
+            Power to which the diffusion operator is powered
+            If given, sets the level of diffusion
+
+        potential_method : string, optional, default: None
+            choose from ['log', 'sqrt']
+            If given, sets which transformation of the diffusional
+            operator is used to compute the diffusion potential
+        """
+        if t is not None:
+            self.t = t
+        if potential_method is not None:
+            self.potential_method = potential_method
+        self.diff_potential = None
 
     def fit(self, X):
         """
-        Computes the position of the cells in the embedding space
+        Computes the diffusion operator
 
         Parameters
         ----------
         X : array, shape=[n_samples, n_features]
             Input data.
 
-        diff_op : array, shape=[n_samples, n_samples], optional
-            Precomputed diffusion operator
+        Returns
+        -------
+        phate_operator : PHATE
+        The estimator object
         """
-        self.fit_transform(X)
+        if self.X is not None and not np.all(X == self.X):
+            """
+            If the same data is used, we can reuse existing kernel and
+            diffusion matrices. Otherwise we have to recompute.
+            """
+            self.diff_op = None
+            self.landmark_transitions = None
+            self.diff_potential = None
+            self.embedding = None
+        self.X = X
+
+        if self.diff_op is None:
+            self.diff_potential = None  # can't use precomputed potential
+        self.diff_op, self.landmark_transitions = calculate_operator(
+            X, a=self.a, k=self.k, knn_dist=self.knn_dist,
+            njobs=self.njobs, n_landmark=self.n_landmark,
+            diff_op=self.diff_op, verbose=self.verbose,
+            landmark_transitions=self.landmark_transitions,
+            alpha_decay=self.alpha_decay, random_state=self.random_state)
         return self
 
-    def fit_transform(self, X):
+    def transform(self, X=None, t_max=200, plot_optimal_t=False, ax=None):
         """
         Computes the position of the cells in the embedding space
 
         Parameters
         ----------
-        X : array, shape=[n_samples, n_features]
-            Input data.
+        X : array, optional, shape=[n_samples, n_features]
+            Input data. Not required, since PHATE does not currently embed
+            cells not given in the input matrix to `PHATE.fit()`
 
-        diff_op : array, shape=[n_samples, n_samples], optional
-            Precomputed diffusion operator
+        t_max : int, optional, default=200
+            maximum t to test if `t` is set to 'auto'
+
+        plot_optimal_t : boolean, optional, default=False
+            If true and `t` is set to 'auto', plot the Von Neumann
+            entropy used to select t
+
+        ax : matplotlib.axes.Axes, optional
+            If given and `plot_optimal_t` is true, plot will be drawn
+            on the given axis.
 
         Returns
         -------
         embedding : array, shape=[n_samples, n_dimensions]
         The cells embedded in a lower dimensional space using PHATE
         """
-        self.embedding, self.diff_op, self.diff_potential = embed_phate(X, n_components=self.ndim, a=self.a, k=self.k, t=self.t,
-                                                                        mds=self.mds, knn_dist=self.knn_dist, mds_dist=self.mds_dist, njobs=self.njobs,
-                                                                        diff_op = self.diff_op, diff_potential = self.diff_potential, random_state=self.random_state, verbose=self.verbose)
-
+        if self.diff_op is None:
+            raise NotFittedError("This PHATE instance is not fitted yet. Call "
+                                 "'fit' with appropriate arguments before "
+                                 "using this method.")
+        elif self.X is not None and X is not None and not np.all(X == self.X):
+            """
+            sklearn.BaseEstimator assumes out-of-sample transformations are
+            possible. We explicitly test for this in case the user is not aware
+            that reusing the same diffusion operator with a different X will
+            not give different results.
+            """
+            raise RuntimeWarning("Pre-fit PHATE cannot be used to transform a "
+                                 "new data matrix. Please fit PHATE to the new"
+                                 " data by running 'fit' with the new data.")
+        if self.t == 'auto':
+            t = self.optimal_t(t_max=t_max, plot=plot_optimal_t, ax=ax)
+            print("Automatically selected t = {}".format(t))
+        else:
+            t = self.t
+        self.embedding, self.diff_potential = embed_mds(
+            self.diff_op,
+            t=t,
+            landmark_transitions=self.landmark_transitions,
+            n_components=self.ndim,
+            diff_potential=self.diff_potential,
+            embedding=self.embedding,
+            mds=self.mds, mds_dist=self.mds_dist,
+            njobs=self.njobs,
+            random_state=self.random_state,
+            verbose=self.verbose,
+            potential_method=self.potential_method)
         return self.embedding
+
+    def fit_transform(self, X, **kwargs):
+        """
+        Computes the diffusion operator and the position of the cells in the
+        embedding space
+
+        Parameters
+        ----------
+        X : array, shape=[n_samples, n_features]
+            Input data.
+
+        **kwargs : further arguments for `PHATE.transform()`
+
+        Returns
+        -------
+        embedding : array, shape=[n_samples, n_dimensions]
+            The cells embedded in a lower dimensional space using PHATE
+        """
+        start = time.time()
+        self.fit(X)
+        self.transform(**kwargs)
+        if self.verbose:
+            print("Finished PHATE embedding in %.2f seconds.\n" %
+                  (time.time() - start))
+        return self.embedding
+
+    def von_neumann_entropy(self, t_max=200):
+        """
+        Determines the Von Neumann entropy of the diffusion affinities
+        at varying levels of t. The user should select a value of t
+        around the "knee" of the entropy curve.
+
+        We require that 'fit' stores the values of gs_ker and diff_deg
+        in order to calculate the Von Neumann entropy. Alternatively,
+        we could recalculate them here.
+
+        Parameters
+        ----------
+        t_max : int, default: 200
+            Maximum value of t to test
+
+        Returns
+        -------
+        entropy : array, shape=[t_max]
+            The entropy of the diffusion affinities for each value of t
+        """
+        if self.diff_op is None:
+            raise NotFittedError("This PHATE instance is not fitted yet. Call "
+                                 "'fit' with appropriate arguments before "
+                                 "using this method.")
+        if self.landmark_transitions is not None:
+            # landmark operator is doing diffusion twice
+            t_max = np.floor(t_max / 2).astype(np.int16)
+            t = np.arange(t_max) * 2 + 1
+        else:
+            t = np.arange(t_max)
+
+        return t, compute_von_neumann_entropy(self.diff_op, t_max=t_max)
+
+    def optimal_t(self, t_max=200, plot=False, ax=None):
+        """
+        Selects the optimal value of t based on the knee point of the
+        Von Neumann Entropy of the diffusion operator.
+
+        Parameters
+        ----------
+        t_max : int, default: 200
+            Maximum value of t to test
+
+        plot : boolean, default: False
+            If true, plots the Von Neumann Entropy and knee point
+
+        ax : matplotlib.Axes, default: None
+            If plot=True and ax is not None, plots the VNE on the given axis
+            Otherwise, creates a new axis and displays the plot
+
+        Returns
+        -------
+        t_opt : int
+            The optimal value of t
+        """
+        t, h = self.von_neumann_entropy(t_max=t_max)
+        t_opt = find_knee_point(y=h, x=t)
+
+        if plot:
+            if ax is None:
+                fig, ax = plt.subplots()
+                show = True
+            else:
+                show = False
+            ax.plot(t, h)
+            ax.scatter(t_opt, h[t == t_opt], marker='*', c='k', s=50)
+            ax.set_xlabel("t")
+            ax.set_ylabel("Von Neumann Entropy")
+            ax.set_title("Optimal t = {}".format(t_opt))
+            if show:
+                plt.show()
+
+        return t_opt
