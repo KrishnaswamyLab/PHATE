@@ -366,7 +366,7 @@ def embed_mds(diff_op, t=30, n_components=2, diff_potential=None,
 
 class PHATE(BaseEstimator):
     """Potential of Heat-diffusion for Affinity-based Trajectory Embedding
-    (PHATE)[1]
+    (PHATE) [1]
 
     Embeds high dimensional single-cell data into two or three dimensions for
     visualization of biological progressions.
