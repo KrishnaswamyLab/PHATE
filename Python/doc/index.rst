@@ -18,5 +18,5 @@ Hello, world!
     :show-inheritance:
 
 
-.. autoclass:: phate.python.phate.phate.calculate_kernel
+.. autofunction:: phate.calculate_kernel
    :members:
