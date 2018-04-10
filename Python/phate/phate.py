@@ -11,7 +11,7 @@ import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.exceptions import NotFittedError
 from sklearn.neighbors import NearestNeighbors
-from sklearn.cluster import MiniBatchKMeans
+from sklearn.cluster import KMeans
 from scipy.spatial.distance import pdist
 from scipy.spatial.distance import squareform
 from sklearn.utils.extmath import randomized_svd
@@ -145,8 +145,8 @@ def calculate_landmark_operator(gs_ker, n_landmark=1000,
         U, S, _ = randomized_svd(diff_op,
                                  n_components=n_svd,
                                  random_state=random_state)
-        kmeans = MiniBatchKMeans(n_landmark, init_size=3 * n_landmark,
-                                 random_state=random_state)
+        kmeans = KMeans(n_landmark,
+                        random_state=random_state)
         clusters = kmeans.fit_predict(np.matmul(U, np.diagflat(S)))
         landmarks = np.unique(clusters)
 
@@ -324,7 +324,7 @@ def embed_mds(diff_op, t=30, n_components=2, diff_potential=None,
             print("Calculating diffusion potential...")
         if landmark_transitions is not None:
             # landmark operator is doing diffusion twice
-            t = np.floor(t / 2).astype(np.int8)
+            t = np.floor(t / 2).astype(np.int16)
 
         X = np.linalg.matrix_power(diff_op, t)  # diffused diffusion operator
 
@@ -721,6 +721,7 @@ class PHATE(BaseEstimator):
             ax.scatter(t_opt, h[t == t_opt], marker='*', c='k', s=50)
             ax.set_xlabel("t")
             ax.set_ylabel("Von Neumann Entropy")
+            ax.set_title("Optimal t = {}".format(t_opt))
             if show:
                 plt.show()
 
