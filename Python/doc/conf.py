@@ -33,7 +33,7 @@ print(sys.path)
 # ones.
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.autosummary',
-              'sphinx.ext.numpyext.numpydoc',
+              'numpydoc',
               'sphinx.ext.doctest',
               'sphinx.ext.coverage',
               'sphinx.ext.viewcode',
