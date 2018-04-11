@@ -1,10 +1,5 @@
-<<<<<<< HEAD
-PHATE  - Potential of Heat-diffusion for Affinity-based Transition Embedding
+PHATE - Potential of Heat-diffusion for Affinity-based Transition Embedding
 -------------------------------------------------------
-=======
-PHATE  - Potential of Heat-diffusion for Affinity-based Trajectory Embedding
-----------------------------------------------------------------------------
->>>>>>> dev
 
 PHATE is a tool for visualizing high dimensional single-cell data with natural progressions or trajectories. PHATE uses a novel conceptual framework for learning and visualizing the manifold inherent to biological systems in which smooth transitions mark the progressions of cells from one state to another. To see how PHATE can be applied to single-cell RNA-seq datasets from hematopoietic stem cells, human embryonic stem cells, and bone marrow samples, check out our preprint on BioRxiv.
 
