@@ -13,8 +13,8 @@ M, C = phate.tree.gen_dla(n_dim=100, n_branch=10, branch_length=300,
 
 # instantiate phate_operator
 phate_operator = phate.PHATE(n_components=2, a=10, k=5, t=30, mds='classic',
-                             knn_dist='euclidean', mds_dist='euclidean', njobs=-2,
-                             n_landmark=None)
+                             knn_dist='euclidean', mds_dist='euclidean',
+                             njobs=-2, n_landmark=None)
 
 # run phate with classic MDS
 print("DLA tree, classic MDS")
@@ -32,7 +32,7 @@ print("DLA tree, metric MDS (sqrt)")
 Y_sqrt = phate_operator.fit_transform(M)
 
 phate_fast_operator = phate.PHATE(
-    n_components=2, a=10, t=50, k=5, mds='classic', mds_dist='euclidean',
+    n_components=2, a=10, t=60, k=5, mds='classic', mds_dist='euclidean',
     alpha_decay=True, n_landmark=1000)
 # run phate with classic MDS
 print("DLA tree, fast classic MDS")
