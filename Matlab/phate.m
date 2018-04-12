@@ -184,8 +184,7 @@ P_t = Pmm^t;
 disp 'Computing potential distances'
 switch pot_method
     case 'log'
-        P_t(P_t<=eps) = eps;
-        Pot = -log(P_t);
+        Pot = -log(P_t + eps);
     case 'sqrt'
         Pot = sqrt(P_t);
     otherwise
