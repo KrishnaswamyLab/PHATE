@@ -9,7 +9,7 @@ if (sys.version_info.major == 3 and sys.version_info.minor < 5) or \
     raise RuntimeError('PHATE requires Python 2.7 or Python >=3.5')
 
 setup(name='phate',
-      version='0.1',
+      version='0.2',
       description='PHATE',
       author='Daniel Burkhardt, Krishnaswamy Lab, Yale University',
       author_email='daniel.burkhardt@yale.edu',
