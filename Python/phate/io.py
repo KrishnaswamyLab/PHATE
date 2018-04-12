@@ -4,6 +4,7 @@
 from __future__ import print_function, division
 import pandas as pd
 import scipy.io as sio
+from scipy import sparse
 
 
 def load_10X(data_dir, sparse=True, gene_labels='symbol'):
@@ -32,25 +33,27 @@ def load_10X(data_dir, sparse=True, gene_labels='symbol'):
 
     try:
         m = sio.mmread(data_dir + "/matrix.mtx")
-        data = pd.DataFrame(m.toarray().T)
-    except FileNotFoundError:
-        raise FileNotFoundError(
-            "'matrix.mtx', 'genes.tsv', and 'barcodes.tsv' must be present in data_dir")
-    try:
         genes = pd.read_csv(data_dir + "/genes.tsv",
                             delimiter='\t', header=None)
         genes.columns = pd.Index(['id', 'symbol'])
         barcodes = pd.read_csv(data_dir + "/barcodes.tsv",
                                delimiter='\t', header=None)
-    except OSError:
+
+    except (FileNotFoundError, OSError):
         raise FileNotFoundError(
             "'matrix.mtx', 'genes.tsv', and 'barcodes.tsv' must be present in data_dir")
 
-    data.columns = pd.Index(genes[gene_labels])
-    data.index = pd.Index(barcodes[0])
+    index = pd.Index(barcodes[0])
+    columns = pd.Index(genes[gene_labels])
+    if sparse and len(columns.duplicated()) > 0:
+        import warnings
+        warnings.warn("Duplicate gene names detected! Forcing dense matrix. Alternatively, try loading the matrix with `gene_labels='id'`", RuntimeWarning)
+        sparse=False
 
     if sparse:
-        data = data.to_sparse(fill_value=0)
+        data = pd.SparseDataFrame(m.T, index=index,columns=columns)
+    else:
+        data = pd.DataFrame(m.toarray().T, index=index,columns=columns)
 
     print("Imported data matrix with %s cells and %s genes." %
           (data.shape[0], data.shape[1]))
