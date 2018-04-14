@@ -6,7 +6,7 @@ Potential of Heat-diffusion for Affinity-based Trajectory Embedding (PHATE)
 # (C) 2017 Krishnaswamy Lab GPLv2
 from __future__ import print_function, division, absolute_import
 
-import timerep
+import time
 import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.exceptions import NotFittedError
