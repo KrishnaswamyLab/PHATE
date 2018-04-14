@@ -32,7 +32,7 @@ print("DLA tree, metric MDS (sqrt)")
 Y_sqrt = phate_operator.fit_transform(M)
 
 phate_fast_operator = phate.PHATE(
-    n_components=2, a=10, t=60, k=5, mds='classic', mds_dist='euclidean',
+    n_components=2, a=10, t=90, k=5, mds='classic', mds_dist='euclidean',
     alpha_decay=True, n_landmark=1000)
 # run phate with classic MDS
 print("DLA tree, fast classic MDS")
@@ -93,15 +93,14 @@ ax3.set_title("PHATE embedding of DLA fractal tree\nFast Metric MDS, sqrt")
 plt.tight_layout()
 plt.savefig("python{}_tree.png".format(python_version), dpi=100)
 
-clusters = pd.read_csv("../../data/MAP.csv", header=None)
+clusters = pd.read_csv("../data/MAP.csv", header=None)
 clusters.columns = pd.Index(['wells', 'clusters'])
-bmmsc = pd.read_csv("../../data/BMMC_myeloid.csv.gz", index_col=0)
+bmmsc = pd.read_csv("../data/BMMC_myeloid.csv.gz", index_col=0)
 
 C = clusters['clusters']  # using cluster labels from original publication
 
 # library_size_normalize performs L1 normalization on each cell
 bmmsc_norm = phate.preprocessing.library_size_normalize(bmmsc)
-bmmsc_reduced = phate.preprocessing.pca_reduce(bmmsc_norm, n_components=20)
 phate_operator = phate.PHATE(
     n_components=2, t='auto', a=200, k=10, mds='metric', mds_dist='euclidean',
     n_landmark=None)
@@ -112,15 +111,15 @@ phate_fast_operator = phate.PHATE(
 
 fig, (ax1, ax2) = plt.subplots(1, 2, sharey='all')
 print("BMMSC, exact PHATE")
-Y_mmds = phate_operator.fit_transform(bmmsc_reduced, t_max=100,
+Y_mmds = phate_operator.fit_transform(bmmsc_norm, t_max=100,
                                       plot_optimal_t=True, ax=ax1)
 ax1.set_title("Optimal t selection on 2730 BMMSCs\n"
-              "Exact PHATE, t = {}".format(phate_operator.t))
+              "Exact PHATE, " + ax1.get_title())
 print("BMMSC, fast PHATE")
-Y_mmds_fast = phate_fast_operator.fit_transform(bmmsc_reduced, t_max=100,
+Y_mmds_fast = phate_fast_operator.fit_transform(bmmsc_norm, t_max=100,
                                                 plot_optimal_t=True, ax=ax2)
 ax2.set_title("Optimal t selection on 2730 BMMSCs\n"
-              "Fast PHATE, t = {}".format(phate_fast_operator.t))
+              "Fast PHATE, " + ax2.get_title())
 plt.tight_layout()
 plt.savefig("python{}_bmmsc_optimal_t.png".format(python_version), dpi=100)
 
