@@ -37,7 +37,7 @@ def library_size_normalize(data, verbose=False):
             data = data.to_coo()
     except NameError:
         pass
-    median_transcript_count = np.median(data.sum(axis=1))
+    median_transcript_count = np.median(np.array(data.sum(axis=1)))
     data_norm = normalize(data, norm='l1', axis=1)
 
     # norm = 'l1' computes the L1 norm which computes the
