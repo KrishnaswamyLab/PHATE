@@ -1,7 +1,7 @@
 PHATE  - Potential of Heat-diffusion for Affinity-based Trajectory Embedding
 ----------------------------------------------------------------------------
 
-PHATE has been implemented in Python (2.7 and >=3.5) and Matlab.
+PHATE has been implemented in Python (2.7 and >=3.5), R and Matlab.
 
 #### Python installation and dependencies
 1. The Python version of PHATE can be installed using:

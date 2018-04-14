@@ -16,13 +16,23 @@ def compute_von_neumann_entropy(data, t_max=100):
 
     Parameters
     ----------
-    t_max : int
+    t_max : int, default: 100
         Maximum value of t to test
 
     Returns
     -------
     entropy : array, shape=[t_max]
         The entropy of the diffusion affinities for each value of t
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> X = np.eye(10)
+    >>> X[0,0] = 5
+    >>> X[3,2] = 4
+    >>> h = compute_von_neumann_entropy(X)
+    >>> find_knee_point(h)
+    23
     """
     _, eigenvalues, _ = svd(data)
     entropy = []
@@ -55,6 +65,14 @@ def find_knee_point(y, x=None):
     -------
     knee_point : int
     The index (or x value) of the knee point on y
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> x = np.arange(20)
+    >>> y = np.exp(-x/10)
+    >>> find_knee_point(y,x)
+    8
     """
     try:
         y.shape

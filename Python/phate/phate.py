@@ -6,15 +6,15 @@ Potential of Heat-diffusion for Affinity-based Trajectory Embedding (PHATE)
 # (C) 2017 Krishnaswamy Lab GPLv2
 from __future__ import print_function, division, absolute_import
 
-import time
+import timerep
 import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.exceptions import NotFittedError
 from sklearn.neighbors import NearestNeighbors
-from sklearn.cluster import KMeans
+from sklearn.cluster import MiniBatchKMeans
 from sklearn.utils.extmath import randomized_svd
 from sklearn.preprocessing import normalize
-from sklearn.decomposition import PCA, TruncatedSVD
+from sklearn.decomposition import PCA
 from scipy import sparse
 from scipy.spatial.distance import pdist
 from scipy.spatial.distance import squareform
@@ -22,12 +22,12 @@ from scipy.spatial.distance import squareform
 
 import matplotlib.pyplot as plt
 
-from phate.mds import embed_MDS
-from phate.vne import compute_von_neumann_entropy, find_knee_point
+from .mds import embed_MDS
+from .vne import compute_von_neumann_entropy, find_knee_point
 
 
 def calculate_kernel(data, k=5, a=10, alpha_decay=True, knn_dist='euclidean',
-                     verbose=True, ndim=100, random_state=None):
+                     verbose=False, ndim=100, random_state=None):
     """Calculate the alpha-decay or KNN kernel
 
     Parameters
@@ -66,17 +66,26 @@ def calculate_kernel(data, k=5, a=10, alpha_decay=True, knn_dist='euclidean',
     kernel : array-like [n_samples, n_samples]
         kernel matrix built from the input data
     """
-    if verbose:
-        print("Building kNN graph and diffusion operator...")
     precomputed = isinstance(knn_dist, list) or \
         isinstance(knn_dist, np.ndarray)
     if not precomputed and ndim < data.shape[1]:
+        if verbose:
+            print("Calculating PCA...")
+            start = time.time()
         if sparse.issparse(data):
-            tSVD = TruncatedSVD(ndim + 50, random_state=random_state)
-            data = tSVD.fit(data).transform(data)
+            _, _, VT = randomized_svd(data, ndim,
+                                      random_state=random_state)
+            data = data.dot(VT.T)
         else:
-            pca = PCA(ndim, svd_solver='randomized', random_state=random_state)
+            pca = PCA(ndim, svd_solver='randomized',
+                      random_state=random_state)
             data = pca.fit_transform(data)
+            if verbose:
+                print("PCA complete in {:.2d} seconds".format(
+                    time.time() - start))
+    if verbose:
+        start = time.time()
+        print("Calculating KNN...")
     if alpha_decay:
         try:
             if precomputed:
@@ -96,23 +105,24 @@ def calculate_kernel(data, k=5, a=10, alpha_decay=True, knn_dist='euclidean',
         if precomputed:
             pdx = knn_dist
             knn_idx = np.argpartition(pdx, k, axis=1)[:, :k]
+            ind_ptr = np.arange(knn_idx.shape[0] + 1) * knn_idx.shape[1]
+            col_ind = knn_idx.reshape(-1)
+            ones = np.repeat(1., len(col_ind))
+            kernel = sparse.csr_matrix((ones, col_ind, ind_ptr),
+                                       shape=[data.shape[0], data.shape[0]])
         else:
-            knn = NearestNeighbors(n_neighbors=k - 1).fit(data)
-            _, knn_idx = knn.kneighbors(data)
-            # make everything its own neighbor
-            knn_idx = np.hstack(
-                [knn_idx, np.arange(data.shape[0])[:, np.newaxis]])
-        ind_ptr = np.arange(knn_idx.shape[0] + 1) * knn_idx.shape[1]
-        col_ind = knn_idx.reshape(-1)
-        ones = np.repeat(1., len(col_ind))
-        kernel = sparse.csr_matrix((ones, col_ind, ind_ptr),
-                                   shape=[data.shape[0], data.shape[0]])
+            knn = NearestNeighbors(n_neighbors=k).fit(data)
+            kernel = knn.kneighbors_graph(data, mode='connectivity')
+
+    if verbose:
+        print("KNN complete in {:.2d} seconds".format(time.time() - start))
     kernel = kernel + kernel.T  # symmetrization
     return kernel
 
 
 def calculate_landmark_operator(kernel, n_landmark=1000,
-                                random_state=None, n_svd=100):
+                                random_state=None, n_svd=100,
+                                verbose=False):
     """
     Calculate the landmark operator
 
@@ -147,18 +157,30 @@ def calculate_landmark_operator(kernel, n_landmark=1000,
     diff_op = normalize(kernel, norm='l1', axis=1)  # row stochastic
     if n_landmark is not None and n_landmark < kernel.shape[0]:
         # spectral clustering
+        if verbose:
+            print("Calculating SVD...")
+            start = time.time()
         U, S, _ = randomized_svd(diff_op,
                                  n_components=n_svd,
                                  random_state=random_state)
-        kmeans = KMeans(n_landmark,
-                        random_state=random_state)
+        if verbose:
+            print("SVD complete in {:.2d} seconds".format(time.time() - start))
+            start = time.time()
+            print("Calculating Kmeans...")
+        kmeans = MiniBatchKMeans(n_landmark,
+                                 init_size=3 * n_landmark,
+                                 batch_size=10000,
+                                 random_state=random_state)
         clusters = kmeans.fit_predict(np.matmul(U, np.diagflat(S)))
         landmarks = np.unique(clusters)
+        if verbose:
+            print("Complete in ", time.time() - start)
 
         # transition matrices
         if is_sparse:
             pmn = sparse.vstack(
-                [sparse.csr_matrix(kernel[clusters == i, :].sum(axis=0)) for i in landmarks])
+                [sparse.csr_matrix(kernel[clusters == i, :].sum(
+                    axis=0)) for i in landmarks])
         else:
             pmn = np.array([np.sum(
                 kernel[clusters == i, :], axis=0) for i in landmarks])
@@ -177,7 +199,7 @@ def calculate_landmark_operator(kernel, n_landmark=1000,
 def calculate_operator(data, k=5, a=10, alpha_decay=True, n_landmark=1000,
                        knn_dist='euclidean', diff_op=None,
                        landmark_transitions=None, njobs=1,
-                       random_state=None, verbose=True, n_svd=100):
+                       random_state=None, verbose=True, n_pca=100, n_svd=100):
     """
     Calculate the diffusion operator
 
@@ -245,12 +267,15 @@ def calculate_operator(data, k=5, a=10, alpha_decay=True, n_landmark=1000,
                 print("Warning: a is set, but alpha decay is not used "
                       "as n_landmark < len(X). To override this behavior,"
                       " set alpha_decay=True (increases memory requirements)"
-                      " or n_landmark=None (increases memory and CPU requirements.)")
+                      " or n_landmark=None (increases memory and CPU "
+                      "requirements.)")
         else:
             alpha_decay = True
     if diff_op is None:
+        if verbose:
+            print("Building kNN graph and diffusion operator...")
         kernel = calculate_kernel(data, a=a, k=k, knn_dist=knn_dist,
-                                  verbose=verbose,
+                                  ndim=n_pca,
                                   alpha_decay=alpha_decay,
                                   random_state=random_state)
         diff_op, landmark_transitions = calculate_landmark_operator(
@@ -387,7 +412,7 @@ class PHATE(BaseEstimator):
         number of dimensions in which the data will be embedded
 
     k : int, optional, default: 5
-        used to set epsilon while auto-tuning kernel bandwidth
+        number of nearest neighbors on which to build kernel
 
     a : int, optional, default: None
         sets decay rate of kernel tails.
@@ -409,6 +434,12 @@ class PHATE(BaseEstimator):
         choose from ['log', 'sqrt']
         which transformation of the diffusional operator is used
         to compute the diffusion potential
+
+    n_pca : int, optional, default: 100
+        Number of principal components to use for calculating
+        neighborhoods. For extremely large datasets, using
+        n_pca < 20 allows neighborhoods to be calculated in
+        log(n_samples) time.
 
     knn_dist : string, optional, default: 'euclidean'
         recommended values: 'euclidean' and 'cosine'
@@ -467,7 +498,7 @@ class PHATE(BaseEstimator):
 
     def __init__(self, n_components=2, k=5, a=None, alpha_decay=None,
                  n_landmark=1000, t='auto', potential_method='log',
-                 knn_dist='euclidean', mds_dist='euclidean',
+                 n_pca=100, knn_dist='euclidean', mds_dist='euclidean',
                  mds='metric', njobs=1, random_state=None, verbose=True):
         self.ndim = n_components
         self.a = a
@@ -475,6 +506,7 @@ class PHATE(BaseEstimator):
         self.t = t
         self.n_landmark = n_landmark
         self.mds = mds
+        self.n_pca = n_pca
         self.knn_dist = knn_dist
         self.mds_dist = mds_dist
         self.njobs = 1
@@ -571,12 +603,12 @@ class PHATE(BaseEstimator):
         self.diff_op, self.landmark_transitions = calculate_operator(
             X, a=self.a, k=self.k, knn_dist=self.knn_dist,
             njobs=self.njobs, n_landmark=self.n_landmark,
-            diff_op=self.diff_op, verbose=self.verbose,
+            diff_op=self.diff_op, verbose=self.verbose, n_pca=self.n_pca,
             landmark_transitions=self.landmark_transitions,
             alpha_decay=self.alpha_decay, random_state=self.random_state)
         return self
 
-    def transform(self, X=None, t_max=200, plot_optimal_t=False, ax=None):
+    def transform(self, X=None, t_max=100, plot_optimal_t=False, ax=None):
         """
         Computes the position of the cells in the embedding space
 
@@ -586,7 +618,7 @@ class PHATE(BaseEstimator):
             Input data. Not required, since PHATE does not currently embed
             cells not given in the input matrix to `PHATE.fit()`
 
-        t_max : int, optional, default: 200
+        t_max : int, optional, default: 100
             maximum t to test if `t` is set to 'auto'
 
         plot_optimal_t : boolean, optional, default: False
@@ -660,7 +692,7 @@ class PHATE(BaseEstimator):
                   (time.time() - start))
         return self.embedding
 
-    def von_neumann_entropy(self, t_max=200):
+    def von_neumann_entropy(self, t_max=100):
         """
         Determines the Von Neumann entropy of the diffusion affinities
         at varying levels of `t`. The user should select a value of `t`
@@ -672,7 +704,7 @@ class PHATE(BaseEstimator):
 
         Parameters
         ----------
-        t_max : int, default: 200
+        t_max : int, default: 100
             Maximum value of `t` to test
 
         Returns
@@ -693,14 +725,14 @@ class PHATE(BaseEstimator):
 
         return t, compute_von_neumann_entropy(self.diff_op, t_max=t_max)
 
-    def optimal_t(self, t_max=200, plot=False, ax=None):
+    def optimal_t(self, t_max=100, plot=False, ax=None):
         """
         Selects the optimal value of t based on the knee point of the
         Von Neumann Entropy of the diffusion operator.
 
         Parameters
         ----------
-        t_max : int, default: 200
+        t_max : int, default: 100
             Maximum value of t to test
 
         plot : boolean, default: False
