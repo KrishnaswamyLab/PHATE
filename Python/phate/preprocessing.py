@@ -3,9 +3,8 @@
 
 from __future__ import print_function, division
 from sklearn.preprocessing import normalize
-import sklearn.decomposition
 import numpy as np
-import scipy.sparse as sp
+from scipy import sparse
 
 try:
     import pandas as pd
@@ -35,10 +34,16 @@ def library_size_normalize(data, verbose=False):
     try:
         if isinstance(data, pd.core.sparse.frame.SparseDataFrame):
             data = data.to_coo()
+        elif isinstance(data, pd.DataFrame):
+            data = np.array(data)
     except NameError:
         pass
     median_transcript_count = np.median(np.array(data.sum(axis=1)))
-    data_norm = normalize(data, norm='l1', axis=1)
+    try:
+        data_norm = normalize(data, norm='l1', axis=1)
+    except MemoryError:
+        data_norm = sparse.vstack([normalize(
+            data[i, :], 'l1', axis=1) for i in range(data.shape[0])])
 
     # norm = 'l1' computes the L1 norm which computes the
     # axis = 1 independently normalizes each sample
