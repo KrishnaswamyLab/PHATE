@@ -41,7 +41,7 @@ def library_size_normalize(data, verbose=False):
     median_transcript_count = np.median(np.array(data.sum(axis=1)))
     try:
         data_norm = normalize(data, norm='l1', axis=1)
-    except MemoryError:
+    except (ValueError, MemoryError):
         data_norm = sparse.vstack([normalize(
             data[i, :], 'l1', axis=1) for i in range(data.shape[0])])
 
