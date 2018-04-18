@@ -86,6 +86,9 @@ def calculate_kernel(data, k=5, a=10, alpha_decay=True, knn_dist='euclidean',
     if verbose:
         start = time.time()
         print("Calculating KNN...")
+    # kernel includes self as connection but not in k
+    # actually search for k+1 neighbors including self
+    k = k + 1
     if alpha_decay:
         try:
             if precomputed:
@@ -120,7 +123,7 @@ def calculate_kernel(data, k=5, a=10, alpha_decay=True, knn_dist='euclidean',
     return kernel
 
 
-def calculate_landmark_operator(kernel, n_landmark=1000,
+def calculate_landmark_operator(kernel, n_landmark=2000,
                                 random_state=None, n_svd=100,
                                 verbose=False):
     """
@@ -130,6 +133,9 @@ def calculate_landmark_operator(kernel, n_landmark=1000,
     ----------
     kernel : array-like [n_samples, n_samples]
         kernel matrix built from the input data
+
+    n_landmark : int, optional, default: 2000
+        number of landmarks to use in fast PHATE
 
     landmark_transitions : array-like, shape=[n_samples, n_landmarks], default: None
         Precomputed transition matrix between input data and landmarks
@@ -196,7 +202,7 @@ def calculate_landmark_operator(kernel, n_landmark=1000,
     return diff_op, pnm
 
 
-def calculate_operator(data, k=5, a=10, alpha_decay=True, n_landmark=1000,
+def calculate_operator(data, k=5, a=10, alpha_decay=True, n_landmark=2000,
                        knn_dist='euclidean', diff_op=None,
                        landmark_transitions=None, njobs=1,
                        random_state=None, verbose=True, n_pca=100, n_svd=100):
@@ -216,6 +222,9 @@ def calculate_operator(data, k=5, a=10, alpha_decay=True, n_landmark=1000,
 
     alpha_decay : boolean, default: True
         If true, use the alpha decaying kernel
+
+    n_landmark : int, optional, default: 2000
+        number of landmarks to use in fast PHATE
 
     knn_dist : string, optional, default: 'euclidean'
         recommended values: 'euclidean' and 'cosine'
@@ -423,7 +432,7 @@ class PHATE(BaseEstimator):
         If None, alpha decaying kernel is used for small inputs
         (n_samples < n_landmark) and not used otherwise
 
-    n_landmark : int, optional, default: 1000
+    n_landmark : int, optional, default: 2000
         number of landmarks to use in fast PHATE
 
     t : int, optional, default: 'auto'
@@ -497,7 +506,7 @@ class PHATE(BaseEstimator):
     """
 
     def __init__(self, n_components=2, k=5, a=None, alpha_decay=None,
-                 n_landmark=1000, t='auto', potential_method='log',
+                 n_landmark=2000, t='auto', potential_method='log',
                  n_pca=100, knn_dist='euclidean', mds_dist='euclidean',
                  mds='metric', njobs=1, random_state=None, verbose=True):
         self.ndim = n_components
