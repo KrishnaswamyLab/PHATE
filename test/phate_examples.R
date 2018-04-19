@@ -82,14 +82,18 @@ C <- as.factor(clusters$clusters)  # using cluster labels from original publicat
 # library.size.normalize performs L1 normalization on each cell
 bmmsc_norm <- library.size.normalize(bmmsc)
 
-dev.new()
+png("tmp.png")
+dev.control(displaylist="enable") 
+print("BMMSC, exact PHATE")
 Y_mmds <- phate(bmmsc_norm, ndim=2, t='auto', a=200, k=10, 
                 mds.method='metric', mds.dist.method='euclidean',
                 n.landmark=NA, plot.optimal.t = TRUE)
 title(main="\n\nExact PHATE on 2730 BMMSCs")
 t_exact_p <- recordPlot()
 dev.off()
-dev.new()
+png("tmp.png")
+dev.control(displaylist="enable")  
+print("BMMSC, fast PHATE")
 Y_mmds_fast <- phate(bmmsc_norm, ndim=2, t='auto', a=NA, k=10, 
                      mds.method='metric', mds.dist.method='euclidean',
                      n.landmark=1000, plot.optimal.t = TRUE)
@@ -98,6 +102,7 @@ t_fast_p <- recordPlot()
 dev.off()
 p <- plot_grid(t_exact_p, t_fast_p, ncol=2)
 save_plot("R_bmmsc_optimal_t.png", p, base_height=6, base_width=8)
+file.remove("tmp.png")
 
 p <- plot_grid(ggplot(Y_mmds) + 
                  geom_point(aes(PHATE1, PHATE2, color=C), show.legend=FALSE) + 
