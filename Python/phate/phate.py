@@ -27,7 +27,7 @@ from .vne import compute_von_neumann_entropy, find_knee_point
 
 
 def calculate_kernel(data, k=5, a=10, alpha_decay=True, knn_dist='euclidean',
-                     verbose=False, ndim=100, random_state=None):
+                     verbose=False, ndim=100, random_state=None, n_jobs=1):
     """Calculate the alpha-decay or KNN kernel
 
     Parameters
@@ -59,6 +59,13 @@ def calculate_kernel(data, k=5, a=10, alpha_decay=True, knn_dist='euclidean',
         The generator used to initialize SMACOF (metric, nonmetric) MDS
         If an integer is given, it fixes the seed
         Defaults to the global numpy random number generator
+
+    n_jobs : integer, optional, default: 1
+        The number of jobs to use for the computation.
+        If -1 all CPUs are used. If 1 is given, no parallel computing code is
+        used at all, which is useful for debugging.
+        For n_jobs below -1, (n_cpus + 1 + n_jobs) are used. Thus for
+        n_jobs = -2, all CPUs but one are used
 
     Returns
     -------
@@ -114,7 +121,8 @@ def calculate_kernel(data, k=5, a=10, alpha_decay=True, knn_dist='euclidean',
             kernel = sparse.csr_matrix((ones, col_ind, ind_ptr),
                                        shape=[data.shape[0], data.shape[0]])
         else:
-            knn = NearestNeighbors(n_neighbors=k).fit(data)
+            knn = NearestNeighbors(n_neighbors=k,
+                                   n_jobs=).fit(data)
             kernel = knn.kneighbors_graph(data, mode='connectivity')
 
     if verbose:
@@ -204,7 +212,7 @@ def calculate_landmark_operator(kernel, n_landmark=2000,
 
 def calculate_operator(data, k=5, a=10, alpha_decay=True, n_landmark=2000,
                        knn_dist='euclidean', diff_op=None,
-                       landmark_transitions=None, njobs=1,
+                       landmark_transitions=None, n_jobs=1,
                        random_state=None, verbose=True, n_pca=100, n_svd=100):
     """
     Calculate the diffusion operator
@@ -237,7 +245,7 @@ def calculate_operator(data, k=5, a=10, alpha_decay=True, n_landmark=2000,
     landmark_transitions : array-like, shape=[n_samples, n_landmarks], default: None
         Precomputed transition matrix between input data and landmarks
 
-    njobs : integer, optional, default: 1
+    n_jobs : integer, optional, default: 1
         The number of jobs to use for the computation.
         If -1 all CPUs are used. If 1 is given, no parallel computing code is
         used at all, which is useful for debugging.
@@ -286,7 +294,8 @@ def calculate_operator(data, k=5, a=10, alpha_decay=True, n_landmark=2000,
         kernel = calculate_kernel(data, a=a, k=k, knn_dist=knn_dist,
                                   ndim=n_pca,
                                   alpha_decay=alpha_decay,
-                                  random_state=random_state)
+                                  random_state=random_state,
+                                  n_jobs=n_jobs)
         diff_op, landmark_transitions = calculate_landmark_operator(
             kernel, n_landmark=n_landmark,
             random_state=random_state)
@@ -301,7 +310,7 @@ def calculate_operator(data, k=5, a=10, alpha_decay=True, n_landmark=2000,
 
 
 def embed_mds(diff_op, t=30, n_components=2, diff_potential=None,
-              embedding=None, mds='metric', mds_dist='euclidean', njobs=1,
+              embedding=None, mds='metric', mds_dist='euclidean', n_jobs=1,
               potential_method='log', random_state=None, verbose=True,
               landmark_transitions=None):
     """
@@ -391,7 +400,7 @@ def embed_mds(diff_op, t=30, n_components=2, diff_potential=None,
         print("Embedding data using %s MDS..." % (mds))
     if embedding is None:
         embedding = embed_MDS(diff_potential, ndim=n_components, how=mds,
-                              distance_metric=mds_dist, njobs=njobs,
+                              distance_metric=mds_dist, n_jobs=n_jobs,
                               seed=random_state)
         if landmark_transitions is not None:
             # return to ambient space
@@ -464,12 +473,14 @@ class PHATE(BaseEstimator):
         choose from ['classic', 'metric', 'nonmetric']
         which MDS algorithm is used for dimensionality reduction
 
-    njobs : integer, optional, default: 1
+    n_jobs : integer, optional, default: 1
         The number of jobs to use for the computation.
         If -1 all CPUs are used. If 1 is given, no parallel computing code is
         used at all, which is useful for debugging.
         For n_jobs below -1, (n_cpus + 1 + n_jobs) are used. Thus for
         n_jobs = -2, all CPUs but one are used
+
+    njobs : deprecated in favor of n_jobs to match sklearn standards
 
     random_state : integer or numpy.RandomState, optional
         The generator used to initialize SMACOF (metric, nonmetric) MDS
@@ -508,7 +519,8 @@ class PHATE(BaseEstimator):
     def __init__(self, n_components=2, k=5, a=None, alpha_decay=None,
                  n_landmark=2000, t='auto', potential_method='log',
                  n_pca=100, knn_dist='euclidean', mds_dist='euclidean',
-                 mds='metric', njobs=1, random_state=None, verbose=True):
+                 mds='metric', n_jobs=1, random_state=None, verbose=True,
+                 njobs=None):
         self.ndim = n_components
         self.a = a
         self.k = k
@@ -518,7 +530,10 @@ class PHATE(BaseEstimator):
         self.n_pca = n_pca
         self.knn_dist = knn_dist
         self.mds_dist = mds_dist
-        self.njobs = 1
+        if njobs is not None:
+            print("Warning: njobs is deprecated. Please use n_jobs in future.")
+            n_jobs = njobs
+        self.n_jobs = n_jobs
         self.random_state = random_state
         self.verbose = verbose
         self.potential_method = potential_method
@@ -611,7 +626,7 @@ class PHATE(BaseEstimator):
             self.diff_potential = None  # can't use precomputed potential
         self.diff_op, self.landmark_transitions = calculate_operator(
             X, a=self.a, k=self.k, knn_dist=self.knn_dist,
-            njobs=self.njobs, n_landmark=self.n_landmark,
+            n_jobs=self.n_jobs, n_landmark=self.n_landmark,
             diff_op=self.diff_op, verbose=self.verbose, n_pca=self.n_pca,
             landmark_transitions=self.landmark_transitions,
             alpha_decay=self.alpha_decay, random_state=self.random_state)
@@ -670,7 +685,7 @@ class PHATE(BaseEstimator):
             diff_potential=self.diff_potential,
             embedding=self.embedding,
             mds=self.mds, mds_dist=self.mds_dist,
-            njobs=self.njobs,
+            n_jobs=self.n_jobs,
             random_state=self.random_state,
             verbose=self.verbose,
             potential_method=self.potential_method)
