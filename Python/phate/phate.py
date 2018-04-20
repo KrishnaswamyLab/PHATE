@@ -18,6 +18,7 @@ from sklearn.decomposition import PCA
 from scipy import sparse
 from scipy.spatial.distance import pdist
 from scipy.spatial.distance import squareform
+import multiprocessing
 
 
 import matplotlib.pyplot as plt
@@ -26,7 +27,7 @@ from .mds import embed_MDS
 from .vne import compute_von_neumann_entropy, find_knee_point
 
 
-def calculate_kernel(data, k=5, a=10, alpha_decay=True, knn_dist='euclidean',
+def calculate_kernel(data, k=5, a=10, alpha_threshold=0, knn_dist='euclidean',
                      verbose=False, ndim=100, random_state=None, n_jobs=1):
     """Calculate the alpha-decay or KNN kernel
 
@@ -41,8 +42,9 @@ def calculate_kernel(data, k=5, a=10, alpha_decay=True, knn_dist='euclidean',
     a : int, optional, default: 10
         sets decay rate of kernel tails.
 
-    alpha_decay : boolean, default: True
-        If true, use the alpha decaying kernel
+    alpha_threshold : float in range [0, 1], optional, default: 0
+        Alpha decay kernel is truncated to zero below this value
+        Use 0 for exact alpha decay, 1 for KNN kernel
 
     knn_dist : string, optional, default: 'euclidean'
         recommended values: 'euclidean' and 'cosine'
@@ -96,34 +98,56 @@ def calculate_kernel(data, k=5, a=10, alpha_decay=True, knn_dist='euclidean',
     # kernel includes self as connection but not in k
     # actually search for k+1 neighbors including self
     k = k + 1
-    if alpha_decay:
+    if alpha_threshold == 0 or precomputed:
         try:
             if precomputed:
                 pdx = knn_dist
             else:
                 pdx = squareform(pdist(data, metric=knn_dist))
-            knn_dist = np.partition(pdx, k, axis=1)[:, :k]
+            try:
+                knn_dist = np.partition(pdx, k, axis=1)[:, :k]
+                epsilon = np.max(knn_dist, axis=1)
+            except np.core._internal.AxisError:
+                # sparse matrices don't handle this
+                def top_k(data, k):
+                    if len(data) > k:
+                        return np.max(np.partition(data, k)[:k])
+                    elif len(data) > 0:
+                        return np.max(data)
+                    else:
+                        return 0
+                epsilon = np.array([top_k(
+                    pdx[i, :].data, k) for i in range(pdx.shape[0])])
             # bandwidth(x) = distance to k-th neighbor of x
-            epsilon = np.max(knn_dist, axis=1)
             pdx = (pdx / epsilon).T  # autotuning d(x,:) using epsilon(x).
         except RuntimeWarning:
             raise ValueError(
                 'It looks like you have at least k identical data points. '
                 'Try removing duplicates.')
-        kernel = np.exp(-1 * (pdx ** a))  # not really Gaussian kernel
+        if alpha_threshold < 1:
+            kernel = np.exp(-1 * (pdx ** a))  # not really Gaussian kernel
+    elif alpha_threshold < 1:
+        knn = NearestNeighbors(n_neighbors=k,
+                               n_jobs=n_jobs).fit(data)
+        radius, _ = knn.kneighbors(data)
+        epsilon = radius[:, -1]
+        radius = epsilon * np.power(-1 * np.log(alpha_threshold), 1 / a)
+        distances = np.empty(shape=data.shape[0], dtype=np.object)
+        for i in range(data.shape[0]):
+            batch_distances = knn.radius_neighbors_graph(
+                data[i, None, :],
+                radius[i],
+                mode='distance')
+            # for i in range(batch_distances.shape[0]):
+            #    batch_distances[i,:].data = batch_distances[i,:].data / epsilon[i]
+            batch_distances.data = np.exp(-1 *
+                                          ((batch_distances.data / epsilon[i]) ** a))
+            distances[i] = batch_distances
+        kernel = sparse.vstack(distances)
     else:
-        if precomputed:
-            pdx = knn_dist
-            knn_idx = np.argpartition(pdx, k, axis=1)[:, :k]
-            ind_ptr = np.arange(knn_idx.shape[0] + 1) * knn_idx.shape[1]
-            col_ind = knn_idx.reshape(-1)
-            ones = np.repeat(1., len(col_ind))
-            kernel = sparse.csr_matrix((ones, col_ind, ind_ptr),
-                                       shape=[data.shape[0], data.shape[0]])
-        else:
-            knn = NearestNeighbors(n_neighbors=k,
-                                   n_jobs=).fit(data)
-            kernel = knn.kneighbors_graph(data, mode='connectivity')
+        knn = NearestNeighbors(n_neighbors=k,
+                               n_jobs=n_jobs).fit(data)
+        kernel = knn.kneighbors_graph(data, mode='connectivity')
 
     if verbose:
         print("KNN complete in {:.2d} seconds".format(time.time() - start))
@@ -210,7 +234,7 @@ def calculate_landmark_operator(kernel, n_landmark=2000,
     return diff_op, pnm
 
 
-def calculate_operator(data, k=5, a=10, alpha_decay=True, n_landmark=2000,
+def calculate_operator(data, k=5, a=10, alpha_threshold=0.1, n_landmark=2000,
                        knn_dist='euclidean', diff_op=None,
                        landmark_transitions=None, n_jobs=1,
                        random_state=None, verbose=True, n_pca=100, n_svd=100):
@@ -228,8 +252,9 @@ def calculate_operator(data, k=5, a=10, alpha_decay=True, n_landmark=2000,
     a : int, optional, default: 10
         sets decay rate of kernel tails.
 
-    alpha_decay : boolean, default: True
-        If true, use the alpha decaying kernel
+    alpha_threshold : float in range [0, 1], optional, default: 0.1
+        Alpha decay kernel is truncated to zero below this value
+        Use 0 for exact alpha decay, 1 for KNN kernel
 
     n_landmark : int, optional, default: 2000
         number of landmarks to use in fast PHATE
@@ -277,23 +302,15 @@ def calculate_operator(data, k=5, a=10, alpha_decay=True, n_landmark=2000,
     # print('Imported numpy: %s'%np.__file__)
 
     tic = time.time()
-    if alpha_decay is None:
-        if n_landmark is not None and len(data) > n_landmark:
-            alpha_decay = False
-            if a is not None:
-                print("Warning: a is set, but alpha decay is not used "
-                      "as n_landmark < len(X). To override this behavior,"
-                      " set alpha_decay=True (increases memory requirements)"
-                      " or n_landmark=None (increases memory and CPU "
-                      "requirements.)")
-        else:
-            alpha_decay = True
+    if alpha_threshold == 0 and n_landmark is not None and len(data) > n_landmark:
+        print("Warning: alpha_threshold = 0 is slow and memory-intensive. "
+              "Use alpha_threshold >= 0.1 for faster results.")
     if diff_op is None:
         if verbose:
             print("Building kNN graph and diffusion operator...")
         kernel = calculate_kernel(data, a=a, k=k, knn_dist=knn_dist,
                                   ndim=n_pca,
-                                  alpha_decay=alpha_decay,
+                                  alpha_threshold=alpha_threshold,
                                   random_state=random_state,
                                   n_jobs=n_jobs)
         diff_op, landmark_transitions = calculate_landmark_operator(
@@ -436,10 +453,9 @@ class PHATE(BaseEstimator):
         sets decay rate of kernel tails.
         If None, alpha decaying kernel is not used
 
-    alpha_decay : boolean, default: None
-        forces the use of alpha decaying kernel
-        If None, alpha decaying kernel is used for small inputs
-        (n_samples < n_landmark) and not used otherwise
+    alpha_threshold : float in range [0, 1], optional, default: 0.1
+        Alpha decay kernel is truncated to zero below this value
+        Use 0 for exact alpha decay, 1 for KNN kernel
 
     n_landmark : int, optional, default: 2000
         number of landmarks to use in fast PHATE
@@ -516,7 +532,7 @@ class PHATE(BaseEstimator):
        <http://biorxiv.org/content/early/2017/03/24/120378>`_
     """
 
-    def __init__(self, n_components=2, k=5, a=None, alpha_decay=None,
+    def __init__(self, n_components=2, k=5, a=10, alpha_threshold=0.1,
                  n_landmark=2000, t='auto', potential_method='log',
                  n_pca=100, knn_dist='euclidean', mds_dist='euclidean',
                  mds='metric', n_jobs=1, random_state=None, verbose=True,
@@ -539,8 +555,8 @@ class PHATE(BaseEstimator):
         self.potential_method = potential_method
 
         if a is None:
-            alpha_decay = False
-        self.alpha_decay = alpha_decay
+            alpha_threshold = 1
+        self.alpha_threshold = alpha_threshold
 
         self.diff_op = None
         self.landmark_transitions = None
@@ -629,7 +645,7 @@ class PHATE(BaseEstimator):
             n_jobs=self.n_jobs, n_landmark=self.n_landmark,
             diff_op=self.diff_op, verbose=self.verbose, n_pca=self.n_pca,
             landmark_transitions=self.landmark_transitions,
-            alpha_decay=self.alpha_decay, random_state=self.random_state)
+            alpha_threshold=self.alpha_threshold, random_state=self.random_state)
         return self
 
     def transform(self, X=None, t_max=100, plot_optimal_t=False, ax=None):
