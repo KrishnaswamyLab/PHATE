@@ -108,7 +108,7 @@ def main():
         n_components=2, t='auto', a=200, k=10, mds='metric', mds_dist='euclidean',
         n_landmark=None)
     phate_fast_operator = phate.PHATE(
-        n_components=2, t='auto', k=10, mds='metric', mds_dist='euclidean',
+        n_components=2, t='auto', a=200, k=10, mds='metric', mds_dist='euclidean',
         n_landmark=1000)
 
     fig, (ax1, ax2) = plt.subplots(1, 2, sharey='all')
