@@ -122,7 +122,7 @@ def calculate_kernel(data, k=5, a=10, alpha_decay=True, knn_dist='euclidean',
                                        shape=[data.shape[0], data.shape[0]])
         else:
             knn = NearestNeighbors(n_neighbors=k,
-                                   n_jobs=).fit(data)
+                                   n_jobs=n_jobs).fit(data)
             kernel = knn.kneighbors_graph(data, mode='connectivity')
 
     if verbose:

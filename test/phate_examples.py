@@ -14,7 +14,7 @@ M, C = phate.tree.gen_dla(n_dim=100, n_branch=10, branch_length=300,
 # instantiate phate_operator
 phate_operator = phate.PHATE(n_components=2, a=10, k=5, t=30, mds='classic',
                              knn_dist='euclidean', mds_dist='euclidean',
-                             njobs=-2, n_landmark=None)
+                             n_jobs=-2, n_landmark=None)
 
 # run phate with classic MDS
 print("DLA tree, classic MDS")
