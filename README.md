@@ -16,7 +16,7 @@ The Python version of PHATE can be installed by running the following from a ter
         cd PHATE/Python
         python setup.py install --user
 
-For more information, read the [documentation on ReadTheDocs](http://phate.readthedocs.io/en/latest/) or view our [tutorial on GitHub](https://github.com/KrishnaswamyLab/PHATE/blob/master/Python/tutorial/PHATE_tree.ipynb)
+For more information, read the [documentation on ReadTheDocs](http://phate.readthedocs.io/) or view our [tutorial on GitHub](https://github.com/KrishnaswamyLab/PHATE/blob/master/Python/tutorial/PHATE_tree.ipynb)
 
 ### MATLAB installation
 1. The MATLAB version of PHATE can be accessed by running the following from a terminal:
