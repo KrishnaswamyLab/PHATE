@@ -8,18 +8,15 @@ PHATE is a tool for visualizing high dimensional single-cell data with natural p
 
 PHATE has been implemented in Python (2.7 and >=3.5), Matlab and R.
 
-
-## Getting started
-
 ### Python installation and dependencies
-1. The Python version of PHATE can be installed using:
+
+The Python version of PHATE can be installed using:
 
         $ git clone --recursive git://github.com/SmitaKrishnaswamy/PHATE.git
         $ cd PHATE/Python
         $ python setup.py install --user
 
-2. PHATE depends on a number of `python` packages available on pypi and these dependencies are listed in `setup.py`
-All the dependencies will be automatically installed using the above commands
+For more information, read the [documentation on ReadTheDocs](http://phate.readthedocs.io/en/latest/) or view our [tutorial on GitHub](https://github.com/KrishnaswamyLab/PHATE/blob/master/Python/tutorial/PHATE_tree.ipynb)
 
 ### MATLAB installation
 1. The MATLAB version of PHATE can be accessed using:
@@ -54,6 +51,4 @@ The R version of PHATE can be installed directly from R with `devtools`:
         $ cd phater
         $ R CMD INSTALL
 
-### Jupyter Notebook
-
-A demo on PHATE usage and visualization for single cell RNA-seq data can be found in this notebook: [https://nbviewer.jupyter.org/github/KrishnaswamyLab/PHATE/blob/master/Python/tutorial/PHATE_tree.ipynb](https://nbviewer.jupyter.org/github/KrishnaswamyLab/PHATE/blob/master/Python/tutorial/PHATE_tree.ipynb)
+For more information, read the [phater README](https://github.com/KrishnaswamyLab/phater).
