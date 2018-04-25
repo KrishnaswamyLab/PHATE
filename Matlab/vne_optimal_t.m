@@ -1,8 +1,7 @@
 function t = vne_optimal_t(P, t_max)
 
 % VNE
-[~,Smm,~] = randPCA(P, length(P));
-Smm = diag(Smm);
+Smm = svds(P, length(P));
 vne = nan(1,t_max);
 for I=1:t_max
     Smm_t = Smm.^I + eps;
