@@ -26,7 +26,7 @@ from .mds import embed_MDS
 from .vne import compute_von_neumann_entropy, find_knee_point
 
 
-def calculate_kernel(data, k=5, a=10, alpha_decay=True, knn_dist='euclidean',
+def calculate_kernel(data, k=15, a=10, alpha_decay=True, knn_dist='euclidean',
                      verbose=False, ndim=100, random_state=None, n_jobs=1):
     """Calculate the alpha-decay or KNN kernel
 
@@ -35,7 +35,7 @@ def calculate_kernel(data, k=5, a=10, alpha_decay=True, knn_dist='euclidean',
     data : array-like [n_samples, n_dimensions]
         2 dimensional input data array with n cells and p dimensions
 
-    k : int, optional, default: 5
+    k : int, optional, default: 15
         used to set epsilon while autotuning kernel bandwidth
 
     a : int, optional, default: 10
@@ -210,7 +210,7 @@ def calculate_landmark_operator(kernel, n_landmark=2000,
     return diff_op, pnm
 
 
-def calculate_operator(data, k=5, a=10, alpha_decay=True, n_landmark=2000,
+def calculate_operator(data, k=15, a=10, alpha_decay=True, n_landmark=2000,
                        knn_dist='euclidean', diff_op=None,
                        landmark_transitions=None, n_jobs=1,
                        random_state=None, verbose=True, n_pca=100, n_svd=100):
@@ -222,7 +222,7 @@ def calculate_operator(data, k=5, a=10, alpha_decay=True, n_landmark=2000,
     data : array-like [n_samples, n_dimensions]
         2 dimensional input data array with n cells and p dimensions
 
-    k : int, optional, default: 5
+    k : int, optional, default: 15
         used to set epsilon while autotuning kernel bandwidth
 
     a : int, optional, default: 10
@@ -431,7 +431,7 @@ class PHATE(BaseEstimator):
     n_components : int, optional, default: 2
         number of dimensions in which the data will be embedded
 
-    k : int, optional, default: 5
+    k : int, optional, default: 15
         number of nearest neighbors on which to build kernel
 
     a : int, optional, default: None
@@ -518,7 +518,7 @@ class PHATE(BaseEstimator):
        <http://biorxiv.org/content/early/2017/03/24/120378>`_
     """
 
-    def __init__(self, n_components=2, k=5, a=None, alpha_decay=None,
+    def __init__(self, n_components=2, k=15, a=None, alpha_decay=None,
                  n_landmark=2000, t='auto', potential_method='log',
                  n_pca=100, knn_dist='euclidean', mds_dist='euclidean',
                  mds='metric', n_jobs=1, random_state=None, verbose=True,
