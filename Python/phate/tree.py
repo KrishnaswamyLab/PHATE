@@ -25,7 +25,7 @@ def gen_dla(n_dim=100, n_branch=20, branch_length=100,
 
     # returns the group labels for each point to make it easier to visualize
     # embeddings
-    C = np.array([i // n_branch for i in range(n_branch * branch_length)])
+    C = np.array([i // branch_length for i in range(n_branch * branch_length)])
 
     return M, C
 

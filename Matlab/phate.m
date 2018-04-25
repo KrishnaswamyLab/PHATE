@@ -52,10 +52,10 @@ function Y = phate(data, varargin)
 %   'nsvd' - number of singular vectors for spectral clustering (for
 %   computing landmarks). Defaults to 100.
 %
-%   'operator' - user supplied operator. If not given ([]) operator is
-%   computed from the supplied data. Supplied operator should be a square
-%   row stochastic (samples by samples) affinity matrix. If operator is
-%   supplied input data can be empty ([]). Deafults to [].
+%   'kernel' - user supplied kernel. If not given ([]) kernel is
+%   computed from the supplied data. Supplied kernel should be a square
+%   (samples by samples) symmetric affinity matrix. If kernel is
+%   supplied input data can be empty ([]). Defaults to [].
 
 npca = 100;
 k = 10;
@@ -67,7 +67,7 @@ mds_method = 'mmds';
 distfun = 'euclidean';
 distfun_mds = 'euclidean';
 pot_method = 'log';
-P = [];
+K = [];
 Pnm = [];
 t_max = 100;
 
@@ -117,13 +117,13 @@ for i=1:length(varargin)
     if(strcmp(varargin{i},'pot_method'))
        pot_method = lower(varargin{i+1});
     end
-    % operator
-    if(strcmp(varargin{i},'operator'))
-       P = lower(varargin{i+1});
+    % kernel
+    if(strcmp(varargin{i},'kernel'))
+       K = lower(varargin{i+1});
     end
 end
 
-if isempty(P)
+if isempty(K)
     if ~isempty(npca) && size(data,2) > npca
         % PCA
         disp 'Doing PCA'
@@ -136,11 +136,14 @@ if isempty(P)
     else
         pc = data;
     end
-    % diffusion operator
-    P = compute_operator_fast(pc, 'k', k, 'distfun', distfun);
+    % kernel
+    K = compute_kernel_sparse(pc, 'k', k, 'distfun', distfun);
 else
-    disp 'Using supplied operator'
+    disp 'Using supplied kernel'
 end
+
+disp 'Make kernel row stochastic'
+P = bsxfun(@rdivide, K, sum(K,2));
 
 if ~isempty(n_landmarks) && n_landmarks < size(pc,1)
     % spectral cluster for landmarks
@@ -150,26 +153,26 @@ if ~isempty(n_landmarks) && n_landmarks < size(pc,1)
     
     % create landmark operators
     disp 'Computing landmark operators'
-    n = size(P,1);
+    n = size(K,1);
     m = max(IDX);
     Pnm = nan(n,m);
-    Pmn = nan(m,n);
     for I=1:m
-        Pnm(:,I) = sum(P(:,IDX==I),2);
-        Pmn(I,:) = sum(P(IDX==I,:),1);
+        Pnm(:,I) = sum(K(:,IDX==I),2);
     end
+    Pmn = Pnm';
     Pmn = bsxfun(@rdivide, Pmn, sum(Pmn,2));
+    Pnm = bsxfun(@rdivide, Pnm, sum(Pnm,2));
     
     % Pmm
     Pmm = Pmn * Pnm;
 else
     disp 'Running PHATE without landmarking'
-    Pmm = P;
+    Pmm = bsxfun(@rdivide, K, sum(K,2));
 end
 
 % VNE
-disp 'Finding optimal t using VNE'
 if isempty(t)
+    disp 'Finding optimal t using VNE'
     t = vne_optimal_t(Pmm, t_max);
 end
 
@@ -181,8 +184,7 @@ P_t = Pmm^t;
 disp 'Computing potential distances'
 switch pot_method
     case 'log'
-        P_t(P_t<=eps) = eps;
-        Pot = -log(P_t);
+        Pot = -log(P_t + eps);
     case 'sqrt'
         Pot = sqrt(P_t);
     otherwise
