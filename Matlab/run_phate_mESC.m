@@ -43,9 +43,7 @@ h = colorbar;
 ylabel(h, gene);
 
 %% PHATE 2D
-tic;
 Y_PHATE_2D = phate(M);
-toc
 
 %% Plot PHATE 2D
 gene = 'Actb';
@@ -63,9 +61,7 @@ h = colorbar;
 ylabel(h, gene);
 
 %% PHATE 3D
-tic;
 Y_PHATE_3D = phate(M, 'ndim', 3);
-toc
 
 %% Plot PHATE 3D
 gene = 'Actb';

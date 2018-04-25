@@ -12,16 +12,16 @@ function Y = phate(data, varargin)
 %   of PHATE.  Parameters are:
 %
 %   'ndim' - number of (output) embedding dimensions. Common values are 2
-%   or 3. Deafults to 2.
+%   or 3. Defaults to 2.
 %
-%   'k' - number of nearest neighbors of the knn graph. Deafults to 10.
+%   'k' - number of nearest neighbors of the knn graph. Defaults to 15.
 %
 %   't' - number of diffusion steps. Defaults to [] wich autmatically picks
 %   the optimal t.
 %
 %   't_max' - maximum t for finding optimal t. if t = [] optimal t will be
 %   computed by computing Von Neumann Entropy for each t <= t_max and then
-%   picking the kneepoint.
+%   picking the kneepoint. Defaults to 100.
 %
 %   'npca' - number of pca components for computing distances. Defaults to
 %   100.
@@ -32,9 +32,9 @@ function Y = phate(data, varargin)
 %       'cmds' - classical MDS
 %       'nmmds' - non-metric MDS
 %
-%   'distfun' - distance function. Deafult is 'euclidean'.
+%   'distfun' - distance function. Default is 'euclidean'.
 %
-%   'distfun_mds' - distance function for MDS. Deafult is 'euclidean'.
+%   'distfun_mds' - distance function for MDS. Default is 'euclidean'.
 %
 %   'pot_method' - method of computing the PHATE potential dstance. Choices
 %   are:
@@ -44,10 +44,16 @@ function Y = phate(data, varargin)
 %       'sqrt' - sqrt(P). (not default but often produces superior
 %       embeddings)
 %
+%       'plogp' - P*log(P).
+%
+%   'pot_eps' - epsilon value added to diffusion operator prior to
+%   computing potential. Only used for 'pot_method' is 'log', i.e.:
+%   -log(P + pot_eps). Defaults to 1e-3.
+%
 %   'n_landmarks' - number of landmarks for fast and scalable PHATE. [] or
 %   n_landmarks = npoints does no landmarking, which is slower. More
 %   landmarks is more accurate but comes at the cost of speed and memory.
-%   Defaults to 1000.
+%   Defaults to 2000.
 %
 %   'nsvd' - number of singular vectors for spectral clustering (for
 %   computing landmarks). Defaults to 100.
@@ -58,9 +64,9 @@ function Y = phate(data, varargin)
 %   supplied input data can be empty ([]). Defaults to [].
 
 npca = 100;
-k = 10;
+k = 15;
 nsvd = 100;
-n_landmarks = 1000;
+n_landmarks = 2000;
 ndim = 2;
 t = [];
 mds_method = 'mmds';
@@ -70,6 +76,9 @@ pot_method = 'log';
 K = [];
 Pnm = [];
 t_max = 100;
+% a = [];
+pot_eps = 1e-3;
+% alpha_th = 1e-4;
 
 % get input parameters
 for i=1:length(varargin)
@@ -77,6 +86,10 @@ for i=1:length(varargin)
     if(strcmp(varargin{i},'k'))
        k = lower(varargin{i+1});
     end
+%     % a for alpha decaying kernel
+%     if(strcmp(varargin{i},'a'))
+%        a = lower(varargin{i+1});
+%     end
     % diffusion time
     if(strcmp(varargin{i},'t'))
        t = lower(varargin{i+1});
@@ -121,23 +134,49 @@ for i=1:length(varargin)
     if(strcmp(varargin{i},'kernel'))
        K = lower(varargin{i+1});
     end
+    % pot_eps
+    if(strcmp(varargin{i},'pot_eps'))
+       pot_eps = lower(varargin{i+1});
+    end
+%     % alpha_th
+%     if(strcmp(varargin{i},'alpha_th'))
+%        alpha_th = lower(varargin{i+1});
+%     end
 end
+
+tt_pca = 0;
+tt_kernel = 0;
+tt_svd = 0;
+tt_kmeans = 0;
+tt_lo = 0;
+tt_mmds = 0;
+tt_nmmds = 0;
 
 if isempty(K)
     if ~isempty(npca) && size(data,2) > npca
         % PCA
         disp 'Doing PCA'
+        tic;
         if issparse(data)
-            disp 'Data is sparse, doing sparse PCA (svd without mean centering)'
+            disp 'Data is sparse, doing SVD instead of PCA (no mean centering)'
             pc = svdpca_sparse(data, npca, 'random');
         else
             pc = svdpca(data, npca, 'random');
         end
+        tt_pca = toc;
+        disp(['PCA took ' num2str(tt_pca) ' seconds']);
     else
         pc = data;
     end
     % kernel
-    K = compute_kernel_sparse(pc, 'k', k, 'distfun', distfun);
+    tic;
+%     if ~isempty(a)
+%         K = compute_alpha_kernel_sparse(pc, 'k', k, 'distfun', distfun, 'a', a, 'th', alpha_th);
+%     else
+        K = compute_kernel_sparse(pc, 'k', k, 'distfun', distfun);
+%     end
+    tt_kernel = toc;
+    disp(['Computing kernel took ' num2str(tt_kernel) ' seconds']);
 else
     disp 'Using supplied kernel'
 end
@@ -145,14 +184,21 @@ end
 disp 'Make kernel row stochastic'
 P = bsxfun(@rdivide, K, sum(K,2));
 
-if ~isempty(n_landmarks) && n_landmarks < size(pc,1)
+if ~isempty(n_landmarks) && n_landmarks < size(K,1)
     % spectral cluster for landmarks
     disp 'Spectral clustering for landmarks'
+    tic;
     [U,S,~] = randPCA(P, nsvd);
+    tt_svd = toc;
+    disp(['svd took ' num2str(tt_svd) ' seconds']);
+    tic;
     IDX = kmeans(U*S, n_landmarks);
+    tt_kmeans = toc;
+    disp(['kmeans took ' num2str(tt_kmeans) ' seconds']);
     
     % create landmark operators
     disp 'Computing landmark operators'
+    tic;
     n = size(K,1);
     m = max(IDX);
     Pnm = nan(n,m);
@@ -162,6 +208,8 @@ if ~isempty(n_landmarks) && n_landmarks < size(pc,1)
     Pmn = Pnm';
     Pmn = bsxfun(@rdivide, Pmn, sum(Pmn,2));
     Pnm = bsxfun(@rdivide, Pnm, sum(Pnm,2));
+    tt_lo = toc;
+    disp(['Computing landmark operators took ' num2str(tt_lo) ' seconds']);
     
     % Pmm
     Pmm = Pmn * Pnm;
@@ -178,45 +226,70 @@ end
 
 % diffuse
 disp 'Diffusing operator'
+tic;
 P_t = Pmm^t;
+tt_diff = toc;
+disp(['Diffusion took ' num2str(tt_diff) ' seconds']);
 
 % potential distances
+tic;
 disp 'Computing potential distances'
 switch pot_method
     case 'log'
-        Pot = -log(P_t + eps);
+        disp 'using -log(P) potential distance'
+        Pot = -log(P_t + pot_eps);
     case 'sqrt'
+        disp 'using sqrt(P) potential distance'
         Pot = sqrt(P_t);
+    case 'plogp'
+        disp 'using P*log(P) potential distance'
+        Pot = P_t .* log(P_t + eps);
     otherwise
         disp 'potential method unknown'
 end
 PDX = squareform(pdist(Pot, distfun_mds));
+tt_pdx = toc;
+disp(['Computing potential distance took ' num2str(tt_pdx) ' seconds']);
 
 % CMDS
 disp 'Doing classical MDS'
+tic;
 Y = randmds(PDX, ndim);
+tt_cmds = toc;
+disp(['CMDS took ' num2str(tt_cmds) ' seconds']);
 
 % MMDS
 if strcmpi(mds_method, 'mmds')
+    tic;
     disp 'Doing metric MDS:'
     opt = statset('display','iter');
     Y = mdscale(PDX,ndim,'options',opt,'start',Y,'Criterion','metricstress');
+    tt_mmds = toc;
+    disp(['MMDS took ' num2str(tt_mmds) ' seconds']);
 end
 
 % NMMDS
 if strcmpi(mds_method, 'nmmds')
+    tic;
     disp 'Doing non-metric MDS:'
     opt = statset('display','iter');
     Y = mdscale(PDX,ndim,'options',opt,'start',Y,'Criterion','stress');
+    tt_nmmds = toc;
+    disp(['NMMDS took ' num2str(tt_nmmds) ' seconds']);
 end
 
 if ~isempty(Pnm)
     % out of sample extension from landmarks to all points
-    disp 'Out of sample extension from landmakrs to all points'
+    disp 'Out of sample extension from landmarks to all points'
     Y = Pnm * Y;
 end
 
 disp 'Done.'
+
+tt_total = tt_pca + tt_kernel + tt_svd + tt_kmeans + tt_lo + tt_diff + ...
+    tt_pdx + tt_cmds + tt_mmds + tt_nmmds;
+
+disp(['Total time ' num2str(tt_total) ' seconds']);
 
 end
 
