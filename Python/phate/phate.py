@@ -377,8 +377,10 @@ def embed_mds(diff_op, t=30, n_components=2, diff_potential=None,
         X = np.linalg.matrix_power(diff_op, t)  # diffused diffusion operator
 
         if potential_method == 'log':
-            X[X <= np.finfo(float).eps] = np.finfo(
-                float).eps  # handling small values
+            # handling small values
+            # X[X <= np.finfo(float).eps] = np.finfo(
+            #     float).eps
+            X = X + 1e-3
             diff_potential = -1 * np.log(X)  # diffusion potential
         elif potential_method == 'sqrt':
             diff_potential = np.sqrt(X)  # diffusion potential
