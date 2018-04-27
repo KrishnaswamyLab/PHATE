@@ -23,7 +23,7 @@ setup(name='phate',
               'doctest',
           ],
           'docs': [
-              'sphinx >= 1.6.5',
+              'sphinx>=1.6.5',
               'sphinx-rtd-theme<0.3',
               'readthedocs-sphinx-ext<0.6',
               'recommonmark>=0.4.0',
