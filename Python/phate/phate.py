@@ -40,7 +40,7 @@ class PHATE(BaseEstimator):
     k : int, optional, default: 5
         number of nearest neighbors on which to build kernel
 
-    a : int, optional, default: None
+    a : int, optional, default: 10
         sets decay rate of kernel tails.
         If None, alpha decaying kernel is not used
 
@@ -223,6 +223,76 @@ class PHATE(BaseEstimator):
 
     def set_params(self, **params):
         """Set the parameters on this estimator.
+
+        Any parameters not given as named arguments will be left at their
+        current value.
+
+        Parameters
+        ----------
+        n_components : int, optional, default: 2
+            number of dimensions in which the data will be embedded
+
+        k : int, optional, default: 5
+            number of nearest neighbors on which to build kernel
+
+        a : int, optional, default: 10
+            sets decay rate of kernel tails.
+            If None, alpha decaying kernel is not used
+
+        alpha_threshold : float in range [0, 1], optional, default: 1e-5
+            Alpha decay kernel is truncated to zero below this value
+            Use 0 for exact alpha decay, 1 for KNN kernel
+
+        n_landmark : int, optional, default: 2000
+            number of landmarks to use in fast PHATE
+
+        t : int, optional, default: 'auto'
+            power to which the diffusion operator is powered.
+            This sets the level of diffusion. If 'auto', t is selected
+            according to the knee point in the Von Neumann Entropy of
+            the diffusion operator
+
+        potential_method : string, optional, default: 'log'
+            choose from ['log', 'sqrt'].
+            Selects which transformation of the diffusional operator is used
+            to compute the diffusion potential
+
+        n_pca : int, optional, default: 100
+            Number of principal components to use for calculating
+            neighborhoods. For extremely large datasets, using
+            n_pca < 20 allows neighborhoods to be calculated in
+            roughly log(n_samples) time.
+
+        knn_dist : string, optional, default: 'euclidean'
+            recommended values: 'euclidean', 'cosine', 'precomputed'
+            Any metric from `sklearn.neighbors.NearestNeighbors` can be used.
+            Distance metric for building kNN graph. If 'precomputed',
+            data should be an [n_samples x n_samples] pairwise
+            distance matrix
+
+        mds_dist : string, optional, default: 'euclidean'
+            recommended values: 'euclidean' and 'cosine'
+            Any metric from `scipy.spatial.distance` can be used
+            distance metric for MDS
+
+        mds : string, optional, default: 'metric'
+            choose from ['classic', 'metric', 'nonmetric'].
+            Selects which MDS algorithm is used for dimensionality reduction
+
+        n_jobs : integer, optional, default: 1
+            The number of jobs to use for the computation.
+            If -1 all CPUs are used. If 1 is given, no parallel computing code is
+            used at all, which is useful for debugging.
+            For n_jobs below -1, (n_cpus + 1 + n_jobs) are used. Thus for
+            n_jobs = -2, all CPUs but one are used
+
+        random_state : integer or numpy.RandomState, optional, default: None
+            The generator used to initialize SMACOF (metric, nonmetric) MDS
+            If an integer is given, it fixes the seed
+            Defaults to the global numpy random number generator
+
+        verbose : boolean, optional
+            If true, print status messages
 
         Returns
         -------

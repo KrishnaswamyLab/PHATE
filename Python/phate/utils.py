@@ -1,7 +1,7 @@
 import numbers
 
 
-def _check_positive(**params):
+def check_positive(**params):
     """Check that parameters are positive as expected
 
     Raises
@@ -14,7 +14,7 @@ def _check_positive(**params):
                 "Expected {} > 0, got {}".format(p, params[p]))
 
 
-def _check_int(**params):
+def check_int(**params):
     """Check that parameters are integers as expected
 
     Raises
@@ -27,7 +27,7 @@ def _check_int(**params):
                 "Expected {} integer, got {}".format(p, params[p]))
 
 
-def _check_if_not(x, *checks, **params):
+def check_if_not(x, *checks, **params):
     """Run checks only if parameters are not equal to a specified value
 
     Parameters
@@ -51,7 +51,7 @@ def _check_if_not(x, *checks, **params):
             [check(p=params[p]) for check in checks]
 
 
-def _check_in(choices, **params):
+def check_in(choices, **params):
     """Checks parameters are in a list of allowed parameters
 
     Parameters
@@ -73,7 +73,7 @@ def _check_in(choices, **params):
                     p, params[p], choices))
 
 
-def _check_between(v_min, v_max, **params):
+def check_between(v_min, v_max, **params):
     """Checks parameters are in a specified range
 
     Parameters
