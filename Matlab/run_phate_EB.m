@@ -32,9 +32,7 @@ set(h,'xtick',1:5);
 ylabel(h, 'time');
 
 %% PHATE 2D
-tic;
-Y_PHATE_2D = phate(data, 'k', 7, 'ndim', 2, 't', 20);
-toc
+Y_PHATE_2D = phate(data, 'k', 7, 'ndim', 2, 't', 20, 'pot_eps', eps);
 
 %% plot PHATE 2D
 figure;
@@ -51,9 +49,7 @@ set(h,'xtick',1:5);
 ylabel(h, 'time');
 
 %% PHATE 3D
-tic;
-Y_PHATE_3D = phate(data, 'k', 7, 'ndim', 3, 't', 20);
-toc
+Y_PHATE_3D = phate(data, 'k', 7, 'ndim', 3, 't', 20, 'pot_eps', eps);
 
 %% plot PHATE 3D
 figure;
