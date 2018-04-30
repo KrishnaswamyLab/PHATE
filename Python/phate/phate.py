@@ -280,12 +280,11 @@ def calculate_operator(data, k=15, a=10, alpha_decay=True, n_landmark=2000,
     if alpha_decay is None:
         if n_landmark is not None and len(data) > n_landmark:
             alpha_decay = False
-            if a is not None:
-                print("Warning: a is set, but alpha decay is not used "
-                      "as n_landmark < len(X). To override this behavior,"
-                      " set alpha_decay=True (increases memory requirements)"
-                      " or n_landmark=None (increases memory and CPU "
-                      "requirements.)")
+            if a is not None and verbose is True:
+                print("Alpha decay is not used as n_landmark < n_samples. "
+                      "To override this behavior, set alpha_decay=True "
+                      "(increases memory requirements) or n_landmark=None "
+                      "(increases memory and CPU requirements.)")
         else:
             alpha_decay = True
     if diff_op is None:
@@ -518,7 +517,7 @@ class PHATE(BaseEstimator):
        <http://biorxiv.org/content/early/2017/03/24/120378>`_
     """
 
-    def __init__(self, n_components=2, k=15, a=None, alpha_decay=None,
+    def __init__(self, n_components=2, k=15, a=10, alpha_decay=None,
                  n_landmark=2000, t='auto', potential_method='log',
                  n_pca=100, knn_dist='euclidean', mds_dist='euclidean',
                  mds='metric', n_jobs=1, random_state=None, verbose=True,
