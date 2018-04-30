@@ -64,9 +64,17 @@ Make the test scripts executable
         plt.scatter(tree_phate[:,0], tree_phate[:,1], c=tree_clusters)
         plt.show()
 
-Jupyter Notebook
-~~~~~~~~~~~~~~~~
+Jupyter Notebooks
+~~~~~~~~~~~~~~~~~
 
-A demo on PHATE usage and visualization for single cell RNA-seq data can
-be found in this notebook:
-https://nbviewer.jupyter.org/github/KrishnaswamyLab/PHATE/blob/master/Python/tutorial/PHATE_tree.ipynb
+A demo on PHATE usage and visualization for single cell RNA-seq data can be found in this notebook_: `https://nbviewer.jupyter.org/github/KrishnaswamyLab/PHATE/blob/master/Python/tutorial/PHATE_tree.ipynb`__
+
+.. _notebook: http://nbviewer.jupyter.org/github/KrishnaswamyLab/PHATE/blob/master/Python/tutorial/EmbryoidBody.ipynb
+
+__ notebook_
+
+A second tutorial is available here_ which works with the artificial tree shown above in more detail.
+
+.. _here: http://nbviewer.jupyter.org/github/KrishnaswamyLab/PHATE/blob/master/Python/tutorial/PHATE_tree.ipynb
+
+__ here_

@@ -29,9 +29,10 @@ The Python version of PHATE can be installed from GitHub by running the followin
         cd PHATE/Python
         python setup.py install --user
 
-For more information, read the [documentation on ReadTheDocs](http://phate.readthedocs.io/en/latest/) or view our [tutorial on GitHub](https://github.com/KrishnaswamyLab/PHATE/blob/master/Python/tutorial/PHATE_tree.ipynb)
+For more information, read the [documentation on ReadTheDocs](http://phate.readthedocs.io/en/latest/) or view our tutorials on GitHub: [single-cell RNA-seq](http://nbviewer.jupyter.org/github/KrishnaswamyLab/PHATE/blob/master/Python/tutorial/EmbryoidBody.ipynb), [artificial tree](http://nbviewer.jupyter.org/github/KrishnaswamyLab/PHATE/blob/master/Python/tutorial/PHATE_tree.ipynb).
 
 ### MATLAB installation
+
 1. The MATLAB version of PHATE can be accessed by running the following from a terminal:
 
         git clone --recursive git://github.com/SmitaKrishnaswamy/PHATE.git
