@@ -561,11 +561,11 @@ class PHATE(BaseEstimator):
         """
         start = time.time()
         self.fit(X)
-        self.transform(**kwargs)
+        embedding = self.transform(**kwargs)
         if self.verbose:
             print("Finished PHATE embedding in %.2f seconds.\n" %
                   (time.time() - start))
-        return self.embedding
+        return embedding
 
     def calculate_potential(self, diff_op, t):
         """Calculates the diffusion potential
