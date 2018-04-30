@@ -11,9 +11,23 @@ PHATE is a tool for visualizing high dimensional single-cell data with natural p
 [Kevin R. Moon, David van Dijk, Zheng Wang, et al. **PHATE: A Dimensionality Reduction Method for Visualizing Trajectory Structures in High-Dimensional Biological Data**. 2017. *BioRxiv*](http://biorxiv.org/content/early/2017/03/24/120378)
 
 
-PHATE has been implemented in Python (2.7 and >=3.5), Matlab and R.
+PHATE has been implemented in [Python](#python) (2.7 and >=3.5), [MATLAB](#matlab) and [R](#r).
 
-### Python installation
+### Table of Contents
+
+* [Python](#python)
+    * [Installation with pip](#installation-with-pip)
+    * [Installation from source](#installation-from-source)
+    * [Tutorial and Reference](#tutorial-and-reference)
+* [MATLAB](#matlab)
+    * [Installation](#installation)
+    * [Tutorial and Reference](#tutorial-and-reference-1)
+* [R](#r)
+    * [Installation with devtools](#installation-with-devtools)
+    * [Installation from source](#installation-from-source-1)
+    * [Tutorial and Reference](#tutorial-and-reference-2)
+
+### Python
 
 #### Installation with `pip`
 
@@ -29,18 +43,26 @@ The Python version of PHATE can be installed from GitHub by running the followin
         cd PHATE/Python
         python setup.py install --user
 
+#### Tutorial and Reference
+
 For more information, read the [documentation on ReadTheDocs](http://phate.readthedocs.io/) or view our tutorials on GitHub: [single-cell RNA-seq](http://nbviewer.jupyter.org/github/KrishnaswamyLab/PHATE/blob/master/Python/tutorial/EmbryoidBody.ipynb), [artificial tree](http://nbviewer.jupyter.org/github/KrishnaswamyLab/PHATE/blob/master/Python/tutorial/PHATE_tree.ipynb).
 
-### MATLAB installation
+### MATLAB
+
+#### Installation
 
 1. The MATLAB version of PHATE can be accessed by running the following from a terminal:
 
         git clone --recursive git://github.com/SmitaKrishnaswamy/PHATE.git
         cd PHATE/Matlab
 
-2. Add the PHATE/Matlab directory to your MATLAB path and run any of our `run_*` scripts to get a feel for PHATE.
+2. Add the PHATE/Matlab directory to your MATLAB path.
 
-### R installation
+#### Tutorial and Reference
+
+Run any of our `run_*` scripts to get a feel for PHATE. Documentation is available in the MATLAB help viewer.
+
+### R
 
 #### Installation with `devtools`
 
@@ -65,4 +87,6 @@ The R version of PHATE can be installed directly from R with `devtools`:
         cd phater
         R CMD INSTALL
 
-For more information, read the [phater README](https://github.com/KrishnaswamyLab/phater).
+#### Tutorial and Reference
+
+For more information and a tutorial, read the [phater README](https://github.com/KrishnaswamyLab/phater). Documentation is available in the R help viewer with `help(phater::phate)`.
