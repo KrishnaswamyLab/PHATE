@@ -5,6 +5,9 @@ PHATE - Potential of Heat-diffusion for Affinity-based Trajectory Embedding
 .. image:: https://img.shields.io/pypi/v/phate.svg
     :target: https://pypi.org/project/phate/
     :alt: Latest PyPI version
+.. image:: https://img.shields.io/readthedocs/phate.svg
+    :target: https://phate.readthedocs.io/
+    :alt: Read the Docs
 
 PHATE has been implemented in Python (2.7 and >=3.5), R and Matlab.
 
