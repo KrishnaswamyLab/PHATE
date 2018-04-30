@@ -25,9 +25,9 @@ To run PHATE on your dataset, create a PHATE operator and run `fit_transform`. H
     import phate
     import matplotlib.pyplot as plt
     tree_data, tree_clusters = phate.tree.gen_dla()
-    phate_operator = phate.PHATE()
+    phate_operator = phate.PHATE(k=15, t=100)
     tree_phate = phate_operator.fit_transform(tree_data)
-    plt.scatter(tree_phate[:,0], tree_phate[:,1], c=tree_clusers)
+    plt.scatter(tree_phate[:,0], tree_phate[:,1], c=tree_clusters)
     plt.show()
 
 .. autoclass:: phate.PHATE

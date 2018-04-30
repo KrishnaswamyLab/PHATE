@@ -1,5 +1,6 @@
+===========================================================================
 PHATE - Potential of Heat-diffusion for Affinity-based Trajectory Embedding
----------------------------------------------------------------------------
+===========================================================================
 
 .. image:: https://img.shields.io/pypi/v/phate.svg
     :target: https://pypi.org/project/phate/
@@ -46,13 +47,13 @@ Make the test scripts executable
 
 ::
 
-       import phate
-       import matplotlib.pyplot as plt
-       tree_data, tree_clusters = phate.tree.gen_dla()
-       phate_operator = phate.PHATE()
-       tree_phate = phate_operator.fit_transform(tree_data)
-       plt.scatter(tree_phate[:,0], tree_phate[:,1], c=tree_clusers)
-       plt.show()
+        import phate
+        import matplotlib.pyplot as plt
+        tree_data, tree_clusters = phate.tree.gen_dla()
+        phate_operator = phate.PHATE(k=15, t=100)
+        tree_phate = phate_operator.fit_transform(tree_data)
+        plt.scatter(tree_phate[:,0], tree_phate[:,1], c=tree_clusters)
+        plt.show()
 
 Jupyter Notebook
 ~~~~~~~~~~~~~~~~
