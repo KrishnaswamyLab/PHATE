@@ -1,22 +1,34 @@
 PHATE - Potential of Heat-diffusion for Affinity-based Trajectory Embedding
 ---------------------------------------------------------------------------
 
+.. image:: https://img.shields.io/pypi/v/phate.svg
+    :target: https://pypi.org/project/phate/
+    :alt: Latest PyPI version
+
 PHATE has been implemented in Python (2.7 and >=3.5), R and Matlab.
 
 Python installation and dependencies
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-1. The Python version of PHATE can be installed using:
+Installation with `pip`
+-----------------------
+
+The Python version of PHATE can be installed using:
 
    ::
 
-       $ git clone git://github.com/SmitaKrishnaswamy/PHATE.git
-       $ cd Python
-       $ python setup.py install --user
+       pip install --user phate
 
-2. PHATE depends on a number of ``python`` packages available on pypi
-   and these dependencies are listed in ``setup.py`` All the
-   dependencies will be automatically installed using the above commands
+Installation from source
+------------------------
+
+The Python version of PHATE can be installed from GitHub by running the following from a terminal:
+
+   ::
+
+       git clone --recursive git://github.com/SmitaKrishnaswamy/PHATE.git
+       cd Python
+       python setup.py install --user
 
 Usage
 ~~~~~
@@ -34,9 +46,13 @@ Make the test scripts executable
 
 ::
 
-       $ cd PHATE/Python/test
-       $ chmod +x phate_test_tree.py phate_test_mESC.py
-       $ ./phate_test_tree.py #output saved in a png
+       import phate
+       import matplotlib.pyplot as plt
+       tree_data, tree_clusters = phate.tree.gen_dla()
+       phate_operator = phate.PHATE()
+       tree_phate = phate_operator.fit_transform(tree_data)
+       plt.scatter(tree_phate[:,0], tree_phate[:,1], c=tree_clusers)
+       plt.show()
 
 Jupyter Notebook
 ~~~~~~~~~~~~~~~~

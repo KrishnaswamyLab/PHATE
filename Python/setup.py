@@ -38,8 +38,8 @@ setup(name='phate',
       url='https://github.com/KrishnaswamyLab/PHATE',
       download_url="https://github.com/KrishnaswamyLab/PHATE/archive/v{}.tar.gz".format(
           version),
-      keywords=['visualization', 'big data', 'dimensionality reduction',
-                'embedding', 'computational biology'],
+      keywords=['visualization', 'big-data', 'dimensionality-reduction',
+                'embedding', 'computational-biology'],
       )
 
 # get location of setup.py
