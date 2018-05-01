@@ -430,9 +430,6 @@ class PHATE(BaseEstimator):
 
     Parameters
     ----------
-    data : array-like [n_samples, n_dimensions]
-        2 dimensional input data array with
-        n_samples samples and n_dimensions dimensions
 
     n_components : int, optional, default: 2
         number of dimensions in which the data will be embedded
@@ -525,7 +522,7 @@ class PHATE(BaseEstimator):
                                                       branch_length=100)
     >>> tree_data.shape
     (2000, 100)
-    >>> phate_operator = phate.PHATE(k=15, a=None, t=150)
+    >>> phate_operator = phate.PHATE(k=5, a=20, t=150)
     >>> tree_phate = phate_operator.fit_transform(tree_data)
     >>> tree_phate.shape
     (2000, 2)
@@ -628,7 +625,9 @@ class PHATE(BaseEstimator):
         Parameters
         ----------
         X : array, shape=[n_samples, n_features]
-            Input data.
+            input data with `n_samples` samples and `n_dimensions`
+            dimensions. Accepted data types: `numpy.ndarray`,
+            `scipy.sparse.spmatrix`, `pd.DataFrame`, `anndata.AnnData`
 
         Returns
         -------
@@ -669,8 +668,11 @@ class PHATE(BaseEstimator):
         Parameters
         ----------
         X : array, optional, shape=[n_samples, n_features]
-            Input data. Not required, since PHATE does not currently embed
-            cells not given in the input matrix to `PHATE.fit()`
+            input data with `n_samples` samples and `n_dimensions`
+            dimensions. Not required, since PHATE does not currently embed
+            cells not given in the input matrix to `PHATE.fit()`.
+            Accepted data types: `numpy.ndarray`,
+            `scipy.sparse.spmatrix`, `pd.DataFrame`, `anndata.AnnData`.
 
         t_max : int, optional, default: 100
             maximum t to test if `t` is set to 'auto'
@@ -728,7 +730,9 @@ class PHATE(BaseEstimator):
         Parameters
         ----------
         X : array, shape=[n_samples, n_features]
-            Input data.
+            input data with `n_samples` samples and `n_dimensions`
+            dimensions. Accepted data types: `numpy.ndarray`,
+            `scipy.sparse.spmatrix`, `pd.DataFrame`, `anndata.AnnData`
 
         kwargs : further arguments for `PHATE.transform()`
             Keyword arguments as specified in :func:`~phate.PHATE.transform`
