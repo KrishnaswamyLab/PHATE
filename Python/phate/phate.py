@@ -481,12 +481,12 @@ class PHATE(BaseEstimator):
         For n_jobs below -1, (n_cpus + 1 + n_jobs) are used. Thus for
         n_jobs = -2, all CPUs but one are used
 
-    njobs : deprecated in favor of n_jobs to match sklearn standards
+    njobs : deprecated in favor of n_jobs to match `sklearn` standards
 
-    random_state : integer or numpy.RandomState, optional
+    random_state : integer or `numpy.RandomState`, optional
         The generator used to initialize SMACOF (metric, nonmetric) MDS
         If an integer is given, it fixes the seed
-        Defaults to the global numpy random number generator
+        Defaults to the global `numpy` random number generator
 
     verbose : boolean, optional
         If true, print status messages
@@ -693,8 +693,7 @@ class PHATE(BaseEstimator):
         return self.embedding
 
     def fit_transform(self, X, **kwargs):
-        """
-        Computes the diffusion operator and the position of the cells in the
+        """Computes the diffusion operator and the position of the cells in the
         embedding space
 
         Parameters
@@ -702,7 +701,8 @@ class PHATE(BaseEstimator):
         X : array, shape=[n_samples, n_features]
             Input data.
 
-        **kwargs : further arguments for `PHATE.transform()`
+        kwargs : further arguments for `PHATE.transform()`
+            Keyword arguments as specified in :func:`~phate.PHATE.transform`
 
         Returns
         -------
