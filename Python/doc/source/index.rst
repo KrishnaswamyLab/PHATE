@@ -4,23 +4,23 @@ PHATE - Potential of Heat-diffusion for Affinity-based Trajectory Embedding
 
 .. raw:: html
 
-    <a href="https://pypi.org/project/phate/"><object data="https://img.shields.io/pypi/v/phate.svg" type="image/svg+xml">Latest PyPi version</object></a>
+    <a href="https://pypi.org/project/phate/"><img src="https://img.shields.io/pypi/v/phate.svg" alt="Latest PyPi version"></a>
 
 .. raw:: html
 
-    <a href="https://phate.readthedocs.io/"><object data="https://img.shields.io/readthedocs/phate.svg" type="image/svg+xml">Read the Docs</object></a>
+    <a href="https://phate.readthedocs.io/"><img src="https://img.shields.io/readthedocs/phate.svg" alt="Read the Docs"></img></a>
 
 .. raw:: html
 
-    <a href="https://www.biorxiv.org/content/early/2017/12/01/120378"><object data="https://zenodo.org/badge/DOI/10.1101/120378.svg" type="image/svg+xml">bioRxiv Preprint</object></a>
+    <a href="https://www.biorxiv.org/content/early/2017/12/01/120378"><img src="https://zenodo.org/badge/DOI/10.1101/120378.svg" alt="bioRxiv Preprint"></a>
 
 .. raw:: html
 
-    <a href="https://twitter.com/KrishnaswamyLab"><object data="https://img.shields.io/twitter/follow/KrishnaswamyLab.svg?style=social&label=Follow" type="image/svg+xml">Twitter</object></a>
+    <a href="https://twitter.com/KrishnaswamyLab"><img src="https://img.shields.io/twitter/follow/KrishnaswamyLab.svg?style=social&label=Follow" alt="Twitter"></a>
 
 .. raw:: html
 
-    <a href="https://github.com/KrishnaswamyLab/PHATE/"><object data="https://img.shields.io/github/stars/KrishnaswamyLab/PHATE.svg?style=social&label=Stars" type="image/svg+xml">GitHub stars</object></a>
+    <a href="https://github.com/KrishnaswamyLab/PHATE/"><img src="https://img.shields.io/github/stars/KrishnaswamyLab/PHATE.svg?style=social&label=Stars" alt="GitHub stars"></a>
 
 PHATE is a tool for visualizing high dimensional single-cell data with natural progressions or trajectories. PHATE uses a novel conceptual framework for learning and visualizing the manifold inherent to biological systems in which smooth transitions mark the progressions of cells from one state to another. To see how PHATE can be applied to single-cell RNA-seq datasets from hematopoietic stem cells, human embryonic stem cells, and bone marrow samples, check out our preprint on BioRxiv_.
 
