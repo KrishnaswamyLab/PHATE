@@ -1,5 +1,5 @@
 PHATE - Potential of Heat-diffusion for Affinity-based Transition Embedding
--------------------------------------------------------
+---------------------------------------------------------------------------
 
 [![Latest PyPI version](https://img.shields.io/pypi/v/phate.svg)](https://pypi.org/project/phate/)
 [![Read the Docs](https://img.shields.io/readthedocs/phate.svg)](https://phate.readthedocs.io/)

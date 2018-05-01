@@ -25,6 +25,12 @@ import matplotlib.pyplot as plt
 from .mds import embed_MDS
 from .vne import compute_von_neumann_entropy, find_knee_point
 
+try:
+    import anndata
+except ImportError:
+    # anndata not installed
+    pass
+
 
 def calculate_kernel(data, k=15, a=10, alpha_decay=True, knn_dist='euclidean',
                      verbose=False, ndim=100, random_state=None, n_jobs=1):
@@ -415,11 +421,12 @@ def embed_mds(diff_op, t=30, n_components=2, diff_potential=None,
 
 
 class PHATE(BaseEstimator):
-    """Potential of Heat-diffusion for Affinity-based Trajectory Embedding
-    (PHATE) [1]
+    """PHATE operator which performs dimensionality reduction.
 
-    Embeds high dimensional single-cell data into two or three dimensions for
-    visualization of biological progressions.
+    Potential of Heat-diffusion for Affinity-based Trajectory Embedding
+    (PHATE).[1]_ Embeds high dimensional single-cell data into two or three
+    dimensions for visualization of biological progressions as described
+    in .
 
     Parameters
     ----------
@@ -509,12 +516,28 @@ class PHATE(BaseEstimator):
         Transition matrix between input data and landmarks,
         if `n_landmark` is set, otherwise `None`
 
+    Examples
+    --------
+    >>> import phate
+    >>> import matplotlib.pyplot as plt
+    >>> tree_data, tree_clusters = phate.tree.gen_dla(n_dim=100,
+                                                      n_branch=20,
+                                                      branch_length=100)
+    >>> tree_data.shape
+    (2000, 100)
+    >>> phate_operator = phate.PHATE(k=15, a=None, t=150)
+    >>> tree_phate = phate_operator.fit_transform(tree_data)
+    >>> tree_phate.shape
+    (2000, 2)
+    >>> plt.scatter(tree_phate[:,0], tree_phate[:,1], c=tree_clusters)
+    >>> plt.show()
+
     References
     ----------
-    .. [1] `Moon KR, van Dijk D, Zheng W, et al. (2017). "PHATE: A
-       Dimensionality Reduction Method for Visualizing Trajectory Structures in
-       High-Dimensional Biological Data". Biorxiv.
-       <http://biorxiv.org/content/early/2017/03/24/120378>`_
+    .. [1] Moon KR, van Dijk D, Zheng W, *et al.* (2017),
+        *PHATE: A Dimensionality Reduction Method for Visualizing Trajectory
+        Structures in High-Dimensional Biological Data*,
+        `BioRxiv <http://biorxiv.org/content/early/2017/03/24/120378>`_.
     """
 
     def __init__(self, n_components=2, k=15, a=10, alpha_decay=None,
@@ -612,6 +635,12 @@ class PHATE(BaseEstimator):
         phate_operator : PHATE
         The estimator object
         """
+        try:
+            if isinstance(X, anndata.AnnData):
+                X = X.X
+        except NameError:
+            # anndata not installed
+            pass
         if self.X is not None and not np.all(X == self.X):
             """
             If the same data is used, we can reuse existing kernel and
