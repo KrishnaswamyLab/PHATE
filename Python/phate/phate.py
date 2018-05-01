@@ -25,6 +25,12 @@ import matplotlib.pyplot as plt
 from .mds import embed_MDS
 from .vne import compute_von_neumann_entropy, find_knee_point
 
+try:
+    import anndata
+except ImportError:
+    # anndata not installed
+    pass
+
 
 def calculate_kernel(data, k=15, a=10, alpha_decay=True, knn_dist='euclidean',
                      verbose=False, ndim=100, random_state=None, n_jobs=1):
@@ -280,12 +286,11 @@ def calculate_operator(data, k=15, a=10, alpha_decay=True, n_landmark=2000,
     if alpha_decay is None:
         if n_landmark is not None and len(data) > n_landmark:
             alpha_decay = False
-            if a is not None:
-                print("Warning: a is set, but alpha decay is not used "
-                      "as n_landmark < len(X). To override this behavior,"
-                      " set alpha_decay=True (increases memory requirements)"
-                      " or n_landmark=None (increases memory and CPU "
-                      "requirements.)")
+            if a is not None and verbose is True:
+                print("Alpha decay is not used as n_landmark < n_samples. "
+                      "To override this behavior, set alpha_decay=True "
+                      "(increases memory requirements) or n_landmark=None "
+                      "(increases memory and CPU requirements.)")
         else:
             alpha_decay = True
     if diff_op is None:
@@ -416,17 +421,15 @@ def embed_mds(diff_op, t=30, n_components=2, diff_potential=None,
 
 
 class PHATE(BaseEstimator):
-    """Potential of Heat-diffusion for Affinity-based Trajectory Embedding
-    (PHATE) [1]
+    """PHATE operator which performs dimensionality reduction.
 
-    Embeds high dimensional single-cell data into two or three dimensions for
-    visualization of biological progressions.
+    Potential of Heat-diffusion for Affinity-based Trajectory Embedding
+    (PHATE).[1]_ Embeds high dimensional single-cell data into two or three
+    dimensions for visualization of biological progressions as described
+    in .
 
     Parameters
     ----------
-    data : array-like [n_samples, n_dimensions]
-        2 dimensional input data array with
-        n_samples samples and n_dimensions dimensions
 
     n_components : int, optional, default: 2
         number of dimensions in which the data will be embedded
@@ -482,12 +485,12 @@ class PHATE(BaseEstimator):
         For n_jobs below -1, (n_cpus + 1 + n_jobs) are used. Thus for
         n_jobs = -2, all CPUs but one are used
 
-    njobs : deprecated in favor of n_jobs to match sklearn standards
+    njobs : deprecated in favor of n_jobs to match `sklearn` standards
 
-    random_state : integer or numpy.RandomState, optional
+    random_state : integer or `numpy.RandomState`, optional
         The generator used to initialize SMACOF (metric, nonmetric) MDS
         If an integer is given, it fixes the seed
-        Defaults to the global numpy random number generator
+        Defaults to the global `numpy` random number generator
 
     verbose : boolean, optional
         If true, print status messages
@@ -510,15 +513,31 @@ class PHATE(BaseEstimator):
         Transition matrix between input data and landmarks,
         if `n_landmark` is set, otherwise `None`
 
+    Examples
+    --------
+    >>> import phate
+    >>> import matplotlib.pyplot as plt
+    >>> tree_data, tree_clusters = phate.tree.gen_dla(n_dim=100,
+                                                      n_branch=20,
+                                                      branch_length=100)
+    >>> tree_data.shape
+    (2000, 100)
+    >>> phate_operator = phate.PHATE(k=5, a=20, t=150)
+    >>> tree_phate = phate_operator.fit_transform(tree_data)
+    >>> tree_phate.shape
+    (2000, 2)
+    >>> plt.scatter(tree_phate[:,0], tree_phate[:,1], c=tree_clusters)
+    >>> plt.show()
+
     References
     ----------
-    .. [1] `Moon KR, van Dijk D, Zheng W, et al. (2017). "PHATE: A
-       Dimensionality Reduction Method for Visualizing Trajectory Structures in
-       High-Dimensional Biological Data". Biorxiv.
-       <http://biorxiv.org/content/early/2017/03/24/120378>`_
+    .. [1] Moon KR, van Dijk D, Zheng W, *et al.* (2017),
+        *PHATE: A Dimensionality Reduction Method for Visualizing Trajectory
+        Structures in High-Dimensional Biological Data*,
+        `BioRxiv <http://biorxiv.org/content/early/2017/03/24/120378>`_.
     """
 
-    def __init__(self, n_components=2, k=15, a=None, alpha_decay=None,
+    def __init__(self, n_components=2, k=15, a=10, alpha_decay=None,
                  n_landmark=2000, t='auto', potential_method='log',
                  n_pca=100, knn_dist='euclidean', mds_dist='euclidean',
                  mds='metric', n_jobs=1, random_state=None, verbose=True,
@@ -606,13 +625,21 @@ class PHATE(BaseEstimator):
         Parameters
         ----------
         X : array, shape=[n_samples, n_features]
-            Input data.
+            input data with `n_samples` samples and `n_dimensions`
+            dimensions. Accepted data types: `numpy.ndarray`,
+            `scipy.sparse.spmatrix`, `pd.DataFrame`, `anndata.AnnData`
 
         Returns
         -------
         phate_operator : PHATE
         The estimator object
         """
+        try:
+            if isinstance(X, anndata.AnnData):
+                X = X.X
+        except NameError:
+            # anndata not installed
+            pass
         if self.X is not None and not np.all(X == self.X):
             """
             If the same data is used, we can reuse existing kernel and
@@ -641,8 +668,11 @@ class PHATE(BaseEstimator):
         Parameters
         ----------
         X : array, optional, shape=[n_samples, n_features]
-            Input data. Not required, since PHATE does not currently embed
-            cells not given in the input matrix to `PHATE.fit()`
+            input data with `n_samples` samples and `n_dimensions`
+            dimensions. Not required, since PHATE does not currently embed
+            cells not given in the input matrix to `PHATE.fit()`.
+            Accepted data types: `numpy.ndarray`,
+            `scipy.sparse.spmatrix`, `pd.DataFrame`, `anndata.AnnData`.
 
         t_max : int, optional, default: 100
             maximum t to test if `t` is set to 'auto'
@@ -694,16 +724,18 @@ class PHATE(BaseEstimator):
         return self.embedding
 
     def fit_transform(self, X, **kwargs):
-        """
-        Computes the diffusion operator and the position of the cells in the
+        """Computes the diffusion operator and the position of the cells in the
         embedding space
 
         Parameters
         ----------
         X : array, shape=[n_samples, n_features]
-            Input data.
+            input data with `n_samples` samples and `n_dimensions`
+            dimensions. Accepted data types: `numpy.ndarray`,
+            `scipy.sparse.spmatrix`, `pd.DataFrame`, `anndata.AnnData`
 
-        **kwargs : further arguments for `PHATE.transform()`
+        kwargs : further arguments for `PHATE.transform()`
+            Keyword arguments as specified in :func:`~phate.PHATE.transform`
 
         Returns
         -------
