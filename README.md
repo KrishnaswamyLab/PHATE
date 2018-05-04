@@ -39,7 +39,7 @@ The Python version of PHATE can be installed by running the following from a ter
 
 The Python version of PHATE can be installed from GitHub by running the following from a terminal:
 
-        git clone --recursive git://github.com/SmitaKrishnaswamy/PHATE.git
+        git clone --recursive git://github.com/KrishnaswamyLab/PHATE.git
         cd PHATE/Python
         python setup.py install --user
 
@@ -53,7 +53,7 @@ For more information, read the [documentation on ReadTheDocs](http://phate.readt
 
 1. The MATLAB version of PHATE can be accessed by running the following from a terminal:
 
-        git clone --recursive git://github.com/SmitaKrishnaswamy/PHATE.git
+        git clone --recursive git://github.com/KrishnaswamyLab/PHATE.git
         cd PHATE/Matlab
 
 2. Add the PHATE/Matlab directory to your MATLAB path.
@@ -75,7 +75,7 @@ The R version of PHATE can be installed directly from R with `devtools`:
 
 1. The R version of PHATE can be accessed [here](https://github.com/KrishnaswamyLab/phater), or by running the following from a terminal:
 
-        git clone --recursive git://github.com/SmitaKrishnaswamy/PHATE.git
+        git clone --recursive git://github.com/KrishnaswamyLab/PHATE.git
         cd PHATE/phater
         R CMD INSTALL
 

@@ -34,7 +34,7 @@ setup(name='phate',
               'docutils==0.13.1',
               'Pygments==2.2.0',
           ]},
-      long_description=open('README.rst').read(),
+      long_description=open('README_pypi.rst').read(),
       url='https://github.com/KrishnaswamyLab/PHATE',
       download_url="https://github.com/KrishnaswamyLab/PHATE/archive/v{}.tar.gz".format(
           version),
