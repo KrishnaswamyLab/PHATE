@@ -9,6 +9,8 @@ version = open(version_py).read().strip().split(
 if sys.version_info[:2] < (2, 7) or (3, 0) <= sys.version_info[:2] < (3, 5):
     raise RuntimeError("Python version 2.7 or >=3.5 required.")
 
+readme = open('README.rst').read()
+
 setup(name='phate',
       version=version,
       description='PHATE',
@@ -34,7 +36,7 @@ setup(name='phate',
               'docutils==0.13.1',
               'Pygments==2.2.0',
           ]},
-      long_description=open('README_pypi.rst').read(),
+      long_description=readme,
       url='https://github.com/KrishnaswamyLab/PHATE',
       download_url="https://github.com/KrishnaswamyLab/PHATE/archive/v{}.tar.gz".format(
           version),
