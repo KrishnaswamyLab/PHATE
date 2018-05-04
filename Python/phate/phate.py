@@ -94,7 +94,7 @@ def calculate_kernel(data, k=15, a=10, alpha_decay=True, knn_dist='euclidean',
                       random_state=random_state)
             data = pca.fit_transform(data)
             if verbose:
-                print("PCA complete in {:.2d} seconds".format(
+                print("PCA complete in {:.2f} seconds".format(
                     time.time() - start))
     if verbose:
         start = time.time()
@@ -132,7 +132,7 @@ def calculate_kernel(data, k=15, a=10, alpha_decay=True, knn_dist='euclidean',
             kernel = knn.kneighbors_graph(data, mode='connectivity')
 
     if verbose:
-        print("KNN complete in {:.2d} seconds".format(time.time() - start))
+        print("KNN complete in {:.2f} seconds".format(time.time() - start))
     kernel = kernel + kernel.T  # symmetrization
     return kernel
 
@@ -184,7 +184,7 @@ def calculate_landmark_operator(kernel, n_landmark=2000,
                                  n_components=n_svd,
                                  random_state=random_state)
         if verbose:
-            print("SVD complete in {:.2d} seconds".format(time.time() - start))
+            print("SVD complete in {:.2f} seconds".format(time.time() - start))
             start = time.time()
             print("Calculating Kmeans...")
         kmeans = MiniBatchKMeans(n_landmark,
@@ -306,8 +306,8 @@ def calculate_operator(data, k=15, a=10, alpha_decay=True, n_landmark=2000,
             kernel, n_landmark=n_landmark,
             random_state=random_state, verbose=verbose)
         if verbose:
-            print("Built graph and diffusion operator in %.2f seconds." %
-                  (time.time() - tic))
+            print("Built graph and diffusion operator in "
+                  "{:.2f} seconds.".format(time.time() - tic))
     else:
         if verbose:
             print("Using precomputed diffusion operator...")
@@ -395,8 +395,8 @@ def embed_mds(diff_op, t=30, n_components=2, diff_potential=None,
                              "'sqrt'. '%s' was passed." % (potential_method))
 
         if verbose:
-            print("Calculated diffusion potential in %.2f seconds." %
-                  (time.time() - tic))
+            print("Calculated diffusion potential in "
+                  "{:.2f} seconds.".format(time.time() - tic))
     # if diffusion potential is precomputed (i.e. 'mds' or 'mds_dist' has
     # changed on PHATE object)
     else:
@@ -405,7 +405,7 @@ def embed_mds(diff_op, t=30, n_components=2, diff_potential=None,
 
     tic = time.time()
     if verbose:
-        print("Embedding data using %s MDS..." % (mds))
+        print("Embedding data using {} MDS...".format(mds))
     if embedding is None:
         embedding = embed_MDS(diff_potential, ndim=n_components, how=mds,
                               distance_metric=mds_dist, n_jobs=n_jobs,
@@ -414,7 +414,7 @@ def embed_mds(diff_op, t=30, n_components=2, diff_potential=None,
             # return to ambient space
             embedding = landmark_transitions.dot(embedding)
         if verbose:
-            print("Embedded data in %.2f seconds." % (time.time() - tic))
+            print("Embedded data in {:.2f} seconds.".format(time.time() - tic))
     else:
         if verbose:
             print("Using precomputed embedding...")
@@ -747,8 +747,8 @@ class PHATE(BaseEstimator):
         self.fit(X)
         self.transform(**kwargs)
         if self.verbose:
-            print("Finished PHATE embedding in %.2f seconds.\n" %
-                  (time.time() - start))
+            print("Finished PHATE embedding in {:.2f} seconds.\n".format(
+                time.time() - start))
         return self.embedding
 
     def von_neumann_entropy(self, t_max=100):

@@ -44,6 +44,7 @@ setup(name='phate',
                 'big-data',
                 'dimensionality-reduction',
                 'embedding',
+                'manifold-learning',
                 'computational-biology'],
       classifiers=[
           'Development Status :: 5 - Production/Stable',
