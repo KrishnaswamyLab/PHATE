@@ -40,7 +40,7 @@ Installation from source
 
 The Python version of PHATE can be installed from GitHub by running the following from a terminal::
 
-       git clone --recursive git://github.com/SmitaKrishnaswamy/PHATE.git
+       git clone --recursive git://github.com/KrishnaswamyLab/PHATE.git
        cd Python
        python setup.py install --user
 
