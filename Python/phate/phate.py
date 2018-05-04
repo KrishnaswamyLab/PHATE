@@ -300,10 +300,11 @@ def calculate_operator(data, k=15, a=10, alpha_decay=True, n_landmark=2000,
                                   ndim=n_pca,
                                   alpha_decay=alpha_decay,
                                   random_state=random_state,
-                                  n_jobs=n_jobs)
+                                  n_jobs=n_jobs,
+                                  verbose=verbose)
         diff_op, landmark_transitions = calculate_landmark_operator(
             kernel, n_landmark=n_landmark,
-            random_state=random_state)
+            random_state=random_state, verbose=verbose)
         if verbose:
             print("Built graph and diffusion operator in %.2f seconds." %
                   (time.time() - tic))
