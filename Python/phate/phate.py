@@ -39,7 +39,9 @@ def calculate_kernel(data, k=15, a=10, alpha_decay=True, knn_dist='euclidean',
     Parameters
     ----------
     data : array-like [n_samples, n_dimensions]
-        2 dimensional input data array with n cells and p dimensions
+        2 dimensional input data array with n cells and p dimensions If
+        `knn_dist` is 'precomputed', `data` should be a n_samples x n_samples
+        distance matrix
 
     k : int, optional, default: 15
         used to set epsilon while autotuning kernel bandwidth
@@ -51,9 +53,10 @@ def calculate_kernel(data, k=15, a=10, alpha_decay=True, knn_dist='euclidean',
         If true, use the alpha decaying kernel
 
     knn_dist : string, optional, default: 'euclidean'
-        recommended values: 'euclidean' and 'cosine'
-        Any metric from scipy.spatial.distance can be used
-        distance metric for building kNN graph
+        recommended values: 'euclidean', 'cosine', 'precomputed'
+        Any metric from `scipy.spatial.distance` can be used
+        distance metric for building kNN graph. If 'precomputed',
+        `data` should be an n_samples x n_samples distance matrix
 
     verbose : boolean, optional, default: True
         If true, print status messages
@@ -79,9 +82,7 @@ def calculate_kernel(data, k=15, a=10, alpha_decay=True, knn_dist='euclidean',
     kernel : array-like [n_samples, n_samples]
         kernel matrix built from the input data
     """
-    precomputed = isinstance(knn_dist, list) or \
-        isinstance(knn_dist, np.ndarray)
-    if not precomputed and ndim < data.shape[1]:
+    if knn_dist != 'precomputed' and ndim < data.shape[1]:
         if verbose:
             print("Calculating PCA...")
             start = time.time()
@@ -102,10 +103,10 @@ def calculate_kernel(data, k=15, a=10, alpha_decay=True, knn_dist='euclidean',
     # kernel includes self as connection but not in k
     # actually search for k+1 neighbors including self
     k = k + 1
-    if alpha_decay:
+    if alpha_decay and a is not None:
         try:
-            if precomputed:
-                pdx = knn_dist
+            if knn_dist == 'precomputed':
+                pdx = data
             else:
                 pdx = squareform(pdist(data, metric=knn_dist))
             knn_dist = np.partition(pdx, k, axis=1)[:, :k]
@@ -118,7 +119,8 @@ def calculate_kernel(data, k=15, a=10, alpha_decay=True, knn_dist='euclidean',
                 'Try removing duplicates.')
         kernel = np.exp(-1 * (pdx ** a))  # not really Gaussian kernel
     else:
-        if precomputed:
+        if knn_dist == 'precomputed':
+            # we already have pairwise distances
             pdx = knn_dist
             knn_idx = np.argpartition(pdx, k, axis=1)[:, :k]
             ind_ptr = np.arange(knn_idx.shape[0] + 1) * knn_idx.shape[1]
@@ -184,7 +186,8 @@ def calculate_landmark_operator(kernel, n_landmark=2000,
                                  n_components=n_svd,
                                  random_state=random_state)
         if verbose:
-            print("SVD complete in {:.2f} seconds".format(time.time() - start))
+            print("Calculated SVD in {:.2f} seconds".format(
+                time.time() - start))
             start = time.time()
             print("Calculating Kmeans...")
         kmeans = MiniBatchKMeans(n_landmark,
@@ -194,7 +197,8 @@ def calculate_landmark_operator(kernel, n_landmark=2000,
         clusters = kmeans.fit_predict(np.matmul(U, np.diagflat(S)))
         landmarks = np.unique(clusters)
         if verbose:
-            print("Complete in ", time.time() - start)
+            print("Calculated Kmeans in {:.2f} seconds".format(
+                time.time() - start))
 
         # transition matrices
         if is_sparse:
@@ -226,7 +230,9 @@ def calculate_operator(data, k=15, a=10, alpha_decay=True, n_landmark=2000,
     Parameters
     ----------
     data : array-like [n_samples, n_dimensions]
-        2 dimensional input data array with n cells and p dimensions
+        2 dimensional input data array with n cells and p dimensions. If
+        `knn_dist` is 'precomputed', `data` should be a n_samples x n_samples
+        distance or affinity matrix
 
     k : int, optional, default: 15
         used to set epsilon while autotuning kernel bandwidth
@@ -241,9 +247,11 @@ def calculate_operator(data, k=15, a=10, alpha_decay=True, n_landmark=2000,
         number of landmarks to use in fast PHATE
 
     knn_dist : string, optional, default: 'euclidean'
-        recommended values: 'euclidean' and 'cosine'
-        Any metric from scipy.spatial.distance can be used
-        distance metric for building kNN graph
+        recommended values: 'euclidean', 'cosine', 'precomputed'
+        Any metric from `scipy.spatial.distance` can be used
+        distance metric for building kNN graph. If 'precomputed',
+        `data` should be an n_samples x n_samples distance or
+        affinity matrix
 
     diff_op : array-like, optional shape=[n_samples, n_samples], default: None
         Precomputed diffusion operator
@@ -296,12 +304,26 @@ def calculate_operator(data, k=15, a=10, alpha_decay=True, n_landmark=2000,
     if diff_op is None:
         if verbose:
             print("Building kNN graph and diffusion operator...")
-        kernel = calculate_kernel(data, a=a, k=k, knn_dist=knn_dist,
-                                  ndim=n_pca,
-                                  alpha_decay=alpha_decay,
-                                  random_state=random_state,
-                                  n_jobs=n_jobs,
-                                  verbose=verbose)
+        if knn_dist == 'precomputed' and np.all(np.diagonal(data) != 0):
+            print("Using precomputed affinity matrix...")
+            kernel = data
+        else:
+            if knn_dist == 'precomputed':
+                if np.all(np.diagonal(data) == 0):
+                    print("Using precomputed distance matrix...")
+                else:
+                    raise ValueError(
+                        "Cannot determine precomputed data type. "
+                        "Precomputed affinity matrices should have "
+                        "only non-zero entries on the diagonal, and"
+                        " precomputed distance matrices should have"
+                        " only zero entries on the diagonal.")
+                kernel = calculate_kernel(data, a=a, k=k, knn_dist=knn_dist,
+                                          ndim=n_pca,
+                                          alpha_decay=alpha_decay,
+                                          random_state=random_state,
+                                          n_jobs=n_jobs,
+                                          verbose=verbose)
         diff_op, landmark_transitions = calculate_landmark_operator(
             kernel, n_landmark=n_landmark,
             random_state=random_state, verbose=verbose)
@@ -382,17 +404,32 @@ def embed_mds(diff_op, t=30, n_components=2, diff_potential=None,
 
         X = np.linalg.matrix_power(diff_op, t)  # diffused diffusion operator
 
-        if potential_method == 'log':
+        if potential_method == 'log':  # or potential_method == 1:
             # handling small values
             # X[X <= np.finfo(float).eps] = np.finfo(
             #     float).eps
-            X = X + 1e-3
+            X = X + 1e-7
             diff_potential = -1 * np.log(X)  # diffusion potential
         elif potential_method == 'sqrt':
             diff_potential = np.sqrt(X)  # diffusion potential
-        else:
-            raise ValueError("Allowable 'potential_method' values: 'log' or "
-                             "'sqrt'. '%s' was passed." % (potential_method))
+        else:  # if isinstance(potential_method, str):
+            raise ValueError(
+                "Allowable 'potential_method' values: 'log' or "
+                "'sqrt'. '{}' was passed.".format(potential_method))
+        # else:
+        #     # gamma
+        #     print("Warning: gamma potential is not stable."
+        #           " Recommended values: 'log' or 'sqrt'")
+        #     if potential_method > 1 or potential_method < -1:
+        #         raise ValueError(
+        #             "Allowable 'potential_method' values between -1 and 1"
+        #             " inclusive. '{}' was passed.".format(potential_method))
+        #     elif potential_method != -1:
+        #         diff_potential = 2 / (1 - potential_method) * \
+        #             np.power(X, ((1 - potential_method) / 2))
+        #     else:
+        #         # gamma = -1 is just MDS on DM
+        #         diff_potential = X
 
         if verbose:
             print("Calculated diffusion potential in "
@@ -425,9 +462,9 @@ class PHATE(BaseEstimator):
     """PHATE operator which performs dimensionality reduction.
 
     Potential of Heat-diffusion for Affinity-based Trajectory Embedding
-    (PHATE).[1]_ Embeds high dimensional single-cell data into two or three
+    (PHATE) embeds high dimensional single-cell data into two or three
     dimensions for visualization of biological progressions as described
-    in .
+    in Moon et al, 2017 [1]_.
 
     Parameters
     ----------
@@ -466,9 +503,11 @@ class PHATE(BaseEstimator):
         log(n_samples) time.
 
     knn_dist : string, optional, default: 'euclidean'
-        recommended values: 'euclidean' and 'cosine'
+        recommended values: 'euclidean', 'cosine', 'precomputed'
         Any metric from `scipy.spatial.distance` can be used
-        distance metric for building kNN graph
+        distance metric for building kNN graph. If 'precomputed',
+        `data` should be an n_samples x n_samples distance or
+        affinity matrix
 
     mds_dist : string, optional, default: 'euclidean'
         recommended values: 'euclidean' and 'cosine'
@@ -628,7 +667,9 @@ class PHATE(BaseEstimator):
         X : array, shape=[n_samples, n_features]
             input data with `n_samples` samples and `n_dimensions`
             dimensions. Accepted data types: `numpy.ndarray`,
-            `scipy.sparse.spmatrix`, `pd.DataFrame`, `anndata.AnnData`
+            `scipy.sparse.spmatrix`, `pd.DataFrame`, `anndata.AnnData`. If
+            `knn_dist` is 'precomputed', `data` should be a n_samples x
+            n_samples distance or affinity matrix
 
         Returns
         -------
@@ -673,7 +714,9 @@ class PHATE(BaseEstimator):
             dimensions. Not required, since PHATE does not currently embed
             cells not given in the input matrix to `PHATE.fit()`.
             Accepted data types: `numpy.ndarray`,
-            `scipy.sparse.spmatrix`, `pd.DataFrame`, `anndata.AnnData`.
+            `scipy.sparse.spmatrix`, `pd.DataFrame`, `anndata.AnnData`. If
+            `knn_dist` is 'precomputed', `data` should be a n_samples x
+            n_samples distance or affinity matrix
 
         t_max : int, optional, default: 100
             maximum t to test if `t` is set to 'auto'
@@ -733,7 +776,9 @@ class PHATE(BaseEstimator):
         X : array, shape=[n_samples, n_features]
             input data with `n_samples` samples and `n_dimensions`
             dimensions. Accepted data types: `numpy.ndarray`,
-            `scipy.sparse.spmatrix`, `pd.DataFrame`, `anndata.AnnData`
+            `scipy.sparse.spmatrix`, `pd.DataFrame`, `anndata.AnnData` If
+            `knn_dist` is 'precomputed', `data` should be a n_samples x
+            n_samples distance or affinity matrix
 
         kwargs : further arguments for `PHATE.transform()`
             Keyword arguments as specified in :func:`~phate.PHATE.transform`
