@@ -814,7 +814,10 @@ class PHATE(BaseEstimator):
         t_opt : int
             The optimal value of t
         """
+        log_start("Von Neumann entropy")
         t, h = self.von_neumann_entropy(t_max=t_max)
+        log_complete("Von Neumann entropy")
+        log_start("optimal t")
         t_opt = find_knee_point(y=h, x=t)
 
         if plot:
