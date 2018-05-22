@@ -64,28 +64,50 @@ Run any of our `run_*` scripts to get a feel for PHATE. Documentation is availab
 
 ### R
 
-#### Installation with `devtools`
+In order to use PHATE in R, you must also install the Python package.
 
-The R version of PHATE can be installed directly from R with `devtools`:
+#### Installation from CRAN and PyPi
 
-        if (!suppressWarnings(require(devtools))) install.packages("devtools")
-        devtools::install_github("KrishnaswamyLab/phater")
+Install `phater` from CRAN by running the following code in R:
+
+    install.packages("phater")
+
+Install `phate` in Python by running the following code from a terminal:
+
+    pip install --user phate
+
+#### Installation with `devtools` and `reticulate`
+
+The development version of PHATE can be installed directly from R with `devtools`:
+
+    if (!suppressWarnings(require(devtools))) install.packages("devtools")
+    devtools::install_github("KrishnaswamyLab/phater")
+
+If you have the development version of `reticulate`, you can also install `phate` in Python by running the following code in R:
+
+    devtools::install_github("rstudio/reticulate")
+    reticulate::py_install("phate")
 
 #### Installation from source
 
-1. The R version of PHATE can be accessed [here](https://github.com/KrishnaswamyLab/phater), or by running the following from a terminal:
+The latest source version of PHATE can be accessed by running the following in a terminal:
 
-        git clone --recursive git://github.com/KrishnaswamyLab/PHATE.git
-        cd PHATE/phater
-        R CMD INSTALL
+    git clone --recursive git://github.com/SmitaKrishnaswamy/PHATE.git
+    cd PHATE/phater
+    R CMD INSTALL
+    cd ../Python
+    python setup.py install --user
 
-2. If the `phater` folder is empty, you have may forgotten to use the `--recursive` option for `git clone`. You can rectify this by running the following from a terminal:
+If the `phater` folder is empty, you have may forgotten to use the `--recursive` option for `git clone`. You can rectify this by running the following in a terminal:
 
-        cd PHATE
-        git submodule init
-        git submodule update
-        cd phater
-        R CMD INSTALL
+    cd PHATE
+    git submodule init
+    git submodule update
+    cd phater
+    R CMD INSTALL
+    cd ../Python
+    python setup.py install --user
+
 
 #### Tutorial and Reference
 

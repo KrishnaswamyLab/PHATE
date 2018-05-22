@@ -14,9 +14,10 @@ except ImportError:
 
 def library_size_normalize(data, verbose=False):
     """Performs L1 normalization on input data
-    Performs L1 normalization on input data such that the sum of expression values for each cell sums to 1
-    then returns normalized matrix to the metric space using median UMI count per
-    cell effectively scaling all cells as if they were sampled evenly.
+    Performs L1 normalization on input data such that the sum of expression
+    values for each cell sums to 1
+    then returns normalized matrix to the metric space using median UMI count
+    per cell effectively scaling all cells as if they were sampled evenly.
 
     Parameters
     ----------
@@ -32,8 +33,9 @@ def library_size_normalize(data, verbose=False):
         print("Normalizing library sizes for %s cells" % (data.shape[0]))
 
     try:
-        if pandas.api.types.is_sparse(data):
-            data = sparse.csr_matrix(data.to_coo())
+        if isinstance(data, pd.SparseDataFrame) or \
+                pd.api.types.is_sparse(data):
+            data = data.to_coo()
     except NameError:
         pass
     median_transcript_count = np.median(np.array(data.sum(axis=1)))

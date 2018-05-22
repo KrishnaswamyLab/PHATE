@@ -5,3 +5,4 @@ from .io import *
 from .preprocessing import *
 from .mds import *
 from .vne import *
+from .version import __version__
