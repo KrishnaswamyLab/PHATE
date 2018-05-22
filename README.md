@@ -23,7 +23,8 @@ PHATE has been implemented in [Python](#python) (2.7 and >=3.5), [MATLAB](#matla
     * [Installation](#installation)
     * [Tutorial and Reference](#tutorial-and-reference-1)
 * [R](#r)
-    * [Installation with devtools](#installation-with-devtools)
+    * [Installation from CRAN and PyPi](#installation-from-cran-and-pypi)
+    * [Installation with devtools and reticulate](#installation-with-devtools-and-reticulate)
     * [Installation from source](#installation-from-source-1)
     * [Tutorial and Reference](#tutorial-and-reference-2)
 
