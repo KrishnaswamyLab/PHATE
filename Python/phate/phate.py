@@ -24,6 +24,7 @@ import matplotlib.pyplot as plt
 
 from .mds import embed_MDS
 from .vne import compute_von_neumann_entropy, find_knee_point
+from .logging import set_logging, log_start, log_complete, log_info
 
 try:
     import anndata
@@ -33,7 +34,7 @@ except ImportError:
 
 
 def calculate_kernel(data, k=15, a=10, alpha_decay=True, knn_dist='euclidean',
-                     verbose=False, ndim=100, random_state=None, n_jobs=1):
+                     ndim=100, random_state=None, n_jobs=1):
     """Calculate the alpha-decay or KNN kernel
 
     Parameters
@@ -58,9 +59,6 @@ def calculate_kernel(data, k=15, a=10, alpha_decay=True, knn_dist='euclidean',
         distance metric for building kNN graph. If 'precomputed',
         `data` should be an n_samples x n_samples distance matrix
 
-    verbose : boolean, optional, default: True
-        If true, print status messages
-
     ndim : int, optional, default: 100
         Number of principal components to use for KNN calculation
 
@@ -83,9 +81,7 @@ def calculate_kernel(data, k=15, a=10, alpha_decay=True, knn_dist='euclidean',
         kernel matrix built from the input data
     """
     if knn_dist != 'precomputed' and ndim < data.shape[1]:
-        if verbose:
-            print("Calculating PCA...")
-            start = time.time()
+        log_start("PCA")
         if sparse.issparse(data):
             _, _, VT = randomized_svd(data, ndim,
                                       random_state=random_state)
@@ -94,15 +90,11 @@ def calculate_kernel(data, k=15, a=10, alpha_decay=True, knn_dist='euclidean',
             pca = PCA(ndim, svd_solver='randomized',
                       random_state=random_state)
             data = pca.fit_transform(data)
-            if verbose:
-                print("PCA complete in {:.2f} seconds".format(
-                    time.time() - start))
-    if verbose:
-        start = time.time()
-        print("Calculating KNN...")
+        log_complete("PCA")
     # kernel includes self as connection but not in k
     # actually search for k+1 neighbors including self
     k = k + 1
+    log_start("KNN search")
     if alpha_decay and a is not None:
         try:
             if knn_dist == 'precomputed':
@@ -132,16 +124,13 @@ def calculate_kernel(data, k=15, a=10, alpha_decay=True, knn_dist='euclidean',
             knn = NearestNeighbors(n_neighbors=k,
                                    n_jobs=n_jobs).fit(data)
             kernel = knn.kneighbors_graph(data, mode='connectivity')
-
-    if verbose:
-        print("KNN complete in {:.2f} seconds".format(time.time() - start))
+    log_complete("KNN search")
     kernel = kernel + kernel.T  # symmetrization
     return kernel
 
 
 def calculate_landmark_operator(kernel, n_landmark=2000,
-                                random_state=None, n_svd=100,
-                                verbose=False):
+                                random_state=None, n_svd=100):
     """
     Calculate the landmark operator
 
@@ -179,26 +168,19 @@ def calculate_landmark_operator(kernel, n_landmark=2000,
     diff_op = normalize(kernel, norm='l1', axis=1)  # row stochastic
     if n_landmark is not None and n_landmark < kernel.shape[0]:
         # spectral clustering
-        if verbose:
-            print("Calculating SVD...")
-            start = time.time()
+        log_start("SVD")
         U, S, _ = randomized_svd(diff_op,
                                  n_components=n_svd,
                                  random_state=random_state)
-        if verbose:
-            print("Calculated SVD in {:.2f} seconds".format(
-                time.time() - start))
-            start = time.time()
-            print("Calculating Kmeans...")
+        log_complete("SVD")
+        log_start("KMeans")
         kmeans = MiniBatchKMeans(n_landmark,
                                  init_size=3 * n_landmark,
                                  batch_size=10000,
                                  random_state=random_state)
         clusters = kmeans.fit_predict(np.matmul(U, np.diagflat(S)))
         landmarks = np.unique(clusters)
-        if verbose:
-            print("Calculated Kmeans in {:.2f} seconds".format(
-                time.time() - start))
+        log_complete("KMeans")
 
         # transition matrices
         if is_sparse:
@@ -223,7 +205,7 @@ def calculate_landmark_operator(kernel, n_landmark=2000,
 def calculate_operator(data, k=15, a=10, alpha_decay=True, n_landmark=2000,
                        knn_dist='euclidean', diff_op=None,
                        landmark_transitions=None, n_jobs=1,
-                       random_state=None, verbose=True, n_pca=100, n_svd=100):
+                       random_state=None, n_pca=100, n_svd=100):
     """
     Calculate the diffusion operator
 
@@ -271,9 +253,6 @@ def calculate_operator(data, k=15, a=10, alpha_decay=True, n_landmark=2000,
         If an integer is given, it fixes the seed
         Defaults to the global numpy random number generator
 
-    verbose : boolean, optional, default: True
-        If true, print status messages
-
     n_svd : int, optional, default: 100
         Number of singular vectors to compute for spectral clustering
         if landmarks are used
@@ -294,18 +273,17 @@ def calculate_operator(data, k=15, a=10, alpha_decay=True, n_landmark=2000,
     if alpha_decay is None:
         if n_landmark is not None and len(data) > n_landmark:
             alpha_decay = False
-            if a is not None and verbose is True:
-                print("Alpha decay is not used as n_landmark < n_samples. "
-                      "To override this behavior, set alpha_decay=True "
-                      "(increases memory requirements) or n_landmark=None "
-                      "(increases memory and CPU requirements.)")
+            if a is not None:
+                log_info("Alpha decay is not used as n_landmark < n_samples. "
+                         "To override this behavior, set alpha_decay=True "
+                         "(increases memory requirements) or n_landmark=None "
+                         "(increases memory and CPU requirements.)")
         else:
             alpha_decay = True
     if diff_op is None:
-        if verbose:
-            print("Building kNN graph and diffusion operator...")
+        log_start("graph and diffusion operator")
         if knn_dist == 'precomputed' and np.all(np.diagonal(data) != 0):
-            print("Using precomputed affinity matrix...")
+            log_info("Using precomputed affinity matrix...")
             kernel = data
         else:
             if knn_dist == 'precomputed':
@@ -322,24 +300,20 @@ def calculate_operator(data, k=15, a=10, alpha_decay=True, n_landmark=2000,
                                       ndim=n_pca,
                                       alpha_decay=alpha_decay,
                                       random_state=random_state,
-                                      n_jobs=n_jobs,
-                                      verbose=verbose)
+                                      n_jobs=n_jobs)
         diff_op, landmark_transitions = calculate_landmark_operator(
             kernel, n_landmark=n_landmark,
-            random_state=random_state, verbose=verbose)
-        if verbose:
-            print("Built graph and diffusion operator in "
-                  "{:.2f} seconds.".format(time.time() - tic))
+            random_state=random_state)
+        log_complete("graph and diffusion operator")
     else:
-        if verbose:
-            print("Using precomputed diffusion operator...")
+        log_info("Using precomputed diffusion operator...")
 
     return diff_op, landmark_transitions
 
 
 def embed_mds(diff_op, t=30, n_components=2, diff_potential=None,
               embedding=None, mds='metric', mds_dist='euclidean', n_jobs=1,
-              potential_method='log', random_state=None, verbose=True,
+              potential_method='log', random_state=None,
               landmark_transitions=None):
     """
     Create the MDS embedding from the diffusion potential
@@ -380,9 +354,6 @@ def embed_mds(diff_op, t=30, n_components=2, diff_potential=None,
         If an integer is given, it fixes the seed
         Defaults to the global numpy random number generator
 
-    verbose : boolean, optional, default: True
-        Print updates during PHATE embedding
-
     Returns
     -------
 
@@ -396,8 +367,7 @@ def embed_mds(diff_op, t=30, n_components=2, diff_potential=None,
     if diff_potential is None:
         embedding = None  # can't use precomputed embedding
         tic = time.time()
-        if verbose:
-            print("Calculating diffusion potential...")
+        log_start("diffusion potential")
         if landmark_transitions is not None:
             # landmark operator is doing diffusion twice
             t = np.floor(t / 2).astype(np.int16)
@@ -431,30 +401,23 @@ def embed_mds(diff_op, t=30, n_components=2, diff_potential=None,
         #         # gamma = -1 is just MDS on DM
         #         diff_potential = X
 
-        if verbose:
-            print("Calculated diffusion potential in "
-                  "{:.2f} seconds.".format(time.time() - tic))
+        log_complete("diffusion potential")
     # if diffusion potential is precomputed (i.e. 'mds' or 'mds_dist' has
     # changed on PHATE object)
     else:
-        if verbose:
-            print("Using precomputed diffusion potential...")
+        log_info("Using precomputed diffusion potential...")
 
-    tic = time.time()
-    if verbose:
-        print("Embedding data using {} MDS...".format(mds))
     if embedding is None:
+        log_start("{} MDS".format(mds))
         embedding = embed_MDS(diff_potential, ndim=n_components, how=mds,
                               distance_metric=mds_dist, n_jobs=n_jobs,
                               seed=random_state)
         if landmark_transitions is not None:
             # return to ambient space
             embedding = landmark_transitions.dot(embedding)
-        if verbose:
-            print("Embedded data in {:.2f} seconds.".format(time.time() - tic))
+        log_complete("{} MDS".format(mds))
     else:
-        if verbose:
-            print("Using precomputed embedding...")
+        log_info("Using precomputed embedding...")
     return embedding, diff_potential
 
 
@@ -532,8 +495,8 @@ class PHATE(BaseEstimator):
         If an integer is given, it fixes the seed
         Defaults to the global `numpy` random number generator
 
-    verbose : boolean, optional
-        If true, print status messages
+    verbose : `int` or `boolean`, optional (default: 1)
+        If `True` or `> 0`, print status messages
 
     Attributes
     ----------
@@ -580,7 +543,7 @@ class PHATE(BaseEstimator):
     def __init__(self, n_components=2, k=15, a=10, alpha_decay=None,
                  n_landmark=2000, t='auto', potential_method='log',
                  n_pca=100, knn_dist='euclidean', mds_dist='euclidean',
-                 mds='metric', n_jobs=1, random_state=None, verbose=True,
+                 mds='metric', n_jobs=1, random_state=None, verbose=1,
                  njobs=None):
         self.ndim = n_components
         self.a = a
@@ -596,7 +559,6 @@ class PHATE(BaseEstimator):
             n_jobs = njobs
         self.n_jobs = n_jobs
         self.random_state = random_state
-        self.verbose = verbose
         self.potential_method = potential_method
 
         if a is None:
@@ -608,6 +570,8 @@ class PHATE(BaseEstimator):
         self.diff_potential = None
         self.embedding = None
         self.X = None
+
+        set_logging(verbose)
 
     def reset_mds(self, n_components=None, mds=None, mds_dist=None):
         """
@@ -698,7 +662,7 @@ class PHATE(BaseEstimator):
         self.diff_op, self.landmark_transitions = calculate_operator(
             X, a=self.a, k=self.k, knn_dist=self.knn_dist,
             n_jobs=self.n_jobs, n_landmark=self.n_landmark,
-            diff_op=self.diff_op, verbose=self.verbose, n_pca=self.n_pca,
+            diff_op=self.diff_op, n_pca=self.n_pca,
             landmark_transitions=self.landmark_transitions,
             alpha_decay=self.alpha_decay, random_state=self.random_state)
         return self
@@ -749,8 +713,10 @@ class PHATE(BaseEstimator):
                                  "new data matrix. Please fit PHATE to the new"
                                  " data by running 'fit' with the new data.")
         if self.t == 'auto':
+            log_start("optimal t")
             t = self.optimal_t(t_max=t_max, plot=plot_optimal_t, ax=ax)
-            print("Automatically selected t = {}".format(t))
+            log_complete("optimal t")
+            log_info("Automatically selected t = {}".format(t))
         else:
             t = self.t
         self.embedding, self.diff_potential = embed_mds(
@@ -763,7 +729,6 @@ class PHATE(BaseEstimator):
             mds=self.mds, mds_dist=self.mds_dist,
             n_jobs=self.n_jobs,
             random_state=self.random_state,
-            verbose=self.verbose,
             potential_method=self.potential_method)
         return self.embedding
 
@@ -788,12 +753,10 @@ class PHATE(BaseEstimator):
         embedding : array, shape=[n_samples, n_dimensions]
             The cells embedded in a lower dimensional space using PHATE
         """
-        start = time.time()
+        log_start('PHATE')
         self.fit(X)
         self.transform(**kwargs)
-        if self.verbose:
-            print("Finished PHATE embedding in {:.2f} seconds.\n".format(
-                time.time() - start))
+        log_complete('PHATE')
         return self.embedding
 
     def von_neumann_entropy(self, t_max=100):
