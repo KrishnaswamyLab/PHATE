@@ -1,8 +1,9 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 from builtins import super, bytes
 import os
 import logging
 import time
+import sys
 
 
 class RSafeStdErr(object):
@@ -11,11 +12,22 @@ class RSafeStdErr(object):
     This class writes directly to stderr to avoid this.
     """
 
-    def write(self, msg):
-        os.write(2, bytes(msg, 'utf8'))
+    def __init__(self, *args, **kwargs):
+        try:
+            __IPYTHON__
+            # running IPython
+            self.write = self.write_python
+        except NameError:
+            self.write = self.write_R
+
+    def write_R(self, msg):
+        os.write(1, bytes(msg, 'utf8'))
+
+    def write_python(self, msg):
+        print(msg, file=sys.stdout, end='')
 
     def flush(self):
-        pass
+        sys.stderr.flush()
 
 
 class TaskLogger(object):
