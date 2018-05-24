@@ -271,7 +271,7 @@ def calculate_operator(data, k=15, a=10, alpha_decay=True, n_landmark=2000,
 
     tic = time.time()
     if alpha_decay is None:
-        if n_landmark is not None and len(data) > n_landmark:
+        if n_landmark is not None and data.shape[0] > n_landmark:
             alpha_decay = False
             if a is not None:
                 log_info("Alpha decay is not used as n_landmark < n_samples. "
