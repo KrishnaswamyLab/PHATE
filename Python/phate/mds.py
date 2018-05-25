@@ -94,13 +94,15 @@ def embed_MDS(X, ndim=2, how='metric', distance_metric='euclidean', n_jobs=1, se
         Y_cmds = cmdscale_fast(X_dist, ndim)
         # Then compute Metric MDS
         Y_mmds = MDS(n_components=ndim, metric=True, max_iter=3000, eps=1e-12,
-                     dissimilarity="precomputed", random_state=seed, n_jobs=n_jobs,
-                     n_init=1).fit_transform(X_dist, init=Y_cmds)
+                     dissimilarity="precomputed", random_state=seed,
+                     n_jobs=n_jobs, n_init=1).fit_transform(X_dist,
+                                                            init=Y_cmds)
         # Nonmetric MDS from sklearn using metric MDS as an initialization
         Y = MDS(n_components=ndim, metric=False, max_iter=3000, eps=1e-12,
                 dissimilarity="precomputed", random_state=seed, n_jobs=n_jobs,
                 n_init=1).fit_transform(X_dist, init=Y_mmds)
     else:
-        raise ValueError(
-            "Allowable 'how' values for MDS: 'classic', 'metric', or 'nonmetric'. '%s' was passed." % (how))
+        raise ValueError("Allowable 'how' values for MDS: 'classic', "
+                         "'metric', or 'nonmetric'. "
+                         "'{}' was passed.".format(how))
     return Y

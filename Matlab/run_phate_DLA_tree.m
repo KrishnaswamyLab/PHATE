@@ -23,9 +23,7 @@ xlabel 'PCA1'
 ylabel 'PCA2'
 
 %% PHATE 2D
-tic;
-Y_PHATE_2D = phate(M, 'pot_method', 'sqrt', 't', 45);
-toc
+Y_PHATE_2D = phate(M, 't', 45);
 
 %% plot PHATE 2D
 figure;
@@ -38,9 +36,7 @@ xlabel 'PHATE1'
 ylabel 'PHATE2'
 
 %% PHATE 3D
-tic;
-Y_PHATE_3D = phate(M, 'pot_method', 'sqrt', 'ndim', 3, 't', 45);
-toc
+Y_PHATE_3D = phate(M, 'ndim', 3, 't', 45);
 
 %% plot PHATE 3D
 figure;

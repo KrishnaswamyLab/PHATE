@@ -17,27 +17,141 @@ import matplotlib.pyplot as plt
 from .mds import embed_MDS
 from .vne import compute_von_neumann_entropy, find_knee_point
 from .utils import check_int, check_positive, check_between, check_in, check_if_not
+from .logging import set_logging, log_start, log_complete, log_info
+
+try:
+    import anndata
+except ImportError:
+    # anndata not installed
+    pass
 
 
-class PHATE(BaseEstimator):
-    """Potential of Heat-diffusion for Affinity-based Trajectory Embedding
-    (PHATE) [1]
-
-    Embeds high dimensional single-cell data into two or three dimensions for
-    visualization of biological progressions.
+def embed_mds(diff_op, t=30, n_components=2, diff_potential=None,
+              embedding=None, mds='metric', mds_dist='euclidean', n_jobs=1,
+              potential_method='log', random_state=None,
+              landmark_transitions=None):
+    """
+    Create the MDS embedding from the diffusion potential
 
     Parameters
     ----------
-    data : array-like [n_samples, n_dimensions]
-        2 dimensional input data array with
-        n_samples samples and n_dimensions dimensions.
-        If knn_dist = 'precomputed', data should be an [n_samples x n_samples]
-        pairwise distance matrix
+
+    diff_op : array-like, shape [n_samples, n_samples]
+        The diffusion operator fit on the input data
+
+    t : int, optional, default: 30
+        power to which the diffusion operator is powered
+        sets the level of diffusion
 
     n_components : int, optional, default: 2
         number of dimensions in which the data will be embedded
 
-    k : int, optional, default: 5
+    diff_potential : ndarray, optional [n, n], default: None
+        Precomputed diffusion potential
+
+    potential_method : string, optional, default: 'log'
+        choose from ['log', 'sqrt']
+        which transformation of the diffusional operator is used
+        to compute the diffusion potential
+
+    mds : string, optional, default: 'metric'
+        choose from ['classic', 'metric', 'nonmetric']
+        which multidimensional scaling algorithm is used for dimensionality
+        reduction
+
+    mds_dist : string, optional, default: 'euclidean'
+        recommended values: 'euclidean' and 'cosine'
+        Any metric from scipy.spatial.distance can be used
+        distance metric for MDS
+
+    random_state : integer or numpy.RandomState, optional
+        The generator used to initialize SMACOF (metric, nonmetric) MDS
+        If an integer is given, it fixes the seed
+        Defaults to the global numpy random number generator
+
+    Returns
+    -------
+
+    diff_potential : array-like, shape [n_samples, n_samples]
+        Precomputed diffusion potential
+
+    embedding : ndarray [n_samples, n_components]
+        PHATE embedding in low dimensional space.
+    """
+
+    if diff_potential is None:
+        embedding = None  # can't use precomputed embedding
+        tic = time.time()
+        log_start("diffusion potential")
+        if landmark_transitions is not None:
+            # landmark operator is doing diffusion twice
+            t = np.floor(t / 2).astype(np.int16)
+
+        X = np.linalg.matrix_power(diff_op, t)  # diffused diffusion operator
+
+        if potential_method == 'log':  # or potential_method == 1:
+            # handling small values
+            # X[X <= np.finfo(float).eps] = np.finfo(
+            #     float).eps
+            X = X + 1e-7
+            diff_potential = -1 * np.log(X)  # diffusion potential
+        elif potential_method == 'sqrt':
+            diff_potential = np.sqrt(X)  # diffusion potential
+        else:  # if isinstance(potential_method, str):
+            raise ValueError(
+                "Allowable 'potential_method' values: 'log' or "
+                "'sqrt'. '{}' was passed.".format(potential_method))
+        # else:
+        #     # gamma
+        #     print("Warning: gamma potential is not stable."
+        #           " Recommended values: 'log' or 'sqrt'")
+        #     if potential_method > 1 or potential_method < -1:
+        #         raise ValueError(
+        #             "Allowable 'potential_method' values between -1 and 1"
+        #             " inclusive. '{}' was passed.".format(potential_method))
+        #     elif potential_method != -1:
+        #         diff_potential = 2 / (1 - potential_method) * \
+        #             np.power(X, ((1 - potential_method) / 2))
+        #     else:
+        #         # gamma = -1 is just MDS on DM
+        #         diff_potential = X
+
+        log_complete("diffusion potential")
+    # if diffusion potential is precomputed (i.e. 'mds' or 'mds_dist' has
+    # changed on PHATE object)
+    else:
+        log_info("Using precomputed diffusion potential...")
+
+    if embedding is None:
+        log_start("{} MDS".format(mds))
+        embedding = embed_MDS(diff_potential, ndim=n_components, how=mds,
+                              distance_metric=mds_dist, n_jobs=n_jobs,
+                              seed=random_state)
+        if landmark_transitions is not None:
+            # return to ambient space
+            embedding = landmark_transitions.dot(embedding)
+        log_complete("{} MDS".format(mds))
+    else:
+        log_info("Using precomputed embedding...")
+    return embedding, diff_potential
+>>>>>> > master
+
+
+class PHATE(BaseEstimator):
+    """PHATE operator which performs dimensionality reduction.
+
+    Potential of Heat-diffusion for Affinity-based Trajectory Embedding
+    (PHATE) embeds high dimensional single-cell data into two or three
+    dimensions for visualization of biological progressions as described
+    in Moon et al, 2017 [1]_.
+
+    Parameters
+    ----------
+
+    n_components : int, optional, default: 2
+        number of dimensions in which the data will be embedded
+
+    k : int, optional, default: 15
         number of nearest neighbors on which to build kernel
 
     a : int, optional, default: 10
@@ -70,10 +184,10 @@ class PHATE(BaseEstimator):
 
     knn_dist : string, optional, default: 'euclidean'
         recommended values: 'euclidean', 'cosine', 'precomputed'
-        Any metric from `sklearn.neighbors.NearestNeighbors` can be used.
-        Distance metric for building kNN graph. If 'precomputed',
-        data should be an [n_samples x n_samples] pairwise
-        distance matrix
+        Any metric from `scipy.spatial.distance` can be used
+        distance metric for building kNN graph. If 'precomputed',
+        `data` should be an n_samples x n_samples distance or
+        affinity matrix
 
     mds_dist : string, optional, default: 'euclidean'
         recommended values: 'euclidean' and 'cosine'
@@ -91,15 +205,15 @@ class PHATE(BaseEstimator):
         For n_jobs below -1, (n_cpus + 1 + n_jobs) are used. Thus for
         n_jobs = -2, all CPUs but one are used
 
-    njobs : deprecated in favor of n_jobs to match sklearn standards
+    njobs : deprecated in favor of n_jobs to match `sklearn` standards
 
     random_state : integer or numpy.RandomState, optional, default: None
         The generator used to initialize SMACOF (metric, nonmetric) MDS
         If an integer is given, it fixes the seed
-        Defaults to the global numpy random number generator
+        Defaults to the global `numpy` random number generator
 
-    verbose : boolean, optional
-        If true, print status messages
+    verbose : `int` or `boolean`, optional (default: 1)
+        If `True` or `> 0`, print status messages
 
     Attributes
     ----------
@@ -109,27 +223,37 @@ class PHATE(BaseEstimator):
     embedding : array-like, shape=[n_samples, n_components]
         Stores the position of the dataset in the embedding space
 
-    diff_op : array-like, shape=[n_samples, n_samples] or [n_landmarks, n_landmarks]
-        The diffusion operator fit on the input data
-
-    diff_potential : array-like, shape=[n_samples, n_samples]
-        The diffusion potential fit on the input data
-
     graph : graphtools.BaseGraph
         The graph built on the input data
 
+    Examples
+    --------
+    >>> import phate
+    >>> import matplotlib.pyplot as plt
+    >>> tree_data, tree_clusters = phate.tree.gen_dla(n_dim=100,
+                                                      n_branch=20,
+                                                      branch_length=100)
+    >>> tree_data.shape
+    (2000, 100)
+    >>> phate_operator = phate.PHATE(k=5, a=20, t=150)
+    >>> tree_phate = phate_operator.fit_transform(tree_data)
+    >>> tree_phate.shape
+    (2000, 2)
+    >>> plt.scatter(tree_phate[:,0], tree_phate[:,1], c=tree_clusters)
+    >>> plt.show()
+
     References
     ----------
-    .. [1] `Moon KR, van Dijk D, Zheng W, et al. (2017). "PHATE: A
-       Dimensionality Reduction Method for Visualizing Trajectory Structures in
-       High-Dimensional Biological Data". Biorxiv.
-       <http://biorxiv.org/content/early/2017/03/24/120378>`_
+    .. [1] Moon KR, van Dijk D, Zheng W, *et al.* (2017),
+        *PHATE: A Dimensionality Reduction Method for Visualizing Trajectory
+        Structures in High-Dimensional Biological Data*,
+        `BioRxiv <http://biorxiv.org/content/early/2017/03/24/120378>`_.
     """
 
     def __init__(self, n_components=2, k=5, a=10, alpha_threshold=1e-5,
                  n_landmark=2000, t='auto', potential_method='log',
                  n_pca=100, knn_dist='euclidean', mds_dist='euclidean',
-                 mds='metric', n_jobs=1, random_state=None, verbose=True,
+                 mds='metric', n_jobs=1, random_state=None, verbose=1,
                  njobs=None):
         self.n_components = n_components
         self.a = a
@@ -145,7 +269,6 @@ class PHATE(BaseEstimator):
             n_jobs = njobs
         self.n_jobs = n_jobs
         self.random_state = random_state
-        self.verbose = verbose
         self.potential_method = potential_method
 
         if a is None:
@@ -375,6 +498,8 @@ class PHATE(BaseEstimator):
         self._check_params()
         return self
 
+        set_logging(verbose)
+
     def reset_mds(self, n_components=None, mds=None, mds_dist=None):
         """
         Deprecated. Reset parameters related to multidimensional scaling
@@ -434,13 +559,23 @@ class PHATE(BaseEstimator):
         Parameters
         ----------
         X : array, shape=[n_samples, n_features]
-            Input data.
+            input data with `n_samples` samples and `n_dimensions`
+            dimensions. Accepted data types: `numpy.ndarray`,
+            `scipy.sparse.spmatrix`, `pd.DataFrame`, `anndata.AnnData`. If
+            `knn_dist` is 'precomputed', `data` should be a n_samples x
+            n_samples distance or affinity matrix
 
         Returns
         -------
         phate_operator : PHATE
         The estimator object
         """
+        try:
+            if isinstance(X, anndata.AnnData):
+                X = X.X
+        except NameError:
+            # anndata not installed
+            pass
         if self.X is not None and not np.all(X == self.X):
             """
             If the same data is used, we can reuse existing kernel and
@@ -451,23 +586,23 @@ class PHATE(BaseEstimator):
 
         if self.graph is None:
             if self.knn_dist == 'precomputed':
-                self.graph = graphtools.TraditionalGraph(
-                    X, decay=self.a,
-                    precomputed="distance",
-                    random_state=self.random_state)
-            elif self.n_landmark is not None and len(X) > self.n_landmark:
-                self.graph = graphtools.LandmarkGraph(
-                    X, decay=self.a, knn=self.k + 1, distance=self.knn_dist,
-                    n_jobs=self.n_jobs, n_landmark=self.n_landmark,
-                    verbose=self.verbose, n_pca=self.n_pca,
-                    thresh=self.alpha_threshold,
-                    random_state=self.random_state)
+                if X[0, 0] == 0:
+                    distance = "distance"
+                else:
+                    distance = "affinity"
             else:
-                self.graph = graphtools.kNNGraph(
-                    X, decay=self.a, knn=self.k + 1, distance=self.knn_dist,
-                    n_jobs=self.n_jobs, verbose=self.verbose, n_pca=self.n_pca,
-                    thresh=self.alpha_threshold,
-                    random_state=self.random_state)
+                distance = self.knn_dist
+
+            self.graph = graphtools.Graph(
+                X,
+                n_pca=self.n_pca,
+                knn=self.k + 1,
+                decay=self.a,
+                thresh=self.alpha_threshold,
+                n_landmark=self.n_landmark,
+                n_jobs=self.n_jobs,
+                verbose=self.verbose,
+                random_state=self.random_state)
         else:
             # check the user hasn't changed parameters manually
             try:
@@ -480,9 +615,6 @@ class PHATE(BaseEstimator):
                 # something changed that should have invalidated the graph
                 self.graph = None
                 return self.fit(X)
-
-        # computation doesn't happen until diff_op is called
-        self.diff_op
         return self
 
     def transform(self, X=None, t_max=100, plot_optimal_t=False, ax=None):
@@ -491,8 +623,13 @@ class PHATE(BaseEstimator):
         Parameters
         ----------
         X : array, optional, shape=[n_samples, n_features]
-            Input data. If not given, the cells used in `PHATE.fit()`
-            will be used.
+            input data with `n_samples` samples and `n_dimensions`
+            dimensions. Not required, since PHATE does not currently embed
+            cells not given in the input matrix to `PHATE.fit()`.
+            Accepted data types: `numpy.ndarray`,
+            `scipy.sparse.spmatrix`, `pd.DataFrame`, `anndata.AnnData`. If
+            `knn_dist` is 'precomputed', `data` should be a n_samples x
+            n_samples distance or affinity matrix
 
         t_max : int, optional, default: 100
             maximum t to test if `t` is set to 'auto'
@@ -516,6 +653,9 @@ class PHATE(BaseEstimator):
                                  "using this method.")
         elif X is not None and not np.all(X == self.X):
             # fit to external data
+            raise RuntimeWarning("Pre-fit PHATE cannot be used to transform a "
+                                 "new data matrix. Please fit PHATE to the new"
+                                 " data by running 'fit' with the new data.")
             if isinstance(self.graph, graphtools.TraditionalGraph):
                 raise ValueError("Cannot transform additional data using a "
                                  "precomputed distance matrix.")
@@ -550,21 +690,24 @@ class PHATE(BaseEstimator):
         Parameters
         ----------
         X : array, shape=[n_samples, n_features]
-            Input data.
+            input data with `n_samples` samples and `n_dimensions`
+            dimensions. Accepted data types: `numpy.ndarray`,
+            `scipy.sparse.spmatrix`, `pd.DataFrame`, `anndata.AnnData` If
+            `knn_dist` is 'precomputed', `data` should be a n_samples x
+            n_samples distance or affinity matrix
 
-        **kwargs : further arguments for `PHATE.transform()`
+        kwargs : further arguments for `PHATE.transform()`
+            Keyword arguments as specified in :func:`~phate.PHATE.transform`
 
         Returns
         -------
         embedding : array, shape=[n_samples, n_dimensions]
             The cells embedded in a lower dimensional space using PHATE
         """
-        start = time.time()
+        log_start('PHATE')
         self.fit(X)
         embedding = self.transform(**kwargs)
-        if self.verbose:
-            print("Finished PHATE embedding in %.2f seconds.\n" %
-                  (time.time() - start))
+        log_complete('PHATE')
         return embedding
 
     def calculate_potential(self, diff_op, t):

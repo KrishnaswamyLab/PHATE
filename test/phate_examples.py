@@ -5,11 +5,10 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import sys
 
+python_version = "{}.{}".format(sys.version_info.major, sys.version_info.minor)
 
-def main():
-    python_version = "{}.{}".format(
-        sys.version_info.major, sys.version_info.minor)
 
+def test_tree():
     # generate DLA tree
     M, C = phate.tree.gen_dla(n_dim=100, n_branch=10, branch_length=300,
                               rand_multiplier=2, seed=37, sigma=4)
@@ -95,7 +94,10 @@ def main():
 
     plt.tight_layout()
     plt.savefig("python{}_tree.png".format(python_version), dpi=100)
+    return 0
 
+
+def test_bmmsc():
     clusters = pd.read_csv("../data/MAP.csv", header=None)
     clusters.columns = pd.Index(['wells', 'clusters'])
     bmmsc = pd.read_csv("../data/BMMC_myeloid.csv.gz", index_col=0)
@@ -119,7 +121,8 @@ def main():
                   "Exact PHATE, " + ax1.get_title())
     print("BMMSC, fast PHATE")
     Y_mmds_fast = phate_fast_operator.fit_transform(bmmsc_norm, t_max=100,
-                                                    plot_optimal_t=True, ax=ax2)
+                                                    plot_optimal_t=True,
+                                                    ax=ax2)
     ax2.set_title("Optimal t selection on 2730 BMMSCs\n"
                   "Fast PHATE, " + ax2.get_title())
     plt.tight_layout()
@@ -145,4 +148,6 @@ def main():
     return 0
 
 if __name__ == "__main__":
-    exit(main())
+    out = test_tree()
+    out += test_bmmsc()
+    exit(out)

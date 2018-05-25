@@ -4,35 +4,78 @@ Installation
 Python installation
 -------------------
 
-1. The Python version of PHATE can be installed using::
+Installation with `pip`
+~~~~~~~~~~~~~~~~~~~~~~~
 
-    $ git clone git://github.com/SmitaKrishnaswamy/PHATE.git
-    $ cd PHATE/Python
-    $ python setup.py install --user
+The Python version of PHATE can be installed using::
 
-2. PHATE depends on a number of `python` packages available on pypi and these dependencies are listed in `setup.py`
-All the dependencies will be automatically installed using the above commands
+       pip install --user phate
+
+Installation from source
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The Python version of PHATE can be installed from GitHub by running the following from a terminal::
+
+       git clone --recursive git://github.com/KrishnaswamyLab/PHATE.git
+       cd Python
+       python setup.py install --user
 
 MATLAB installation
 -------------------
 
 1. The MATLAB version of PHATE can be accessed using::
 
-    $ git clone git://github.com/SmitaKrishnaswamy/PHATE.git
-    $ cd PHATE/Matlab
+    git clone git://github.com/KrishnaswamyLab/PHATE.git
+    cd PHATE/Matlab
 
 2. Add the PHATE/Matlab directory to your MATLAB path and run any of our `test` scripts to get a feel for PHATE.
 
 R installation
 --------------
 
-1. The R version of PHATE can be accessed on GitHub_ at `https://github.com/KrishnaswamyLab/phater`__.
-2. The R version can also be accessed with this repository by adding the following steps after cloning::
+In order to use PHATE in R, you must also install the Python package.
 
-    $ git submodule init
-    $ git submodule update
-    $ cd phater
+Installation from CRAN and PyPi
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. _GitHub: https://github.com/KrishnaswamyLab/phater
+Install `phater` from CRAN by running the following code in R::
 
-__ GitHub_
+    install.packages("phater")
+
+Install `phate` in Python by running the following code from a terminal::
+
+    pip install --user phate
+
+Installation with `devtools` and `reticulate`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The development version of PHATE can be installed directly from R with `devtools`::
+
+    if (!suppressWarnings(require(devtools))) install.packages("devtools")
+    devtools::install_github("KrishnaswamyLab/phater")
+
+If you have the development version of `reticulate`, you can also install `phate` in Python by running the following code in R::
+
+    devtools::install_github("rstudio/reticulate")
+    reticulate::py_install("phate")
+
+Installation from source
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The latest source version of PHATE can be accessed by running the following in a terminal::
+
+    git clone --recursive git://github.com/SmitaKrishnaswamy/PHATE.git
+    cd PHATE/phater
+    R CMD INSTALL
+    cd ../Python
+    python setup.py install --user
+
+If the `phater` folder is empty, you have may forgotten to use the `--recursive` option for `git clone`. You can rectify this by running the following in a terminal::
+
+    cd PHATE
+    git submodule init
+    git submodule update
+    cd phater
+    R CMD INSTALL
+    cd ../Python
+    python setup.py install --user
