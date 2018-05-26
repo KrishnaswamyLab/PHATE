@@ -26,117 +26,6 @@ except ImportError:
     pass
 
 
-def embed_mds(diff_op, t=30, n_components=2, diff_potential=None,
-              embedding=None, mds='metric', mds_dist='euclidean', n_jobs=1,
-              potential_method='log', random_state=None,
-              landmark_transitions=None):
-    """
-    Create the MDS embedding from the diffusion potential
-
-    Parameters
-    ----------
-
-    diff_op : array-like, shape [n_samples, n_samples]
-        The diffusion operator fit on the input data
-
-    t : int, optional, default: 30
-        power to which the diffusion operator is powered
-        sets the level of diffusion
-
-    n_components : int, optional, default: 2
-        number of dimensions in which the data will be embedded
-
-    diff_potential : ndarray, optional [n, n], default: None
-        Precomputed diffusion potential
-
-    potential_method : string, optional, default: 'log'
-        choose from ['log', 'sqrt']
-        which transformation of the diffusional operator is used
-        to compute the diffusion potential
-
-    mds : string, optional, default: 'metric'
-        choose from ['classic', 'metric', 'nonmetric']
-        which multidimensional scaling algorithm is used for dimensionality
-        reduction
-
-    mds_dist : string, optional, default: 'euclidean'
-        recommended values: 'euclidean' and 'cosine'
-        Any metric from scipy.spatial.distance can be used
-        distance metric for MDS
-
-    random_state : integer or numpy.RandomState, optional
-        The generator used to initialize SMACOF (metric, nonmetric) MDS
-        If an integer is given, it fixes the seed
-        Defaults to the global numpy random number generator
-
-    Returns
-    -------
-
-    diff_potential : array-like, shape [n_samples, n_samples]
-        Precomputed diffusion potential
-
-    embedding : ndarray [n_samples, n_components]
-        PHATE embedding in low dimensional space.
-    """
-
-    if diff_potential is None:
-        embedding = None  # can't use precomputed embedding
-        tic = time.time()
-        log_start("diffusion potential")
-        if landmark_transitions is not None:
-            # landmark operator is doing diffusion twice
-            t = np.floor(t / 2).astype(np.int16)
-
-        X = np.linalg.matrix_power(diff_op, t)  # diffused diffusion operator
-
-        if potential_method == 'log':  # or potential_method == 1:
-            # handling small values
-            # X[X <= np.finfo(float).eps] = np.finfo(
-            #     float).eps
-            X = X + 1e-7
-            diff_potential = -1 * np.log(X)  # diffusion potential
-        elif potential_method == 'sqrt':
-            diff_potential = np.sqrt(X)  # diffusion potential
-        else:  # if isinstance(potential_method, str):
-            raise ValueError(
-                "Allowable 'potential_method' values: 'log' or "
-                "'sqrt'. '{}' was passed.".format(potential_method))
-        # else:
-        #     # gamma
-        #     print("Warning: gamma potential is not stable."
-        #           " Recommended values: 'log' or 'sqrt'")
-        #     if potential_method > 1 or potential_method < -1:
-        #         raise ValueError(
-        #             "Allowable 'potential_method' values between -1 and 1"
-        #             " inclusive. '{}' was passed.".format(potential_method))
-        #     elif potential_method != -1:
-        #         diff_potential = 2 / (1 - potential_method) * \
-        #             np.power(X, ((1 - potential_method) / 2))
-        #     else:
-        #         # gamma = -1 is just MDS on DM
-        #         diff_potential = X
-
-        log_complete("diffusion potential")
-    # if diffusion potential is precomputed (i.e. 'mds' or 'mds_dist' has
-    # changed on PHATE object)
-    else:
-        log_info("Using precomputed diffusion potential...")
-
-    if embedding is None:
-        log_start("{} MDS".format(mds))
-        embedding = embed_MDS(diff_potential, ndim=n_components, how=mds,
-                              distance_metric=mds_dist, n_jobs=n_jobs,
-                              seed=random_state)
-        if landmark_transitions is not None:
-            # return to ambient space
-            embedding = landmark_transitions.dot(embedding)
-        log_complete("{} MDS".format(mds))
-    else:
-        log_info("Using precomputed embedding...")
-    return embedding, diff_potential
->>>>>> > master
-
-
 class PHATE(BaseEstimator):
     """PHATE operator which performs dimensionality reduction.
 
@@ -280,6 +169,7 @@ class PHATE(BaseEstimator):
         self.embedding = None
         self.X = None
         self._check_params()
+        set_logging(verbose)
 
     @property
     def diff_op(self):
@@ -483,6 +373,7 @@ class PHATE(BaseEstimator):
             self._set_graph_params(random_state=params['random_state'])
         if 'verbose' in params:
             self.verbose = params['verbose']
+            set_logging(self.verbose)
             self._set_graph_params(verbose=params['verbose'])
 
         if reset_kernel:
@@ -497,8 +388,6 @@ class PHATE(BaseEstimator):
 
         self._check_params()
         return self
-
-        set_logging(verbose)
 
     def reset_mds(self, n_components=None, mds=None, mds_dist=None):
         """
