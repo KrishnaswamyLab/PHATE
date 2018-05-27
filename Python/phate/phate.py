@@ -169,6 +169,7 @@ class PHATE(BaseEstimator):
         self.embedding = None
         self.X = None
         self._check_params()
+        self.verbose = verbose
         set_logging(verbose)
 
     @property
