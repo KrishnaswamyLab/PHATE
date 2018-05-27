@@ -571,6 +571,7 @@ class PHATE(BaseEstimator):
         self.embedding = None
         self.X = None
 
+        self.verbose = verbose
         set_logging(verbose)
 
     def reset_mds(self, n_components=None, mds=None, mds_dist=None):
