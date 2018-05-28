@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 from .mds import embed_MDS
 from .vne import compute_von_neumann_entropy, find_knee_point
 from .utils import check_int, check_positive, check_between, check_in, check_if_not
-from .logging import set_logging, log_start, log_complete, log_info
+from .logging import set_logging, log_start, log_complete, log_info, log_debug
 
 try:
     import anndata
@@ -483,16 +483,29 @@ class PHATE(BaseEstimator):
             else:
                 distance = self.knn_dist
 
+            if X.shape[1] <= self.n_pca:
+                n_pca = None
+            else:
+                n_pca = self.n_pca
+
+            if X.shape[0] <= self.n_landmark:
+                n_landmark = None
+            else:
+                n_landmark = self.n_landmark
+
+            log_start("graph and diffusion operator")
             self.graph = graphtools.Graph(
                 X,
-                n_pca=self.n_pca,
+                n_pca=n_pca,
+                n_landmark=n_landmark,
+                distance=distance,
                 knn=self.k + 1,
                 decay=self.a,
                 thresh=self.alpha_threshold,
-                n_landmark=self.n_landmark,
                 n_jobs=self.n_jobs,
                 verbose=self.verbose,
                 random_state=self.random_state)
+            log_complete("graph and diffusion operator")
         else:
             # check the user hasn't changed parameters manually
             try:
@@ -501,6 +514,7 @@ class PHATE(BaseEstimator):
                     n_jobs=self.n_jobs, verbose=self.verbose, n_pca=self.n_pca,
                     thresh=self.alpha_threshold, n_landmark=self.n_landmark,
                     random_state=self.random_state)
+                log_info("Using precomputed graph and diffusion operator...")
             except ValueError:
                 # something changed that should have invalidated the graph
                 self.graph = None
@@ -556,19 +570,22 @@ class PHATE(BaseEstimator):
         else:
             if self.t == 'auto':
                 t = self.optimal_t(t_max=t_max, plot=plot_optimal_t, ax=ax)
-                print("Automatically selected t = {}".format(t))
+                log_info("Automatically selected t = {}".format(t))
             else:
                 t = self.t
-            if isinstance(self.graph, graphtools.LandmarkGraph):
-                t = t // 2
             if self.diff_potential is None:
                 self.calculate_potential(self.diff_op, t)
             if self.embedding is None:
+                log_start("{} MDS".format(self.mds))
+                log_debug("Running MDS on diffusion potential"
+                          " of shape {}".format(self.diff_potential.shape))
                 self.embedding = embed_MDS(
                     self.diff_potential, ndim=self.n_components, how=self.mds,
                     distance_metric=self.mds_dist, n_jobs=self.n_jobs,
                     seed=self.random_state)
+                log_complete("{} MDS".format(self.mds))
             if isinstance(self.graph, graphtools.LandmarkGraph):
+                log_debug("Extending to original data...")
                 return self.graph.interpolate(self.embedding)
             else:
                 return self.embedding
@@ -619,16 +636,13 @@ class PHATE(BaseEstimator):
         diff_potential : array-like, shape=[n_samples, n_samples]
             The diffusion potential fit on the input data
         """
-        tic = time.time()
-        if self.verbose:
-            print("Calculating diffusion potential...")
-
+        log_start("diffusion potential")
         # diffused diffusion operator
         diff_op_t = np.linalg.matrix_power(diff_op, t)
 
         if self.potential_method == 'log':
             # handling small values
-            diff_op_t = diff_op_t + 1e-3
+            diff_op_t = diff_op_t + 1e-7
             self.diff_potential = -1 * np.log(diff_op_t)
         elif self.potential_method == 'sqrt':
             self.diff_potential = np.sqrt(diff_op_t)
@@ -636,9 +650,7 @@ class PHATE(BaseEstimator):
             raise ValueError("Allowable 'potential_method' values: 'log' or "
                              "'sqrt'. '{}' was passed.".format(
                                  self.potential_method))
-        if self.verbose:
-            print("Calculated diffusion potential in {:.2f} seconds.".format(
-                time.time() - tic))
+        log_complete("diffusion potential")
 
     def von_neumann_entropy(self, t_max=100):
         """Calculate Von Neumann Entropy
@@ -661,13 +673,7 @@ class PHATE(BaseEstimator):
         entropy : array, shape=[t_max]
             The entropy of the diffusion affinities for each value of `t`
         """
-        if isinstance(self.graph, graphtools.LandmarkGraph):
-            # landmark operator is doing diffusion twice
-            t_max = np.floor(t_max / 2).astype(np.int16)
-            t = np.arange(t_max) * 2 + 1
-        else:
-            t = np.arange(t_max)
-
+        t = np.arange(t_max)
         return t, compute_von_neumann_entropy(self.diff_op, t_max=t_max)
 
     def optimal_t(self, t_max=100, plot=False, ax=None):
@@ -693,8 +699,10 @@ class PHATE(BaseEstimator):
         t_opt : int
             The optimal value of t
         """
+        log_start("optimal t")
         t, h = self.von_neumann_entropy(t_max=t_max)
         t_opt = find_knee_point(y=h, x=t)
+        log_complete("optimal t")
 
         if plot:
             if ax is None:
