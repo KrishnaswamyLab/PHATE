@@ -1,6 +1,6 @@
 numpy>=1.10.0
 pandas>=0.18.0
-scipy>=0.14.0
+scipy>=0.18.0
 matplotlib
-sklearn
-future
+scikit-learn>=0.19.1
+future>=0.16.0
