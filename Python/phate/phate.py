@@ -11,6 +11,7 @@ import numpy as np
 import graphtools
 from sklearn.base import BaseEstimator
 from sklearn.exceptions import NotFittedError
+from scipy import sparse
 
 import matplotlib.pyplot as plt
 
@@ -139,7 +140,7 @@ class PHATE(BaseEstimator):
         `BioRxiv <http://biorxiv.org/content/early/2017/03/24/120378>`_.
     """
 
-    def __init__(self, n_components=2, k=5, a=10, alpha_threshold=1e-5,
+    def __init__(self, n_components=2, k=5, a=10, alpha_threshold=1e-4,
                  n_landmark=2000, t='auto', potential_method='log',
                  n_pca=100, knn_dist='euclidean', mds_dist='euclidean',
                  mds='metric', n_jobs=1, random_state=None, verbose=1,
@@ -177,10 +178,13 @@ class PHATE(BaseEstimator):
         """The diffusion operator calculated from the data
         """
         if self.graph is not None:
-            if isinstance(self.graph, graphtools.LandmarkGraph):
-                return self.graph.landmark_op
+            if isinstance(self.graph, graphtools.graphs.LandmarkGraph):
+                diff_op = self.graph.landmark_op
             else:
-                return self.graph.diff_op
+                diff_op = self.graph.diff_op
+            if sparse.issparse(diff_op):
+                diff_op = diff_op.toarray()
+            return diff_op
         else:
             raise NotFittedError("This PHATE instance is not fitted yet. Call "
                                  "'fit' with appropriate arguments before "
@@ -488,7 +492,7 @@ class PHATE(BaseEstimator):
             else:
                 n_pca = self.n_pca
 
-            if X.shape[0] <= self.n_landmark:
+            if self.n_landmark is None or X.shape[0] <= self.n_landmark:
                 n_landmark = None
             else:
                 n_landmark = self.n_landmark
@@ -577,14 +581,12 @@ class PHATE(BaseEstimator):
                 self.calculate_potential(self.diff_op, t)
             if self.embedding is None:
                 log_start("{} MDS".format(self.mds))
-                log_debug("Running MDS on diffusion potential"
-                          " of shape {}".format(self.diff_potential.shape))
                 self.embedding = embed_MDS(
                     self.diff_potential, ndim=self.n_components, how=self.mds,
                     distance_metric=self.mds_dist, n_jobs=self.n_jobs,
                     seed=self.random_state)
                 log_complete("{} MDS".format(self.mds))
-            if isinstance(self.graph, graphtools.LandmarkGraph):
+            if isinstance(self.graph, graphtools.graphs.LandmarkGraph):
                 log_debug("Extending to original data...")
                 return self.graph.interpolate(self.embedding)
             else:
