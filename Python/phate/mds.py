@@ -93,7 +93,7 @@ def embed_MDS(X, ndim=2, how='metric', distance_metric='euclidean',
                                              X_dist.shape))
         # Metric MDS from sklearn
         Y, _ = smacof(X_dist, n_components=ndim, metric=True, max_iter=3000,
-                      eps=1e-12, random_state=seed, n_jobs=n_jobs,
+                      eps=1e-6, random_state=seed, n_jobs=n_jobs,
                       n_init=1, init=Y, verbose=verbose)
     if how == 'nonmetric':
         log_debug(
@@ -102,6 +102,6 @@ def embed_MDS(X, ndim=2, how='metric', distance_metric='euclidean',
                                        X_dist.shape))
         # Nonmetric MDS from sklearn using metric MDS as an initialization
         Y, _ = smacof(X_dist, n_components=ndim, metric=True, max_iter=3000,
-                      eps=1e-12, random_state=seed, n_jobs=n_jobs,
+                      eps=1e-6, random_state=seed, n_jobs=n_jobs,
                       n_init=1, init=Y, verbose=verbose)
     return Y
