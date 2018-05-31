@@ -1,9 +1,11 @@
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import
 from builtins import super, bytes
 import os
 import logging
 import time
-import sys
+
+
+__logger_name__ = "PHATE"
 
 
 class RSafeStdErr(object):
@@ -12,22 +14,11 @@ class RSafeStdErr(object):
     This class writes directly to stderr to avoid this.
     """
 
-    def __init__(self, *args, **kwargs):
-        try:
-            __IPYTHON__
-            # running IPython
-            self.write = self.write_python
-        except NameError:
-            self.write = self.write_R
-
-    def write_R(self, msg):
-        os.write(1, bytes(msg, 'utf8'))
-
-    def write_python(self, msg):
-        print(msg, file=sys.stdout, end='')
+    def write(self, msg):
+        os.write(2, bytes(msg, 'utf8'))
 
     def flush(self):
-        sys.stderr.flush()
+        pass
 
 
 class TaskLogger(object):
@@ -46,8 +37,10 @@ class TaskLogger(object):
 
     def complete_task(self, name):
         try:
-            self.logger.info("Calculated {} in {:.2f} seconds.".format(
-                name, time.time() - self.tasks[name]))
+            runtime = time.time() - self.tasks[name]
+            if runtime >= 0.01:
+                self.logger.info("Calculated {} in {:.2f} seconds.".format(
+                    name, runtime))
             del self.tasks[name]
         except KeyError:
             self.logger.info("Calculated {}.".format(name))
@@ -66,23 +59,27 @@ def set_logging(level=1):
     """
     if level is True or level == 1:
         level = logging.INFO
+        level_name = "INFO"
     elif level is False or level <= 0:
         level = logging.WARNING
+        level_name = "WARNING"
     elif level >= 2:
         level = logging.DEBUG
+        level_name = "DEBUG"
 
     logger = get_logger()
-    logger.task_logger = TaskLogger(logger)
     logger.setLevel(level)
-    logger.propagate = False
     if not logger.handlers:
+        logger.task_logger = TaskLogger(logger)
+        logger.propagate = False
         handler = logging.StreamHandler(stream=RSafeStdErr())
         handler.setFormatter(logging.Formatter(fmt='%(message)s'))
         logger.addHandler(handler)
+    log_debug("Set {} logging to {}".format(__logger_name__, level_name))
 
 
 def get_logger():
-    return logging.getLogger("PHATE")
+    return logging.getLogger(__logger_name__)
 
 
 def get_task_logger():

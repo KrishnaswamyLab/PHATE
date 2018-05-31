@@ -5,6 +5,7 @@ from __future__ import print_function, division
 from sklearn.preprocessing import normalize
 import numpy as np
 from scipy import sparse
+import warnings
 
 try:
     import pandas as pd
@@ -33,11 +34,16 @@ def library_size_normalize(data, verbose=False):
         print("Normalizing library sizes for %s cells" % (data.shape[0]))
 
     try:
-        if isinstance(data, pd.SparseDataFrame) or \
-                pd.api.types.is_sparse(data):
+        if isinstance(data, pd.SparseDataFrame):
+            data = data.to_coo()
+        elif pd.api.types.is_sparse(data):
             data = data.to_coo()
     except NameError:
         pass
+    except AttributeError as e:
+        warnings.warn("{}: is pandas out of date? ({})".format(
+            str(e), pd.__version__), ImportWarning)
+
     median_transcript_count = np.median(np.array(data.sum(axis=1)))
     if sparse.issparse(data) and data.nnz >= 2**31:
         # check we can access elements by index
