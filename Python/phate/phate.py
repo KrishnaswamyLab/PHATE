@@ -222,7 +222,7 @@ class PHATE(BaseEstimator):
                      n_pca=self.n_pca)
         check_if_not('auto', check_positive, check_int,
                      t=self.t)
-        check_in(['euclidean', 'cosine', 'correlation', 'cityblock',
+        check_in(['euclidean', 'precomputed', 'cosine', 'correlation', 'cityblock',
                   'l1', 'l2', 'manhattan', 'braycurtis', 'canberra',
                   'chebyshev', 'dice', 'hamming', 'jaccard',
                   'kulsinski', 'mahalanobis', 'matching', 'minkowski',
@@ -496,7 +496,7 @@ class PHATE(BaseEstimator):
         except NameError:
             # anndata not installed
             pass
-        if self.X is not None and not np.all(X == self.X):
+        if self.X is not None and not (X != self.X).sum() == 0:
             """
             If the same data is used, we can reuse existing kernel and
             diffusion matrices. Otherwise we have to recompute.
@@ -506,17 +506,19 @@ class PHATE(BaseEstimator):
 
         if self.graph is None:
             if self.knn_dist == 'precomputed':
+                if isinstance(X, sparse.coo_matrix):
+                    X = X.tocsr()
                 if X[0, 0] == 0:
-                    distance = "distance"
+                    precomputed = "distance"
                 else:
-                    distance = "affinity"
-            else:
-                distance = self.knn_dist
-
-            if X.shape[1] <= self.n_pca:
+                    precomputed = "affinity"
                 n_pca = None
             else:
-                n_pca = self.n_pca
+                precomputed = None
+                if X.shape[1] <= self.n_pca:
+                    n_pca = None
+                else:
+                    n_pca = self.n_pca
 
             if self.n_landmark is None or X.shape[0] <= self.n_landmark:
                 n_landmark = None
@@ -528,7 +530,8 @@ class PHATE(BaseEstimator):
                 X,
                 n_pca=n_pca,
                 n_landmark=n_landmark,
-                distance=distance,
+                distance=self.knn_dist,
+                precomputed=precomputed,
                 knn=self.k + 1,
                 decay=self.a,
                 thresh=1e-4,
@@ -587,7 +590,7 @@ class PHATE(BaseEstimator):
             raise NotFittedError("This PHATE instance is not fitted yet. Call "
                                  "'fit' with appropriate arguments before "
                                  "using this method.")
-        elif X is not None and not np.all(X == self.X):
+        elif X is not None and not (X != self.X).sum() == 0:
             # fit to external data
             warnings.warn("Pre-fit PHATE cannot be used to transform a "
                           "new data matrix. Please fit PHATE to the new"

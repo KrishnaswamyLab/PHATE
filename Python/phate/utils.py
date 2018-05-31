@@ -9,7 +9,7 @@ def check_positive(**params):
     ValueError : unacceptable choice of parameters
     """
     for p in params:
-        if params[p] <= 0:
+        if not isinstance(params[p], numbers.Number) or params[p] <= 0:
             raise ValueError(
                 "Expected {} > 0, got {}".format(p, params[p]))
 
@@ -47,8 +47,8 @@ def check_if_not(x, *checks, **params):
     ValueError : unacceptable choice of parameters
     """
     for p in params:
-        if params[p] is not x:
-            [check(p=params[p]) for check in checks]
+        if params[p] is not x and params[p] != x:
+            [check(**{p: params[p]}) for check in checks]
 
 
 def check_in(choices, **params):
