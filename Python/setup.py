@@ -23,10 +23,12 @@ setup(name='phate',
                         'scipy>=0.18.0',
                         'matplotlib',
                         'scikit-learn>=0.19.1',
-                        'future>=0.16.0', ],
+                        'future',
+                        'graphtools'],
       extras_require={
           'tests': [
               'doctest',
+              'nose2',
           ],
           'docs': [
               'sphinx>=1.6.5',
