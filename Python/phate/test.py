@@ -3,9 +3,12 @@
 # (C) 2017 Krishnaswamy Lab GPLv2
 
 # Generating random fractal tree via DLA
-from __future__ import print_function, division
+from __future__ import print_function, division, absolute_import
 import doctest
+import nose2
 import phate
+import pandas as pd
+from mpl_toolkits.mplot3d import Axes3D
 
 
 def test_docs():
@@ -17,6 +20,7 @@ def test_simple():
     tree_data, tree_clusters = phate.tree.gen_dla()
     phate_operator = phate.PHATE(k=15, t=100)
     tree_phate = phate_operator.fit_transform(tree_data)
+    assert tree_phate.shape == (tree_data.shape[0], 2)
 
 
 def test_tree():
@@ -92,6 +96,7 @@ def test_bmmsc():
     print("BMMSC, fast PHATE")
     Y_mmds_fast = phate_fast_operator.fit_transform(bmmsc_norm, t_max=100)
     assert Y_mmds_fast.shape == (bmmsc_norm.shape[0], 2)
+    print("BMMSC, fast PHATE")
     return 0
 
 

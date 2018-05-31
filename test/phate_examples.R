@@ -1,8 +1,7 @@
-library(phater)
+library(phateR)
 library(ggplot2)
 library(gridGraphics)
 library(cowplot)
-library(tidyverse)
 
 # generate DLA tree
 
@@ -73,9 +72,10 @@ p <- plot_grid(ggplot(Y_cmds) +
           ncol=3)
 save_plot("R_tree.png", p, base_height = 6, base_width=12)
 
-clusters <- read_csv("../data/MAP.csv", col_names=c('wells', 'clusters'))
-bmmsc <- read_csv("../data/BMMC_myeloid.csv.gz") %>%
-  select(-X1)
+clusters <- read.csv("../data/MAP.csv", row.names=NULL, header=FALSE,
+                     col.names=c('wells', 'clusters'))
+bmmsc <- read.csv("../data/BMMC_myeloid.csv.gz", row.names=NULL)
+bmmsc <- bmmsc[,2:ncol(bmmsc)]
 
 C <- as.factor(clusters$clusters)  # using cluster labels from original publication
 
