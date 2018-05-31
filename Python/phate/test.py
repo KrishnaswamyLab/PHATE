@@ -12,7 +12,7 @@ from mpl_toolkits.mplot3d import Axes3D
 
 
 def test_docs():
-    doctest.testmod(verbose=True, summary=True, raise_on_error=True)
+    doctest.testmod(verbose=True, raise_on_error=True)
     assert True
 
 
