@@ -523,18 +523,19 @@ class PHATE(BaseEstimator):
                 diffusion matrices. Otherwise we have to recompute.
                 """
                 self.graph = None
-        else:
-            try:
-                self.graph.set_params(
-                    decay=self.a, knn=self.k + 1, distance=self.knn_dist,
-                    precomputed=precomputed,
-                    n_jobs=self.n_jobs, verbose=self.verbose, n_pca=n_pca,
-                    thresh=1e-4, n_landmark=n_landmark,
-                    random_state=self.random_state)
-                log_info("Using precomputed graph and diffusion operator...")
-            except ValueError:
-                # something changed that should have invalidated the graph
-                self.graph = None
+            else:
+                try:
+                    self.graph.set_params(
+                        decay=self.a, knn=self.k + 1, distance=self.knn_dist,
+                        precomputed=precomputed,
+                        n_jobs=self.n_jobs, verbose=self.verbose, n_pca=n_pca,
+                        thresh=1e-4, n_landmark=n_landmark,
+                        random_state=self.random_state)
+                    log_info("Using precomputed graph and diffusion operator...")
+                except ValueError as e:
+                    # something changed that should have invalidated the graph
+                    log_debug("Reset graph due to {}".format(str(e)))
+                    self.graph = None
 
         self.X = X
 
