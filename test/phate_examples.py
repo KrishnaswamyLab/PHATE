@@ -106,6 +106,7 @@ def test_bmmsc():
 
     # library_size_normalize performs L1 normalization on each cell
     bmmsc_norm = phate.preprocessing.library_size_normalize(bmmsc)
+    bmmsc_norm = np.sqrt(bmmsc_norm)
     phate_operator = phate.PHATE(
         n_components=2, t='auto', a=200, k=10, mds='metric', mds_dist='euclidean',
         n_landmark=None)

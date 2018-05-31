@@ -7,13 +7,18 @@ from __future__ import print_function, division, absolute_import
 import doctest
 import nose2
 import phate
+import numpy as np
 import pandas as pd
-from mpl_toolkits.mplot3d import Axes3D
 
 
 def test_docs():
-    doctest.testmod(verbose=True, raise_on_error=True)
-    assert True
+    assert doctest.testmod(phate.phate).failed == 0
+    assert doctest.testmod(phate.vne).failed == 0
+    assert doctest.testmod(phate.utils).failed == 0
+    assert doctest.testmod(phate.preprocessing).failed == 0
+    assert doctest.testmod(phate.mds).failed == 0
+    assert doctest.testmod(phate.io).failed == 0
+    assert doctest.testmod(phate.logging).failed == 0
 
 
 def test_simple():
@@ -83,6 +88,7 @@ def test_bmmsc():
 
     # library_size_normalize performs L1 normalization on each cell
     bmmsc_norm = phate.preprocessing.library_size_normalize(bmmsc)
+    bmmsc_norm = np.sqrt(bmmsc_norm)
     phate_operator = phate.PHATE(
         n_components=2, t='auto', a=200, k=10, mds='metric', mds_dist='euclidean',
         n_landmark=None)

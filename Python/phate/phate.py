@@ -121,17 +121,16 @@ class PHATE(BaseEstimator):
     --------
     >>> import phate
     >>> import matplotlib.pyplot as plt
-    >>> tree_data, tree_clusters = phate.tree.gen_dla(n_dim=100,
-                                                      n_branch=20,
-                                                      branch_length=100)
+    >>> tree_data, tree_clusters = phate.tree.gen_dla(n_dim=100, n_branch=20,
+    ...                                               branch_length=100)
     >>> tree_data.shape
     (2000, 100)
     >>> phate_operator = phate.PHATE(k=5, a=20, t=150)
     >>> tree_phate = phate_operator.fit_transform(tree_data)
     >>> tree_phate.shape
     (2000, 2)
-    >>> plt.scatter(tree_phate[:,0], tree_phate[:,1], c=tree_clusters)
-    >>> plt.show()
+    >>> # plt.scatter(tree_phate[:,0], tree_phate[:,1], c=tree_clusters)
+    >>> # plt.show()
 
     References
     ----------
@@ -317,6 +316,29 @@ class PHATE(BaseEstimator):
 
         verbose : boolean, optional
             If true, print status messages
+
+        Examples
+        --------
+        >>> import phate
+        >>> import matplotlib.pyplot as plt
+        >>> tree_data, tree_clusters = phate.tree.gen_dla(n_dim=50, n_branch=5,
+        ...                                               branch_length=50)
+        >>> tree_data.shape
+        (250, 50)
+        >>> phate_operator = phate.PHATE(k=5, a=20, t=150)
+        >>> tree_phate = phate_operator.fit_transform(tree_data)
+        >>> tree_phate.shape
+        (250, 2)
+        >>> phate_operator.set_params(n_components=10)
+        PHATE(a=20, alpha_decay=None, k=5, knn_dist='euclidean', mds='metric',
+           mds_dist='euclidean', n_components=10, n_jobs=1, n_landmark=2000,
+           n_pca=100, njobs=None, potential_method='log', random_state=None, t=150,
+           verbose=1)
+        >>> tree_phate = phate_operator.transform()
+        >>> tree_phate.shape
+        (250, 10)
+        >>> # plt.scatter(tree_phate[:,0], tree_phate[:,1], c=tree_clusters)
+        >>> # plt.show()
 
         Returns
         -------
