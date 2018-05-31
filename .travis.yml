@@ -15,4 +15,5 @@
     - cd ..
 
   script:
-    - python -m nose2 -s Python
+    - cd Python
+    - python setup.py test
