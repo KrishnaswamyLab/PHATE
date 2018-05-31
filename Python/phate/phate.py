@@ -496,35 +496,49 @@ class PHATE(BaseEstimator):
         except NameError:
             # anndata not installed
             pass
-        if self.X is not None and not (X != self.X).sum() == 0:
-            """
-            If the same data is used, we can reuse existing kernel and
-            diffusion matrices. Otherwise we have to recompute.
-            """
-            self.graph = None
+
+        if self.knn_dist == 'precomputed':
+            if isinstance(X, sparse.coo_matrix):
+                X = X.tocsr()
+            if X[0, 0] == 0:
+                precomputed = "distance"
+            else:
+                precomputed = "affinity"
+            n_pca = None
+        else:
+            precomputed = None
+            if X.shape[1] <= self.n_pca:
+                n_pca = None
+            else:
+                n_pca = self.n_pca
+        if self.n_landmark is None or X.shape[0] <= self.n_landmark:
+            n_landmark = None
+        else:
+            n_landmark = self.n_landmark
+
+        if self.graph is not None:
+            if self.X is not None and not (X != self.X).sum() == 0:
+                """
+                If the same data is used, we can reuse existing kernel and
+                diffusion matrices. Otherwise we have to recompute.
+                """
+                self.graph = None
+        else:
+            try:
+                self.graph.set_params(
+                    decay=self.a, knn=self.k + 1, distance=self.knn_dist,
+                    precomputed=precomputed,
+                    n_jobs=self.n_jobs, verbose=self.verbose, n_pca=n_pca,
+                    thresh=1e-4, n_landmark=n_landmark,
+                    random_state=self.random_state)
+                log_info("Using precomputed graph and diffusion operator...")
+            except ValueError:
+                # something changed that should have invalidated the graph
+                self.graph = None
+
         self.X = X
 
         if self.graph is None:
-            if self.knn_dist == 'precomputed':
-                if isinstance(X, sparse.coo_matrix):
-                    X = X.tocsr()
-                if X[0, 0] == 0:
-                    precomputed = "distance"
-                else:
-                    precomputed = "affinity"
-                n_pca = None
-            else:
-                precomputed = None
-                if X.shape[1] <= self.n_pca:
-                    n_pca = None
-                else:
-                    n_pca = self.n_pca
-
-            if self.n_landmark is None or X.shape[0] <= self.n_landmark:
-                n_landmark = None
-            else:
-                n_landmark = self.n_landmark
-
             log_start("graph and diffusion operator")
             self.graph = graphtools.Graph(
                 X,
@@ -539,19 +553,7 @@ class PHATE(BaseEstimator):
                 verbose=self.verbose,
                 random_state=self.random_state)
             log_complete("graph and diffusion operator")
-        else:
-            # check the user hasn't changed parameters manually
-            try:
-                self.graph.set_params(
-                    decay=self.a, knn=self.k + 1, distance=self.knn_dist,
-                    n_jobs=self.n_jobs, verbose=self.verbose, n_pca=self.n_pca,
-                    thresh=1e-4, n_landmark=self.n_landmark,
-                    random_state=self.random_state)
-                log_info("Using precomputed graph and diffusion operator...")
-            except ValueError:
-                # something changed that should have invalidated the graph
-                self.graph = None
-                return self.fit(X)
+
         # landmark op doesn't build unless forced
         self.diff_op
         return self
