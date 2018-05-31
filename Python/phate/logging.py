@@ -31,19 +31,22 @@ class TaskLogger(object):
         self.logger = logger
         super().__init__(*args, **kwargs)
 
+    def log(self, msg):
+        self.logger.info(msg)
+
     def start_task(self, name):
         self.tasks[name] = time.time()
-        self.logger.info("Calculating {}...".format(name))
+        self.log("Calculating {}...".format(name))
 
     def complete_task(self, name):
         try:
             runtime = time.time() - self.tasks[name]
             if runtime >= 0.01:
-                self.logger.info("Calculated {} in {:.2f} seconds.".format(
+                self.log("Calculated {} in {:.2f} seconds.".format(
                     name, runtime))
             del self.tasks[name]
         except KeyError:
-            self.logger.info("Calculated {}.".format(name))
+            self.log("Calculated {}.".format(name))
 
 
 def set_logging(level=1):
