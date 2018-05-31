@@ -9,7 +9,7 @@ PHATE - Potential of Heat-diffusion for Affinity-based Trajectory Embedding
     :target: https://cran.r-project.org/package=phateR
     :alt: Latest CRAN version
 .. image:: https://api.travis-ci.com/KrishnaswamyLab/phate.svg?branch=master
-    :target: https://travis-ci.com/KrishnaswamyLab/phate
+    :target: https://travis-ci.com/KrishnaswamyLab/PHATE
     :alt: Travis CI Build
 .. image:: https://img.shields.io/readthedocs/phate.svg
     :target: https://phate.readthedocs.io/

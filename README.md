@@ -3,7 +3,7 @@ PHATE - Potential of Heat-diffusion for Affinity-based Transition Embedding
 
 [![Latest PyPI version](https://img.shields.io/pypi/v/phate.svg)](https://pypi.org/project/phate/)
 [![Latest CRAN version](https://img.shields.io/cran/v/phateR.svg)](https://cran.r-project.org/package=phateR)
-[![Travis CI Build](https://api.travis-ci.com/KrishnaswamyLab/phate.svg?branch=master)](https://travis-ci.com/KrishnaswamyLab/phate)
+[![Travis CI Build](https://api.travis-ci.com/KrishnaswamyLab/phate.svg?branch=master)](https://travis-ci.com/KrishnaswamyLab/PHATE)
 [![Read the Docs](https://img.shields.io/readthedocs/phate.svg)](https://phate.readthedocs.io/)
 [![bioRxiv Preprint](https://zenodo.org/badge/DOI/10.1101/120378.svg)](https://www.biorxiv.org/content/early/2017/12/01/120378)
 [![Twitter](https://img.shields.io/twitter/follow/KrishnaswamyLab.svg?style=social&label=Follow)](https://twitter.com/KrishnaswamyLab)
