@@ -162,7 +162,6 @@ class PHATE(BaseEstimator):
         self.diff_potential = None
         self.embedding = None
         self.X = None
-        self._check_params()
 
         if alpha_decay is not None:
             warnings.warn("alpha_decay is deprecated. Use `a=None`"
@@ -182,6 +181,7 @@ class PHATE(BaseEstimator):
         elif verbose is False:
             verbose = 0
         self.verbose = verbose
+        self._check_params()
         set_logging(verbose)
 
     @property
@@ -527,6 +527,8 @@ class PHATE(BaseEstimator):
                 # something changed that should have invalidated the graph
                 self.graph = None
                 return self.fit(X)
+        # landmark op doesn't build unless forced
+        self.diff_op
         return self
 
     def transform(self, X=None, t_max=100, plot_optimal_t=False, ax=None):
@@ -583,7 +585,7 @@ class PHATE(BaseEstimator):
             else:
                 t = self.t
             if self.diff_potential is None:
-                self.calculate_potential(self.diff_op, t)
+                self.diff_potential = self.calculate_potential(self.diff_op, t)
             if self.embedding is None:
                 log_start("{} MDS".format(self.mds))
                 self.embedding = embed_MDS(
@@ -650,14 +652,15 @@ class PHATE(BaseEstimator):
         if self.potential_method == 'log':
             # handling small values
             diff_op_t = diff_op_t + 1e-7
-            self.diff_potential = -1 * np.log(diff_op_t)
+            diff_potential = -1 * np.log(diff_op_t)
         elif self.potential_method == 'sqrt':
-            self.diff_potential = np.sqrt(diff_op_t)
+            diff_potential = np.sqrt(diff_op_t)
         else:
             raise ValueError("Allowable 'potential_method' values: 'log' or "
                              "'sqrt'. '{}' was passed.".format(
                                  self.potential_method))
         log_complete("diffusion potential")
+        return diff_potential
 
     def von_neumann_entropy(self, t_max=100):
         """Calculate Von Neumann Entropy
