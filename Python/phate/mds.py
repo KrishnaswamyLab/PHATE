@@ -2,7 +2,7 @@
 # (C) 2017 Krishnaswamy Lab GPLv2
 
 from __future__ import print_function, division
-from sklearn.manifold import MDS
+from sklearn.manifold import smacof
 from sklearn.decomposition import PCA
 from scipy.spatial.distance import pdist
 from scipy.spatial.distance import squareform
@@ -38,7 +38,7 @@ def cmdscale_fast(D, ndim):
 
 
 def embed_MDS(X, ndim=2, how='metric', distance_metric='euclidean',
-              n_jobs=1, seed=None):
+              n_jobs=1, seed=None, verbose=0):
     """Performs classic, metric, and non-metric MDS
 
     Metric MDS is initialized using classic MDS,
@@ -94,16 +94,16 @@ def embed_MDS(X, ndim=2, how='metric', distance_metric='euclidean',
                   "{} of shape {}...".format(type(X_dist),
                                              X_dist.shape))
         # Metric MDS from sklearn
-        Y = MDS(n_components=ndim, metric=True, max_iter=3000, eps=1e-12,
-                dissimilarity="precomputed", random_state=seed, n_jobs=n_jobs,
-                n_init=1).fit_transform(X_dist, init=Y)
+        Y, _ = smacof(X_dist, n_components=ndim, metric=True, max_iter=3000,
+                      eps=1e-12, random_state=seed, n_jobs=n_jobs,
+                      n_init=1, init=Y, verbose=verbose)
     if how == 'nonmetric':
         log_debug(
             "Performing non-metric MDS on "
             "{} of shape {}...".format(type(X_dist),
                                        X_dist.shape))
         # Nonmetric MDS from sklearn using metric MDS as an initialization
-        Y = MDS(n_components=ndim, metric=False, max_iter=3000, eps=1e-12,
-                dissimilarity="precomputed", random_state=seed, n_jobs=n_jobs,
-                n_init=1).fit_transform(X_dist, init=Y)
+        Y, _ = smacof(X_dist, n_components=ndim, metric=True, max_iter=3000,
+                      eps=1e-12, random_state=seed, n_jobs=n_jobs,
+                      n_init=1, init=Y, verbose=verbose)
     return Y

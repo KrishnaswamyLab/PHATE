@@ -28,7 +28,7 @@ PHATE is a tool for visualizing high dimensional single-cell data with natural p
 
 PHATE has been implemented in Python (2.7 and >=3.5), R_ and MATLAB_.
 
-.. _R: https://github.com/KrishnaswamyLab/phater
+.. _R: https://github.com/KrishnaswamyLab/phateR
 .. _MATLAB: https://github.com/KrishnaswamyLab/PHATE
 
 Python installation and dependencies

@@ -170,6 +170,11 @@ class PHATE(BaseEstimator):
         self.embedding = None
         self.X = None
         self._check_params()
+
+        if verbose is True:
+            verbose = 1
+        elif verbose is False:
+            verbose = 0
         self.verbose = verbose
         set_logging(verbose)
 
@@ -584,7 +589,7 @@ class PHATE(BaseEstimator):
                 self.embedding = embed_MDS(
                     self.diff_potential, ndim=self.n_components, how=self.mds,
                     distance_metric=self.mds_dist, n_jobs=self.n_jobs,
-                    seed=self.random_state)
+                    seed=self.random_state, verbose=self.verbose - 1)
                 log_complete("{} MDS".format(self.mds))
             if isinstance(self.graph, graphtools.graphs.LandmarkGraph):
                 log_debug("Extending to original data...")

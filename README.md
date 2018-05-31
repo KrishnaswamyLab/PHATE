@@ -71,9 +71,9 @@ In order to use PHATE in R, you must also install the Python package.
 
 #### Installation from CRAN and PyPi
 
-Install `phater` from CRAN by running the following code in R:
+Install `phateR` from CRAN by running the following code in R:
 
-    install.packages("phater")
+    install.packages("phateR")
 
 Install `phate` in Python by running the following code from a terminal:
 
@@ -84,7 +84,7 @@ Install `phate` in Python by running the following code from a terminal:
 The development version of PHATE can be installed directly from R with `devtools`:
 
     if (!suppressWarnings(require(devtools))) install.packages("devtools")
-    devtools::install_github("KrishnaswamyLab/phater")
+    devtools::install_github("KrishnaswamyLab/phateR")
 
 If you have the development version of `reticulate`, you can also install `phate` in Python by running the following code in R:
 
@@ -96,17 +96,17 @@ If you have the development version of `reticulate`, you can also install `phate
 The latest source version of PHATE can be accessed by running the following in a terminal:
 
     git clone --recursive git://github.com/SmitaKrishnaswamy/PHATE.git
-    cd PHATE/phater
+    cd PHATE/phateR
     R CMD INSTALL
     cd ../Python
     python setup.py install --user
 
-If the `phater` folder is empty, you have may forgotten to use the `--recursive` option for `git clone`. You can rectify this by running the following in a terminal:
+If the `phateR` folder is empty, you have may forgotten to use the `--recursive` option for `git clone`. You can rectify this by running the following in a terminal:
 
     cd PHATE
     git submodule init
     git submodule update
-    cd phater
+    cd phateR
     R CMD INSTALL
     cd ../Python
     python setup.py install --user
@@ -114,4 +114,4 @@ If the `phater` folder is empty, you have may forgotten to use the `--recursive`
 
 #### Tutorial and Reference
 
-For more information and a tutorial, read the [phater README](https://github.com/KrishnaswamyLab/phater). Documentation is available in the R help viewer with `help(phater::phate)`.
+For more information and a tutorial, read the [phateR README](https://github.com/KrishnaswamyLab/phateR). Documentation is available in the R help viewer with `help(phateR::phate)`.

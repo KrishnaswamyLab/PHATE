@@ -1,4 +1,4 @@
-[submodule "phateR"]
-	path = phateR
+[submodule "phater"]
+	path = phater
 	url = https://github.com/KrishnaswamyLab/phateR
 	branch = master
