@@ -579,12 +579,12 @@ class PHATE(BaseEstimator):
                 return self.graph.interpolate(self.embedding,
                                               transitions)
         else:
-            if self.t == 'auto':
-                t = self.optimal_t(t_max=t_max, plot=plot_optimal_t, ax=ax)
-                log_info("Automatically selected t = {}".format(t))
-            else:
-                t = self.t
             if self.diff_potential is None:
+                if self.t == 'auto':
+                    t = self.optimal_t(t_max=t_max, plot=plot_optimal_t, ax=ax)
+                    log_info("Automatically selected t = {}".format(t))
+                else:
+                    t = self.t
                 self.diff_potential = self.calculate_potential(self.diff_op, t)
             if self.embedding is None:
                 log_start("{} MDS".format(self.mds))
