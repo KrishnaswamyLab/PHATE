@@ -6,12 +6,12 @@ Potential of Heat-diffusion for Affinity-based Trajectory Embedding (PHATE)
 # (C) 2017 Krishnaswamy Lab GPLv2
 from __future__ import print_function, division, absolute_import
 
-import time
 import numpy as np
 import graphtools
 from sklearn.base import BaseEstimator
 from sklearn.exceptions import NotFittedError
 from scipy import sparse
+import warnings
 
 import matplotlib.pyplot as plt
 
@@ -47,10 +47,6 @@ class PHATE(BaseEstimator):
     a : int, optional, default: 10
         sets decay rate of kernel tails.
         If None, alpha decaying kernel is not used
-
-    alpha_threshold : float in range [0, 1], optional, default: 1e-5
-        Alpha decay kernel is truncated to zero below this value
-        Use 0 for exact alpha decay, 1 for KNN kernel
 
     n_landmark : int, optional, default: 2000
         number of landmarks to use in fast PHATE
@@ -95,6 +91,8 @@ class PHATE(BaseEstimator):
         For n_jobs below -1, (n_cpus + 1 + n_jobs) are used. Thus for
         n_jobs = -2, all CPUs but one are used
 
+    alpha_decay : deprecated. Use `a=None` to disable alpha decay
+
     njobs : deprecated in favor of n_jobs to match `sklearn` standards
 
     random_state : integer or numpy.RandomState, optional, default: None
@@ -113,7 +111,10 @@ class PHATE(BaseEstimator):
     embedding : array-like, shape=[n_samples, n_components]
         Stores the position of the dataset in the embedding space
 
-    graph : graphtools.BaseGraph
+    diff_op :  array-like, shape=[n_samples, n_samples] or [n_landmark, n_landmark]
+        The diffusion operator built from the graph
+
+    graph : graphtools.base.BaseGraph
         The graph built on the input data
 
     Examples
@@ -140,7 +141,7 @@ class PHATE(BaseEstimator):
         `BioRxiv <http://biorxiv.org/content/early/2017/03/24/120378>`_.
     """
 
-    def __init__(self, n_components=2, k=5, a=10, alpha_threshold=1e-4,
+    def __init__(self, n_components=2, k=5, a=10, alpha_decay=None,
                  n_landmark=2000, t='auto', potential_method='log',
                  n_pca=100, knn_dist='euclidean', mds_dist='euclidean',
                  mds='metric', n_jobs=1, random_state=None, verbose=1,
@@ -154,22 +155,27 @@ class PHATE(BaseEstimator):
         self.n_pca = n_pca
         self.knn_dist = knn_dist
         self.mds_dist = mds_dist
-        if njobs is not None:
-            print("Warning: njobs is deprecated. Please use n_jobs in future.")
-            n_jobs = njobs
-        self.n_jobs = n_jobs
         self.random_state = random_state
         self.potential_method = potential_method
-
-        if a is None:
-            alpha_threshold = 1
-        self.alpha_threshold = alpha_threshold
 
         self.graph = None
         self.diff_potential = None
         self.embedding = None
         self.X = None
         self._check_params()
+
+        if alpha_decay is not None:
+            warnings.warn("alpha_decay is deprecated. Use `a=None`"
+                          " to disable alpha decay in future.", FutureWarning)
+            if not alpha_decay:
+                self.a = None
+
+        if njobs is not None:
+            warnings.warn(
+                "Warning: njobs is deprecated. Please use n_jobs in future.",
+                FutureWarning)
+            n_jobs = njobs
+        self.n_jobs = n_jobs
 
         if verbose is True:
             verbose = 1
@@ -211,7 +217,6 @@ class PHATE(BaseEstimator):
         check_int(n_components=self.n_components,
                   k=self.k,
                   n_jobs=self.n_jobs)
-        check_between(0, 1, alpha_threshold=self.alpha_threshold)
         check_if_not(None, check_positive, a=self.a)
         check_if_not(None, check_positive, check_int,
                      n_landmark=self.n_landmark,
@@ -261,10 +266,6 @@ class PHATE(BaseEstimator):
         a : int, optional, default: 10
             sets decay rate of kernel tails.
             If None, alpha decaying kernel is not used
-
-        alpha_threshold : float in range [0, 1], optional, default: 1e-5
-            Alpha decay kernel is truncated to zero below this value
-            Use 0 for exact alpha decay, 1 for KNN kernel
 
         n_landmark : int, optional, default: 2000
             number of landmarks to use in fast PHATE
@@ -352,10 +353,6 @@ class PHATE(BaseEstimator):
         if 'a' in params and params['a'] != self.a:
             self.a = params['a']
             reset_kernel = True
-        if 'alpha_threshold' in params and \
-                params['alpha_threshold'] != self.alpha_threshold:
-            self.alpha_threshold = params['alpha_threshold']
-            reset_kernel = True
         if 'n_pca' in params and params['n_pca'] != self.n_pca:
             self.n_pca = params['n_pca']
             reset_kernel = True
@@ -419,8 +416,9 @@ class PHATE(BaseEstimator):
             Any metric from scipy.spatial.distance can be used
             If given, sets the distance metric for MDS
         """
-        print("Warning: PHATE.reset_mds is deprecated. "
-              "Please use PHATE.set_params in future.")
+        warnings.warn("PHATE.reset_mds is deprecated. "
+                      "Please use PHATE.set_params in future.",
+                      FutureWarning)
         if n_components is not None:
             self.n_components = n_components
         if mds is not None:
@@ -444,8 +442,9 @@ class PHATE(BaseEstimator):
             If given, sets which transformation of the diffusional
             operator is used to compute the diffusion potential
         """
-        print("Warning: PHATE.reset_potential is deprecated. "
-              "Please use PHATE.set_params in future.")
+        warnings.warn("PHATE.reset_potential is deprecated. "
+                      "Please use PHATE.set_params in future.",
+                      FutureWarning)
         if t is not None:
             self.t = t
         if potential_method is not None:
@@ -510,7 +509,7 @@ class PHATE(BaseEstimator):
                 distance=distance,
                 knn=self.k + 1,
                 decay=self.a,
-                thresh=self.alpha_threshold,
+                thresh=1e-4,
                 n_jobs=self.n_jobs,
                 verbose=self.verbose,
                 random_state=self.random_state)
@@ -521,7 +520,7 @@ class PHATE(BaseEstimator):
                 self.graph.set_params(
                     decay=self.a, knn=self.k + 1, distance=self.knn_dist,
                     n_jobs=self.n_jobs, verbose=self.verbose, n_pca=self.n_pca,
-                    thresh=self.alpha_threshold, n_landmark=self.n_landmark,
+                    thresh=1e-4, n_landmark=self.n_landmark,
                     random_state=self.random_state)
                 log_info("Using precomputed graph and diffusion operator...")
             except ValueError:
@@ -566,9 +565,10 @@ class PHATE(BaseEstimator):
                                  "using this method.")
         elif X is not None and not np.all(X == self.X):
             # fit to external data
-            raise RuntimeWarning("Pre-fit PHATE cannot be used to transform a "
-                                 "new data matrix. Please fit PHATE to the new"
-                                 " data by running 'fit' with the new data.")
+            warnings.warn("Pre-fit PHATE cannot be used to transform a "
+                          "new data matrix. Please fit PHATE to the new"
+                          " data by running 'fit' with the new data.",
+                          RuntimeWarning)
             if isinstance(self.graph, graphtools.TraditionalGraph):
                 raise ValueError("Cannot transform additional data using a "
                                  "precomputed distance matrix.")
