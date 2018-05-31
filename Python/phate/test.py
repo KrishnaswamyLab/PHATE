@@ -11,21 +11,22 @@ import numpy as np
 import pandas as pd
 
 
-def test_docs():
-    assert doctest.testmod(phate.phate).failed == 0
-    assert doctest.testmod(phate.vne).failed == 0
-    assert doctest.testmod(phate.utils).failed == 0
-    assert doctest.testmod(phate.preprocessing).failed == 0
-    assert doctest.testmod(phate.mds).failed == 0
-    assert doctest.testmod(phate.io).failed == 0
-    assert doctest.testmod(phate.logging).failed == 0
-
-
 def test_simple():
     tree_data, tree_clusters = phate.tree.gen_dla()
     phate_operator = phate.PHATE(k=15, t=100)
     tree_phate = phate_operator.fit_transform(tree_data)
     assert tree_phate.shape == (tree_data.shape[0], 2)
+
+
+def test_vne():
+    X = np.eye(10)
+    X[0, 0] = 5
+    X[3, 2] = 4
+    h = phate.vne.compute_von_neumann_entropy(X)
+    assert phate.vne.find_knee_point(h) == 23
+    x = np.arange(20)
+    y = np.exp(-x / 10)
+    assert phate.vne.find_knee_point(y, x) == 8
 
 
 def test_tree():
