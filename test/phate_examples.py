@@ -16,7 +16,7 @@ def test_tree():
     # instantiate phate_operator
     phate_operator = phate.PHATE(n_components=2, a=10, k=5, t=30, mds='classic',
                                  knn_dist='euclidean', mds_dist='euclidean',
-                                 njobs=-2, n_landmark=None)
+                                 n_jobs=-2, n_landmark=None)
 
     # run phate with classic MDS
     print("DLA tree, classic MDS")
@@ -24,12 +24,12 @@ def test_tree():
 
     # run phate with metric MDS
     # change the MDS embedding without recalculating diffusion potential
-    phate_operator.reset_mds(mds="metric")
+    phate_operator.set_params(mds="metric")
     print("DLA tree, metric MDS (log)")
     Y_mmds = phate_operator.fit_transform(M)
 
     # run phate with nonmetric MDS
-    phate_operator.reset_potential(potential_method="sqrt")
+    phate_operator.set_params(potential_method="sqrt")
     print("DLA tree, metric MDS (sqrt)")
     Y_sqrt = phate_operator.fit_transform(M)
 
@@ -42,12 +42,12 @@ def test_tree():
 
     # run phate with metric MDS
     # change the MDS embedding without recalculating diffusion potential
-    phate_fast_operator.reset_mds(mds="metric")
+    phate_fast_operator.set_params(mds="metric")
     print("DLA tree, fast metric MDS (log)")
     Y_mmds_fast = phate_fast_operator.fit_transform(M)
 
     # run phate with nonmetric MDS
-    phate_fast_operator.reset_potential(potential_method="sqrt")
+    phate_fast_operator.set_params(potential_method="sqrt")
     print("DLA tree, fast metric MDS (sqrt)")
     Y_sqrt_fast = phate_fast_operator.fit_transform(M)
 
