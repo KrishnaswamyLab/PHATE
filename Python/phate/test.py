@@ -3,7 +3,7 @@
 # (C) 2017 Krishnaswamy Lab GPLv2
 
 # Generating random fractal tree via DLA
-from __future__ import print_function, division
+from __future__ import print_function, division, absolute_import
 import doctest
 import nose2
 import phate
