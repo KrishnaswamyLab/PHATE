@@ -4,7 +4,7 @@ function W = compute_kernel_sparse(data, varargin)
 % varargin:
 %   'npca' (default = [], no PCA)
 %       perform fast random PCA before computing distances
-%   'k' (default = 10)
+%   'k' (default = 15)
 %       k of kNN graph
 
 % set up default parameters
