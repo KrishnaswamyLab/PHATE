@@ -27,12 +27,14 @@ def compute_von_neumann_entropy(data, t_max=100):
     Examples
     --------
     >>> import numpy as np
+    >>> import phate
     >>> X = np.eye(10)
     >>> X[0,0] = 5
     >>> X[3,2] = 4
-    >>> h = compute_von_neumann_entropy(X)
-    >>> find_knee_point(h)
+    >>> h = phate.vne.compute_von_neumann_entropy(X)
+    >>> phate.vne.find_knee_point(h)
     23
+
     """
     _, eigenvalues, _ = svd(data)
     entropy = []
@@ -69,10 +71,12 @@ def find_knee_point(y, x=None):
     Examples
     --------
     >>> import numpy as np
+    >>> import phate
     >>> x = np.arange(20)
     >>> y = np.exp(-x/10)
-    >>> find_knee_point(y,x)
+    >>> phate.vne.find_knee_point(y,x)
     8
+
     """
     try:
         y.shape

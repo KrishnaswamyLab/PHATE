@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 
 from .phate import PHATE
 from .tree import *

@@ -14,10 +14,9 @@ def test_tree():
                               rand_multiplier=2, seed=37, sigma=4)
 
     # instantiate phate_operator
-    phate_operator = phate.PHATE(n_components=2, a=10, k=5, t=30,
-                                 mds='classic', knn_dist='euclidean',
-                                 mds_dist='euclidean', n_jobs=-2,
-                                 n_landmark=None)
+    phate_operator = phate.PHATE(n_components=2, a=10, k=5, t=30, mds='classic',
+                                 knn_dist='euclidean', mds_dist='euclidean',
+                                 n_jobs=-2, n_landmark=None)
 
     # run phate with classic MDS
     print("DLA tree, classic MDS")
@@ -25,30 +24,30 @@ def test_tree():
 
     # run phate with metric MDS
     # change the MDS embedding without recalculating diffusion potential
-    phate_operator.reset_mds(mds="metric")
+    phate_operator.set_params(mds="metric")
     print("DLA tree, metric MDS (log)")
     Y_mmds = phate_operator.fit_transform(M)
 
     # run phate with nonmetric MDS
-    phate_operator.reset_potential(potential_method="sqrt")
+    phate_operator.set_params(potential_method="sqrt")
     print("DLA tree, metric MDS (sqrt)")
     Y_sqrt = phate_operator.fit_transform(M)
 
     phate_fast_operator = phate.PHATE(
         n_components=2, a=10, t=90, k=5, mds='classic', mds_dist='euclidean',
-        alpha_decay=True, n_landmark=1000)
+        n_landmark=1000)
     # run phate with classic MDS
     print("DLA tree, fast classic MDS")
     Y_cmds_fast = phate_fast_operator.fit_transform(M)
 
     # run phate with metric MDS
     # change the MDS embedding without recalculating diffusion potential
-    phate_fast_operator.reset_mds(mds="metric")
+    phate_fast_operator.set_params(mds="metric")
     print("DLA tree, fast metric MDS (log)")
     Y_mmds_fast = phate_fast_operator.fit_transform(M)
 
     # run phate with nonmetric MDS
-    phate_fast_operator.reset_potential(potential_method="sqrt")
+    phate_fast_operator.set_params(potential_method="sqrt")
     print("DLA tree, fast metric MDS (sqrt)")
     Y_sqrt_fast = phate_fast_operator.fit_transform(M)
 
@@ -95,6 +94,7 @@ def test_tree():
 
     plt.tight_layout()
     plt.savefig("python{}_tree.png".format(python_version), dpi=100)
+    return 0
 
 
 def test_bmmsc():
@@ -106,11 +106,12 @@ def test_bmmsc():
 
     # library_size_normalize performs L1 normalization on each cell
     bmmsc_norm = phate.preprocessing.library_size_normalize(bmmsc)
+    bmmsc_norm = np.sqrt(bmmsc_norm)
     phate_operator = phate.PHATE(
-        n_components=2, t='auto', a=200, k=10, mds='metric',
-        mds_dist='euclidean', n_landmark=None)
+        n_components=2, t='auto', a=200, k=10, mds='metric', mds_dist='euclidean',
+        n_landmark=None)
     phate_fast_operator = phate.PHATE(
-        n_components=2, t='auto', k=10, mds='metric', mds_dist='euclidean',
+        n_components=2, t='auto', a=200, k=10, mds='metric', mds_dist='euclidean',
         n_landmark=1000)
 
     fig, (ax1, ax2) = plt.subplots(1, 2, sharey='all')
@@ -145,8 +146,9 @@ def test_bmmsc():
     plt.gcf().set_size_inches(8, 8)
     plt.tight_layout()
     plt.savefig("python{}_bmmsc.png".format(python_version), dpi=100)
+    return 0
 
-
-if __name__ == '__main__':
-    test_tree()
-    test_bmmsc()
+if __name__ == "__main__":
+    out = test_tree()
+    out += test_bmmsc()
+    exit(out)
