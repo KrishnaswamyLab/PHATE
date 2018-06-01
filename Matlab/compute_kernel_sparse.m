@@ -8,7 +8,7 @@ function W = compute_kernel_sparse(data, varargin)
 %       k of kNN graph
 
 % set up default parameters
-k = 10;
+k = 15;
 npca = [];
 distfun = 'euclidean';
 gamma = [];
