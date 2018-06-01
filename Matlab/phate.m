@@ -14,7 +14,12 @@ function Y = phate(data, varargin)
 %   'ndim' - number of (output) embedding dimensions. Common values are 2
 %   or 3. Defaults to 2.
 %
-%   'k' - number of nearest neighbors of the knn graph. Defaults to 15.
+%   'k' - number of nearest neighbors for bandwidth of adaptive alpha
+%   decaying kernel or, when a=[], number of nearest neighbors of the knn
+%   graph. Defaults to 5.
+%
+%   'a' - alpha of alpha decaying kernel. when a=[] knn (unweighted) kernel
+%   is used. Defaults to 10.
 %
 %   't' - number of diffusion steps. Defaults to [] wich autmatically picks
 %   the optimal t.
@@ -44,7 +49,12 @@ function Y = phate(data, varargin)
 %       'sqrt' - sqrt(P). (not default but often produces superior
 %       embeddings)
 %
-%       'plogp' - P*log(P).
+%       'gamma' - 2/(1-\gamma)*P^((1-\gamma)/2) (default, with gamma=1)
+%
+%   'gamma' - gamma value for gamma potential method. Value between -1 and
+%   1. -1 is diffusion distance. 1 is log potential. 0 is sqrt. Smaller
+%   gamma is a more locally sensitive embedding whereas larger gamma is a
+%   more globally sensitive embedding. Defaults to 1.
 %
 %   'pot_eps' - epsilon value added to diffusion operator prior to
 %   computing potential. Only used for 'pot_method' is 'log', i.e.:
@@ -64,7 +74,7 @@ function Y = phate(data, varargin)
 %   supplied input data can be empty ([]). Defaults to [].
 
 npca = 100;
-k = 15;
+k = 5;
 nsvd = 100;
 n_landmarks = 2000;
 ndim = 2;
@@ -72,13 +82,13 @@ t = [];
 mds_method = 'mmds';
 distfun = 'euclidean';
 distfun_mds = 'euclidean';
-pot_method = 'log';
+pot_method = 'gamma';
 K = [];
+a = 10;
 Pnm = [];
 t_max = 100;
-% a = [];
-pot_eps = 1e-3;
-% alpha_th = 1e-4;
+pot_eps = 1e-7;
+gamma = 1;
 
 % get input parameters
 for i=1:length(varargin)
@@ -86,10 +96,10 @@ for i=1:length(varargin)
     if(strcmp(varargin{i},'k'))
        k = lower(varargin{i+1});
     end
-%     % a for alpha decaying kernel
-%     if(strcmp(varargin{i},'a'))
-%        a = lower(varargin{i+1});
-%     end
+    % a (alpha) for alpha decaying kernel
+    if(strcmp(varargin{i},'a'))
+       a = lower(varargin{i+1});
+    end
     % diffusion time
     if(strcmp(varargin{i},'t'))
        t = lower(varargin{i+1});
@@ -126,7 +136,7 @@ for i=1:length(varargin)
     if(strcmp(varargin{i},'n_landmarks'))
        n_landmarks = lower(varargin{i+1});
     end
-    % potential method: log, sqrt
+    % potential method: log, sqrt, gamma
     if(strcmp(varargin{i},'pot_method'))
        pot_method = lower(varargin{i+1});
     end
@@ -134,14 +144,14 @@ for i=1:length(varargin)
     if(strcmp(varargin{i},'kernel'))
        K = lower(varargin{i+1});
     end
+    % kernel
+    if(strcmp(varargin{i},'gamma'))
+       gamma = lower(varargin{i+1});
+    end
     % pot_eps
     if(strcmp(varargin{i},'pot_eps'))
        pot_eps = lower(varargin{i+1});
     end
-%     % alpha_th
-%     if(strcmp(varargin{i},'alpha_th'))
-%        alpha_th = lower(varargin{i+1});
-%     end
 end
 
 tt_pca = 0;
@@ -170,11 +180,13 @@ if isempty(K)
     end
     % kernel
     tic;
-%     if ~isempty(a)
-%         K = compute_alpha_kernel_sparse(pc, 'k', k, 'distfun', distfun, 'a', a, 'th', alpha_th);
-%     else
+    if isempty(a)
+        disp 'using unweighted knn kernel'
         K = compute_kernel_sparse(pc, 'k', k, 'distfun', distfun);
-%     end
+    else
+        disp 'using alpha decaying kernel'
+        K = compute_alpha_kernel_sparse(pc, 'k', k, 'a', a, 'distfun', distfun);
+    end
     tt_kernel = toc;
     disp(['Computing kernel took ' num2str(tt_kernel) ' seconds']);
 else
@@ -241,11 +253,13 @@ switch pot_method
     case 'sqrt'
         disp 'using sqrt(P) potential distance'
         Pot = sqrt(P_t);
-    case 'plogp'
-        disp 'using P*log(P) potential distance'
-        Pot = P_t .* log(P_t + eps);
+    case 'gamma'
+        disp 'Pot = 2/(1-\gamma)*P^((1-\gamma)/2)'
+        disp(['gamma = ' num2str(gamma)]);
+        gamma = min(gamma, 0.95);
+        Pot = 2/(1-gamma)*P_t.^((1-gamma)/2);
     otherwise
-        disp 'potential method unknown'
+        error 'potential method unknown'
 end
 PDX = squareform(pdist(Pot, distfun_mds));
 tt_pdx = toc;
