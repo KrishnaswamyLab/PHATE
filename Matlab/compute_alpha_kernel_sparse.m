@@ -1,5 +1,15 @@
 function K = compute_alpha_kernel_sparse(data, varargin)
-
+% K = computer_alpha_kernel_sparse(data, varargin)
+% Computes sparse alpha-decay kernel
+% varargin: 
+%   'npca' (default = [], no PCA)
+%       Perform fast random PCA before computing distances
+%   'k' (default = 5)
+%       k for the knn distances for the locally adaptive bandwidth
+%   'a' (default = 10)
+%       The alpha exponent in the alpha-decaying kernel
+%   'distfun' (default = 'euclidean')
+%       Input distance function
 k = 5;
 a = 10;
 npca = [];
@@ -58,15 +68,8 @@ epsilon=kdist(:,k+1);
 below_thresh=kdist(:,end)>=bth*epsilon;
 
 idx_thresh=find(below_thresh);
-% K=sparse(N,N);
 
-% K(idx_thresh,idx)=
-
-
-
-if ~isempty(idx_thresh)
-    
-    
+if ~isempty(idx_thresh) 
     K=exp(-(kdist(idx_thresh,:)./epsilon(idx_thresh)).^a);
     K(K<=th)=0;
     K=K(:);
@@ -126,8 +129,7 @@ if length(idx_thresh)<N
     
 end
 
-
-
+% Build the kernel
 K = sparse(i, j, K);
 
 disp '   Symmetrize affinities'
