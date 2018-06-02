@@ -57,10 +57,7 @@ class PHATE(BaseEstimator):
         according to the knee point in the Von Neumann Entropy of
         the diffusion operator
 
-    potential_method : string, optional, default: 'log'
-        choose from ['log', 'sqrt'].
-        Selects which transformation of the diffusional operator is used
-        to compute the diffusion potential
+    gamma : float, optional, default: 1
 
     n_pca : int, optional, default: 100
         Number of principal components to use for calculating
@@ -91,10 +88,6 @@ class PHATE(BaseEstimator):
         For n_jobs below -1, (n_cpus + 1 + n_jobs) are used. Thus for
         n_jobs = -2, all CPUs but one are used
 
-    alpha_decay : deprecated. Use `a=None` to disable alpha decay
-
-    njobs : deprecated in favor of n_jobs to match `sklearn` standards
-
     random_state : integer or numpy.RandomState, optional, default: None
         The generator used to initialize SMACOF (metric, nonmetric) MDS
         If an integer is given, it fixes the seed
@@ -102,6 +95,17 @@ class PHATE(BaseEstimator):
 
     verbose : `int` or `boolean`, optional (default: 1)
         If `True` or `> 0`, print status messages
+
+
+    potential_method : deprecated.
+        Use `gamma=1` for log transformation and `gamma=0` for square root
+        transformation.
+
+    alpha_decay : deprecated.
+        Use `a=None` to disable alpha decay
+
+    njobs : deprecated.
+        Use n_jobs to match `sklearn` standards
 
     Attributes
     ----------
@@ -140,11 +144,11 @@ class PHATE(BaseEstimator):
         `BioRxiv <http://biorxiv.org/content/early/2017/03/24/120378>`_.
     """
 
-    def __init__(self, n_components=2, k=5, a=10, alpha_decay=None,
-                 n_landmark=2000, t='auto', potential_method='log',
+    def __init__(self, n_components=2, k=5, a=10,
+                 n_landmark=2000, t='auto', gamma=1,
                  n_pca=100, knn_dist='euclidean', mds_dist='euclidean',
                  mds='metric', n_jobs=1, random_state=None, verbose=1,
-                 njobs=None):
+                 potential_method=None, alpha_decay=None, njobs=None):
         self.n_components = n_components
         self.a = a
         self.k = k
@@ -155,7 +159,6 @@ class PHATE(BaseEstimator):
         self.knn_dist = knn_dist
         self.mds_dist = mds_dist
         self.random_state = random_state
-        self.potential_method = potential_method
 
         self.graph = None
         self.diff_potential = None
@@ -170,10 +173,29 @@ class PHATE(BaseEstimator):
 
         if njobs is not None:
             warnings.warn(
-                "Warning: njobs is deprecated. Please use n_jobs in future.",
+                "njobs is deprecated. Please use n_jobs in future.",
                 FutureWarning)
             n_jobs = njobs
         self.n_jobs = n_jobs
+
+        if potential_method is not None:
+            if potential_method == 'log':
+                gamma = 1
+            elif potential_method == 'sqrt':
+                gamma = 0
+            else:
+                raise ValueError("potential_method {} not recognized. Please "
+                                 "use gamma between -1 and 1".format(
+                                     potential_method))
+            warnings.warn(
+                "potential_method is deprecated. Setting gamma to {} to achieve"
+                " {} transformation.".format(gamma, potential_method),
+                FutureWarning)
+        elif gamma > 0.99 and gamma < 1:
+            warnings.warn("0.99 < gamma < 1 is numerically unstable. Setting gamma to 0.99",
+                          RuntimeWarning)
+            gamma = 0.99
+        self.gamma = gamma
 
         if verbose is True:
             verbose = 1
@@ -216,6 +238,7 @@ class PHATE(BaseEstimator):
         check_int(n_components=self.n_components,
                   k=self.k,
                   n_jobs=self.n_jobs)
+        check_between(0, 1, gamma=self.gamma)
         check_if_not(None, check_positive, a=self.a)
         check_if_not(None, check_positive, check_int,
                      n_landmark=self.n_landmark,
@@ -238,8 +261,6 @@ class PHATE(BaseEstimator):
                  mds_dist=self.mds_dist)
         check_in(['classic', 'metric', 'nonmetric'],
                  mds=self.mds)
-        check_in(['log', 'sqrt'],
-                 potential_method=self.potential_method)
 
     def _set_graph_params(self, **params):
         try:
@@ -352,39 +373,60 @@ class PHATE(BaseEstimator):
         if 'n_components' in params and params['n_components'] != self.n_components:
             self.n_components = params['n_components']
             reset_embedding = True
+            del params['n_components']
         if 'mds' in params and params['mds'] != self.mds:
             self.mds = params['mds']
             reset_embedding = True
+            del params['mds']
         if 'mds_dist' in params and params['mds_dist'] != self.mds_dist:
             self.mds_dist = params['mds_dist']
             reset_embedding = True
+            del params['mds_dist']
 
         # diff potential parameters
         if 't' in params and params['t'] != self.t:
             self.t = params['t']
             reset_potential = True
-        if 'potential_method' in params and \
-                params['potential_method'] != self.potential_method:
-            self.potential_method = params['potential_method']
+            del params['t']
+        if 'potential_method' in params:
+            if params['potential_method'] == 'log':
+                params['gamma'] = 1
+            elif params['potential_method'] == 'sqrt':
+                params['gamma'] = 0
+            else:
+                raise ValueError("potential_method {} not recognized. Please "
+                                 "use gamma between -1 and 1".format(
+                                     params['potential_method']))
+            warnings.warn(
+                "potential_method is deprecated. Setting gamma to {} to "
+                "achieve {} transformation.".format(
+                    params['gamma'],
+                    params['potential_method']),
+                FutureWarning)
+            del params['potential_method']
+        if 'gamma' in params and \
+                params['gamma'] != self.gamma:
+            self.gamma = params['gamma']
             reset_potential = True
+            del params['gamma']
 
         # kernel parameters
         if 'k' in params and params['k'] != self.k:
             self.k = params['k']
             reset_kernel = True
+            del params['k']
         if 'a' in params and params['a'] != self.a:
             self.a = params['a']
             reset_kernel = True
+            del params['a']
         if 'n_pca' in params and params['n_pca'] != self.n_pca:
             self.n_pca = params['n_pca']
             reset_kernel = True
+            del params['n_pca']
         if 'knn_dist' in params and params['knn_dist'] != self.knn_dist:
-            if self.knn_dist is 'precomputed' or \
-                    params['knn_dist'] is 'precomputed':
-                # need a different type of graph, reset entirely
-                self.graph = None
             self.knn_dist = params['knn_dist']
             reset_kernel = True
+            del params['knn_dist']
         if 'n_landmark' in params and params['n_landmark'] != self.n_landmark:
             if self.n_landmark is None or params['n_landmark'] is None:
                 # need a different type of graph, reset entirely
@@ -392,18 +434,22 @@ class PHATE(BaseEstimator):
             else:
                 self._set_graph_params(n_landmark=params['n_landmark'])
             self.n_landmark = params['n_landmark']
+            del params['n_landmark']
 
         # parameters that don't change the embedding
         if 'n_jobs' in params:
             self.n_jobs = params['n_jobs']
             self._set_graph_params(n_jobs=params['n_jobs'])
+            del params['n_jobs']
         if 'random_state' in params:
             self.random_state = params['random_state']
             self._set_graph_params(random_state=params['random_state'])
+            del params['random_state']
         if 'verbose' in params:
             self.verbose = params['verbose']
             set_logging(self.verbose)
             self._set_graph_params(verbose=params['verbose'])
+            del params['verbose']
 
         if reset_kernel:
             # can't reset the graph kernel without making a new graph
@@ -418,7 +464,7 @@ class PHATE(BaseEstimator):
         self._check_params()
         return self
 
-    def reset_mds(self, n_components=None, mds=None, mds_dist=None):
+    def reset_mds(self, **kwargs):
         """
         Deprecated. Reset parameters related to multidimensional scaling
 
@@ -441,15 +487,9 @@ class PHATE(BaseEstimator):
         warnings.warn("PHATE.reset_mds is deprecated. "
                       "Please use PHATE.set_params in future.",
                       FutureWarning)
-        if n_components is not None:
-            self.n_components = n_components
-        if mds is not None:
-            self.mds = mds
-        if mds_dist is not None:
-            self.mds_dist = mds_dist
-        self.embedding = None
+        self.set_params(**kwargs)
 
-    def reset_potential(self, t=None, potential_method=None):
+    def reset_potential(self, **kwargs):
         """
         Deprecated. Reset parameters related to the diffusion potential
 
@@ -467,11 +507,7 @@ class PHATE(BaseEstimator):
         warnings.warn("PHATE.reset_potential is deprecated. "
                       "Please use PHATE.set_params in future.",
                       FutureWarning)
-        if t is not None:
-            self.t = t
-        if potential_method is not None:
-            self.potential_method = potential_method
-        self.diff_potential = None
+        self.set_params(**kwargs)
 
     def fit(self, X):
         """Computes the diffusion operator
@@ -677,16 +713,15 @@ class PHATE(BaseEstimator):
         # diffused diffusion operator
         diff_op_t = np.linalg.matrix_power(diff_op, t)
 
-        if self.potential_method == 'log':
+        if self.gamma == 1:
             # handling small values
             diff_op_t = diff_op_t + 1e-7
             diff_potential = -1 * np.log(diff_op_t)
-        elif self.potential_method == 'sqrt':
-            diff_potential = np.sqrt(diff_op_t)
+        elif self.gamma == -1:
+            diff_potential = diff_op_t
         else:
-            raise ValueError("Allowable 'potential_method' values: 'log' or "
-                             "'sqrt'. '{}' was passed.".format(
-                                 self.potential_method))
+            c = (1 - self.gamma) / 2
+            diff_potential = ((diff_op_t)**c) / c
         log_complete("diffusion potential")
         return diff_potential
 
