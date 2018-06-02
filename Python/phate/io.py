@@ -6,6 +6,28 @@ import pandas as pd
 import scipy.io as sio
 import warnings
 import numpy as np
+import os
+
+
+def _combine_gene_id(genes):
+    """Creates gene labels of the form SYMBOL (ID)
+
+    Parameters
+    ----------
+
+    genes : pandas.DataFrame with columns ['symbol', 'id']
+
+    Returns
+    -------
+
+    pandas.Index with combined gene symbols and ids
+    """
+    columns = np.core.defchararray.add(
+        np.array(genes['symbol'], dtype=str), ' (')
+    columns = np.core.defchararray.add(
+        columns, np.array(genes['id'], dtype=str))
+    columns = np.core.defchararray.add(columns, ')')
+    return pd.Index(columns)
 
 
 def load_10X(data_dir, sparse=True, gene_labels='symbol'):
@@ -27,9 +49,9 @@ def load_10X(data_dir, sparse=True, gene_labels='symbol'):
         will raise and error otherwise
     sparse : boolean
         If True, a sparse Pandas DataFrame is returned.
-    gene_labels : string, 'id' or 'symbol', optional, default: 'id'
+    gene_labels : string, {'id', 'symbol', 'both'} optional, default: 'symbol'
         Whether the columns of the dataframe should contain gene ids or gene
-        symbols
+        symbols. If 'both', returns symbols followed by ids in parentheses.
 
     Returns
     -------
@@ -37,15 +59,15 @@ def load_10X(data_dir, sparse=True, gene_labels='symbol'):
         imported data matrix
     """
 
-    if gene_labels not in ['id', 'symbol']:
-        raise ValueError("gene_labels not in ['id', 'symbol']")
+    if gene_labels not in ['id', 'symbol', 'both']:
+        raise ValueError("gene_labels not in ['id', 'symbol', 'both']")
 
     try:
-        m = sio.mmread(data_dir + "/matrix.mtx")
-        genes = pd.read_csv(data_dir + "/genes.tsv",
+        m = sio.mmread(os.path.join(data_dir, "matrix.mtx"))
+        genes = pd.read_csv(os.path.join(data_dir, "genes.tsv"),
                             delimiter='\t', header=None)
         genes.columns = pd.Index(['id', 'symbol'])
-        barcodes = pd.read_csv(data_dir + "/barcodes.tsv",
+        barcodes = pd.read_csv(os.path.join(data_dir, "barcodes.tsv"),
                                delimiter='\t', header=None)
 
     except (FileNotFoundError, OSError):
@@ -54,12 +76,16 @@ def load_10X(data_dir, sparse=True, gene_labels='symbol'):
             "in data_dir")
 
     index = pd.Index(barcodes[0])
-    columns = pd.Index(genes[gene_labels])
-    if sparse and np.sum(columns.duplicated()) > 0:
-        warnings.warn("Duplicate gene names detected! Forcing dense matrix. "
-                      "Alternatively, try loading the matrix with "
-                      "`gene_labels='id'`", RuntimeWarning)
-        sparse = False
+    if gene_labels == 'both':
+        columns = _combine_gene_id(genes)
+    else:
+        columns = pd.Index(genes[gene_labels])
+        if sparse and np.sum(columns.duplicated()) > 0:
+            warnings.warn(
+                "Duplicate gene names detected! Forcing `gene_labels='both'`."
+                "Alternatively, try loading the matrix with "
+                "`sparse=False`", RuntimeWarning)
+            columns = _combine_gene_id(genes)
 
     if sparse:
         data = pd.SparseDataFrame(m.T, index=index,
