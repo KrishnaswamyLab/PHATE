@@ -58,6 +58,9 @@ class PHATE(BaseEstimator):
         the diffusion operator
 
     gamma : float, optional, default: 1
+        Informational distance constant between -1 and 1.
+        `gamma=1` gives the PHATE log potential, `gamma=0` gives
+        a square root potential.
 
     n_pca : int, optional, default: 100
         Number of principal components to use for calculating
@@ -277,6 +280,7 @@ class PHATE(BaseEstimator):
 
         Parameters
         ----------
+
         n_components : int, optional, default: 2
             number of dimensions in which the data will be embedded
 
@@ -296,10 +300,10 @@ class PHATE(BaseEstimator):
             according to the knee point in the Von Neumann Entropy of
             the diffusion operator
 
-        potential_method : string, optional, default: 'log'
-            choose from ['log', 'sqrt'].
-            Selects which transformation of the diffusional operator is used
-            to compute the diffusion potential
+        gamma : float, optional, default: 1
+            Informational distance constant between -1 and 1.
+            `gamma=1` gives the PHATE log potential, `gamma=0` gives
+            a square root potential.
 
         n_pca : int, optional, default: 100
             Number of principal components to use for calculating
@@ -309,10 +313,10 @@ class PHATE(BaseEstimator):
 
         knn_dist : string, optional, default: 'euclidean'
             recommended values: 'euclidean', 'cosine', 'precomputed'
-            Any metric from `sklearn.neighbors.NearestNeighbors` can be used.
-            Distance metric for building kNN graph. If 'precomputed',
-            data should be an [n_samples x n_samples] pairwise
-            distance matrix
+            Any metric from `scipy.spatial.distance` can be used
+            distance metric for building kNN graph. If 'precomputed',
+            `data` should be an n_samples x n_samples distance or
+            affinity matrix
 
         mds_dist : string, optional, default: 'euclidean'
             recommended values: 'euclidean' and 'cosine'
@@ -333,10 +337,10 @@ class PHATE(BaseEstimator):
         random_state : integer or numpy.RandomState, optional, default: None
             The generator used to initialize SMACOF (metric, nonmetric) MDS
             If an integer is given, it fixes the seed
-            Defaults to the global numpy random number generator
+            Defaults to the global `numpy` random number generator
 
-        verbose : boolean, optional
-            If true, print status messages
+        verbose : `int` or `boolean`, optional (default: 1)
+            If `True` or `> 0`, print status messages
 
         Examples
         --------
