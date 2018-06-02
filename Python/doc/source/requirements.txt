@@ -5,3 +5,4 @@ scipy>=0.14.0
 matplotlib
 sklearn
 future
+graphtools
