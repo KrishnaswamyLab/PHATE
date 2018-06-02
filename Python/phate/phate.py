@@ -41,7 +41,7 @@ class PHATE(BaseEstimator):
     n_components : int, optional, default: 2
         number of dimensions in which the data will be embedded
 
-    k : int, optional, default: 15
+    k : int, optional, default: 10
         number of nearest neighbors on which to build kernel
 
     a : int, optional, default: 10
@@ -144,7 +144,7 @@ class PHATE(BaseEstimator):
         `BioRxiv <http://biorxiv.org/content/early/2017/03/24/120378>`_.
     """
 
-    def __init__(self, n_components=2, k=5, a=10,
+    def __init__(self, n_components=2, k=10, a=10,
                  n_landmark=2000, t='auto', gamma=1,
                  n_pca=100, knn_dist='euclidean', mds_dist='euclidean',
                  mds='metric', n_jobs=1, random_state=None, verbose=1,
@@ -280,7 +280,7 @@ class PHATE(BaseEstimator):
         n_components : int, optional, default: 2
             number of dimensions in which the data will be embedded
 
-        k : int, optional, default: 5
+        k : int, optional, default: 10
             number of nearest neighbors on which to build kernel
 
         a : int, optional, default: 10
@@ -733,8 +733,7 @@ class PHATE(BaseEstimator):
         around the "knee" of the entropy curve.
 
         We require that 'fit' stores the value of `PHATE.diff_op`
-        in order to calculate the Von Neumann entropy. Alternatively,
-        we could recalculate it here, but that is less desirable.
+        in order to calculate the Von Neumann entropy.
 
         Parameters
         ----------
