@@ -544,6 +544,7 @@ class PHATE(BaseEstimator):
                 precomputed = "distance"
             else:
                 precomputed = "affinity"
+            log_info("Using precomputed {} matrix...".format(precomputed))
             n_pca = None
         else:
             precomputed = None
