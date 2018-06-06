@@ -11,7 +11,7 @@ function W = compute_kernel_sparse(data, varargin)
 k = 5;
 npca = [];
 distfun = 'euclidean';
-gamma = [];
+
 % get the input parameters
 if ~isempty(varargin)
     for j = 1:length(varargin)
@@ -26,10 +26,6 @@ if ~isempty(varargin)
         % distfun
         if strcmp(varargin{j}, 'distfun')
             distfun = varargin{j+1};
-        end
-        % gamma
-        if strcmp(varargin{j}, 'gamma')
-            gamma = varargin{j+1};
         end
     end
 end
@@ -57,11 +53,7 @@ j = idx(:);
 W = sparse(i, j, ones(size(j)));
 
 disp '   Symmetrize affinities'
-if isempty(gamma)
-    W = W + W';
-else
-    W = gamma * min(W,W') + (1-gamma) * max(W,W');
-end
+W = W + W';
 
 disp '   Done computing kernel'
 

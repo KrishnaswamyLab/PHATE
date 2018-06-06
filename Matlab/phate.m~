@@ -16,8 +16,7 @@ function Y = phate(data, varargin)
 %
 %   'k' - number of nearest neighbors for bandwidth of adaptive alpha
 %   decaying kernel or, when a=[], number of nearest neighbors of the knn
-%   graph. For the unweighted kernel we recommend k to be a bit larger,
-%   e.g. 10 or 15. Defaults to 5.
+%   graph. Defaults to 5.
 %
 %   'a' - alpha of alpha decaying kernel. when a=[] knn (unweighted) kernel
 %   is used. Defaults to 10.
@@ -156,10 +155,8 @@ for i=1:length(varargin)
 end
 
 if isempty(a) && k <=5
-    disp '======================================================================='
-    disp 'Make sure k is not too small when using an unweighted knn kernel (a=[])'
+    disp 'Make sure k is not too small when using an unweighted knn kernel'
     disp(['Currently k = ' numstr(k) ', which may be too small']);
-    disp '======================================================================='
 end
 
 tt_pca = 0;
