@@ -33,13 +33,20 @@ def library_size_normalize(data, verbose=False):
     if verbose:
         print("Normalizing library sizes for %s cells" % (data.shape[0]))
 
+    # pandas support
+    columns, index = None, None
     try:
-        if isinstance(data, pd.SparseDataFrame):
+        if isinstance(data, pd.SparseDataFrame) or \
+                pd.api.types.is_sparse(data):
+            columns, index = data.columns, data.index
             data = data.to_coo()
-        elif pd.api.types.is_sparse(data):
-            data = data.to_coo()
-    except NameError:
-        pass
+        elif isinstance(data, pd.DataFrame):
+            columns, index = data.columns, data.index
+    except NameError as e:
+        if not str(e) == "name 'pd' is not defined":
+            raise
+        else:
+            pass
     except AttributeError as e:
         warnings.warn("{}: is pandas out of date? ({})".format(
             str(e), pd.__version__), ImportWarning)
@@ -76,4 +83,12 @@ def library_size_normalize(data, verbose=False):
     # axis = 1 independently normalizes each sample
 
     data_norm = data_norm * median_transcript_count
+    if columns is not None:
+        # pandas dataframe
+        if sparse.issparse(data_norm):
+            data_norm = pd.SparseDataFrame(data_norm, default_fill_value=0)
+        else:
+            data_norm = pd.DataFrame(data_norm)
+        data_norm.columns = columns
+        data_norm.index = index
     return data_norm

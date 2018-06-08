@@ -23,7 +23,7 @@ xlabel 'PCA1'
 ylabel 'PCA2'
 
 %% PHATE 2D
-Y_PHATE_2D = phate(M, 't', 45);
+Y_PHATE_2D = phate(M, 't', 20, 'gamma', 0);
 
 %% plot PHATE 2D
 figure;
@@ -36,7 +36,7 @@ xlabel 'PHATE1'
 ylabel 'PHATE2'
 
 %% PHATE 3D
-Y_PHATE_3D = phate(M, 'ndim', 3, 't', 45);
+Y_PHATE_3D = phate(M, 'ndim', 3, 't', 20);
 
 %% plot PHATE 3D
 figure;
