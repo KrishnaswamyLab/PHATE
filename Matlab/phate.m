@@ -20,7 +20,7 @@ function Y = phate(data, varargin)
 %   e.g. 10 or 15. Defaults to 5.
 %
 %   'a' - alpha of alpha decaying kernel. when a=[] knn (unweighted) kernel
-%   is used. Defaults to 10.
+%   is used. Defaults to 15.
 %
 %   't' - number of diffusion steps. Defaults to [] wich autmatically picks
 %   the optimal t.
@@ -50,16 +50,16 @@ function Y = phate(data, varargin)
 %       'sqrt' - sqrt(P). (not default but often produces superior
 %       embeddings)
 %
-%       'gamma' - 2/(1-\gamma)*P^((1-\gamma)/2) (default, with gamma=1)
+%       'gamma' - 2/(1-\gamma)*P^((1-\gamma)/2)
 %
 %   'gamma' - gamma value for gamma potential method. Value between -1 and
 %   1. -1 is diffusion distance. 1 is log potential. 0 is sqrt. Smaller
 %   gamma is a more locally sensitive embedding whereas larger gamma is a
-%   more globally sensitive embedding. Defaults to 1.
+%   more globally sensitive embedding. Defaults to 0.5.
 %
 %   'pot_eps' - epsilon value added to diffusion operator prior to
 %   computing potential. Only used for 'pot_method' is 'log', i.e.:
-%   -log(P + pot_eps). Defaults to 1e-3.
+%   -log(P + pot_eps). Defaults to 1e-7.
 %
 %   'n_landmarks' - number of landmarks for fast and scalable PHATE. [] or
 %   n_landmarks = npoints does no landmarking, which is slower. More
@@ -83,13 +83,13 @@ t = [];
 mds_method = 'mmds';
 distfun = 'euclidean';
 distfun_mds = 'euclidean';
-pot_method = 'gamma';
+pot_method = 'log';
 K = [];
-a = 10;
+a = 15;
 Pnm = [];
 t_max = 100;
 pot_eps = 1e-7;
-gamma = 1;
+gamma = 0.5;
 
 % get input parameters
 for i=1:length(varargin)
