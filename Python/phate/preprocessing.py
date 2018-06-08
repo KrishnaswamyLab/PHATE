@@ -42,8 +42,11 @@ def library_size_normalize(data, verbose=False):
             data = data.to_coo()
         elif isinstance(data, pd.DataFrame):
             columns, index = data.columns, data.index
-    except NameError:
-        pass
+    except NameError as e:
+        if not str(e) == "name 'pd' is not defined":
+            raise
+        else:
+            pass
     except AttributeError as e:
         warnings.warn("{}: is pandas out of date? ({})".format(
             str(e), pd.__version__), ImportWarning)
