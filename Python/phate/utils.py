@@ -1,4 +1,5 @@
 import numbers
+import numpy as np
 
 
 def check_positive(**params):
