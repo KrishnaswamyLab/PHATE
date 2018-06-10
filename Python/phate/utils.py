@@ -1,4 +1,5 @@
 import numbers
+import numpy as np
 
 
 def check_positive(**params):
@@ -94,3 +95,10 @@ def check_between(v_min, v_max, **params):
         if params[p] < v_min or params[p] > v_max:
             raise ValueError("Expected {} between {} and {}, "
                              "got {}".format(p, v_min, v_max, params[p]))
+
+
+def matrix_is_equivalent(X, Y):
+    """
+    Checks matrix equivalence with numpy, scipy and pandas
+    """
+    return isinstance(X, Y.__class__) and np.sum((X != Y).sum()) == 0

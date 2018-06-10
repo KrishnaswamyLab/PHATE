@@ -17,7 +17,12 @@ import matplotlib.pyplot as plt
 
 from .mds import embed_MDS
 from .vne import compute_von_neumann_entropy, find_knee_point
-from .utils import check_int, check_positive, check_between, check_in, check_if_not
+from .utils import (check_int,
+                    check_positive,
+                    check_between,
+                    check_in,
+                    check_if_not,
+                    matrix_is_equivalent)
 from .logging import set_logging, log_start, log_complete, log_info, log_debug
 
 try:
@@ -558,7 +563,7 @@ class PHATE(BaseEstimator):
             n_landmark = self.n_landmark
 
         if self.graph is not None:
-            if self.X is not None and not (X != self.X).sum() == 0:
+            if self.X is not None and not matrix_is_equivalent(X, self.X):
                 """
                 If the same data is used, we can reuse existing kernel and
                 diffusion matrices. Otherwise we have to recompute.
@@ -634,7 +639,7 @@ class PHATE(BaseEstimator):
             raise NotFittedError("This PHATE instance is not fitted yet. Call "
                                  "'fit' with appropriate arguments before "
                                  "using this method.")
-        elif X is not None and not (X != self.X).sum() == 0:
+        elif X is not None and not matrix_is_equivalent(X, self.X):
             # fit to external data
             warnings.warn("Pre-fit PHATE cannot be used to transform a "
                           "new data matrix. Please fit PHATE to the new"
