@@ -79,6 +79,8 @@ Install `phate` in Python by running the following code from a terminal:
 
     pip install --user phate
 
+If `python` or `pip` are not installed, you will need to install them. We recommend [Miniconda3](https://conda.io/miniconda.html) to install Python and `pip` together, or otherwise you can install `pip` from https://pip.pypa.io/en/stable/installing/.
+
 #### Installation with `devtools` and `reticulate`
 
 The development version of PHATE can be installed directly from R with `devtools`:
@@ -89,7 +91,7 @@ The development version of PHATE can be installed directly from R with `devtools
 If you have the development version of `reticulate`, you can also install `phate` in Python by running the following code in R:
 
     devtools::install_github("rstudio/reticulate")
-    reticulate::py_install("phate")
+    reticulate::py_install("phate", pip=TRUE)
 
 #### Installation from source
 
