@@ -73,15 +73,11 @@ In order to use PHATE in R, you must also install the Python package.
 
 Install `phateR` from CRAN by running the following code in R:
 
-```{r cran-install, eval = FALSE}
-install.packages("phateR")
-```
+    install.packages("phateR")
 
 Install `phate` in Python by running the following code from a terminal:
 
-```{bash pypi-install, eval = FALSE}
-pip install --user phate
-```
+    pip install --user phate
 
 If `python` or `pip` are not installed, you will need to install them. We recommend [Miniconda3](https://conda.io/miniconda.html) to install Python and `pip` together, or otherwise you can install `pip` from https://pip.pypa.io/en/stable/installing/.
 
@@ -89,17 +85,13 @@ If `python` or `pip` are not installed, you will need to install them. We recomm
 
 The development version of PHATE can be installed directly from R with `devtools`:
 
-```{r github-install, eval = FALSE}
-if (!suppressWarnings(require(devtools))) install.packages("devtools")
-devtools::install_github("KrishnaswamyLab/phateR")
-```
+    if (!suppressWarnings(require(devtools))) install.packages("devtools")
+    devtools::install_github("KrishnaswamyLab/phateR")
 
 If you have the development version of `reticulate`, you can also install `phate` in Python by running the following code in R:
 
-```{r reticulate-install, eval = FALSE}
-devtools::install_github("rstudio/reticulate")
-reticulate::py_install("phate", pip=TRUE)
-```
+    devtools::install_github("rstudio/reticulate")
+    reticulate::py_install("phate", pip=TRUE)
 
 #### Installation from source
 
