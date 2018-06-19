@@ -35,33 +35,38 @@ def _get_plot_data(data):
     return data
 
 
-def _auto_params(data, c, discrete, cmap):
-    if discrete is None:
-        # guess
-        discrete = len(np.unique(c)) <= 20
-    if discrete:
-        c, labels = pd.factorize(c)
-        if cmap is None and len(np.unique(c)) <= 10:
-            c = mpl.cm.tab10(np.linspace(0, 1, 10))[c]
-            cmap = None
+def _auto_params(data, c, discrete, cmap, legend):
+    if c is not None:
+        if discrete is None:
+            # guess
+            discrete = len(np.unique(c)) <= 20
+        if discrete:
+            c, labels = pd.factorize(c)
+            if cmap is None and len(np.unique(c)) <= 10:
+                c = mpl.cm.tab10(np.linspace(0, 1, 10))[c]
+                cmap = None
+            else:
+                cmap = 'tab20'
         else:
-            cmap = 'tab20'
+            labels = None
+            if cmap is None:
+                cmap = 'viridis'
     else:
         labels = None
-        if cmap is None:
-            cmap = 'viridis'
+        legend = False
     if len(data) == 3:
         subplot_kw = {'projection': '3d'}
     else:
         subplot_kw = {}
-    return c, labels, discrete, cmap, subplot_kw
+    return c, labels, discrete, cmap, subplot_kw, legend
 
 
 def _scatter(*data, c=None, cmap=None, s=1, discrete=None,
              ax=None, legend=True,
              **plot_kwargs):
-    c, labels, discrete, cmap, subplot_kw = _auto_params(data, c, discrete,
-                                                         cmap)
+    c, labels, discrete, cmap, subplot_kw, legend = _auto_params(
+        data, c, discrete,
+        cmap, legend)
     plot_idx = np.random.permutation(data[0].shape[0])
     if ax is None:
         fig, ax = plt.subplots(subplot_kw=subplot_kw)
@@ -73,7 +78,8 @@ def _scatter(*data, c=None, cmap=None, s=1, discrete=None,
                        vmin=np.min(c), vmax=np.max(c), cmap=cmap)
         ax.clear()
     sc = ax.scatter(*[d[plot_idx] for d in data],
-                    c=c[plot_idx], cmap=cmap, s=s, **plot_kwargs)
+                    c=c[plot_idx] if c is not None else c,
+                    cmap=cmap, s=s, **plot_kwargs)
     if legend:
         if discrete:
             def handle(c):
