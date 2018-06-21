@@ -71,9 +71,9 @@ def test_tree():
     phate_precomputed_affinity = phate_operator.fit_transform(K)
 
     np.testing.assert_allclose(
-        phate_precomputed_K, phate_precomputed_affinity, atol=2e-4)
+        phate_precomputed_K, phate_precomputed_affinity, atol=5e-4)
     np.testing.assert_allclose(
-        phate_precomputed_D, phate_precomputed_distance, atol=2e-4)
+        phate_precomputed_D, phate_precomputed_distance, atol=5e-4)
     return 0
 
 
