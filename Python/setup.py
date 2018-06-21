@@ -24,7 +24,7 @@ setup(name='phate',
                         'matplotlib',
                         'scikit-learn>=0.19.1',
                         'future',
-                        'graphtools>=0.1.6'],
+                        'graphtools>=0.1.7'],
       extras_require={
           'tests': [
               'doctest',
