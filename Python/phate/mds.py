@@ -26,7 +26,7 @@ def cmdscale_fast(D, ndim):
     Y : array-like, embedded data [n_sample, ndim]
     """
     log_debug("Performing classic MDS on {} of shape {}...".format(
-        type(D), D.shape))
+        type(D).__name__, D.shape))
     D = D**2
     D = D - D.mean(axis=0)[None, :]
     D = D - D.mean(axis=1)[:, None]
