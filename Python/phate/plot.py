@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 from mpl_toolkits.mplot3d import Axes3D  # NOQA: F401
 import pandas as pd
+import numbers
 from .phate import PHATE
 
 try:
@@ -39,13 +40,20 @@ def _auto_params(data, c, discrete, cmap, legend):
     if c is not None:
         if discrete is None:
             # guess
-            discrete = len(np.unique(c)) <= 20
+            if not np.all([isinstance(x, numbers.Number) for x in c]):
+                discrete = True
+            else:
+                discrete = len(np.unique(c)) <= 20
+            if discrete:
+                print("Assuming discrete data.")
+            else:
+                print("Assuming continuous data.")
         if discrete:
             c, labels = pd.factorize(c)
             if cmap is None and len(np.unique(c)) <= 10:
-                c = mpl.cm.tab10(np.linspace(0, 1, 10))[c]
-                cmap = None
-            else:
+                cmap = mpl.colors.ListedColormap(
+                    mpl.cm.tab10.colors[:len(np.unique(c))])
+            elif cmap is None:
                 cmap = 'tab20'
         else:
             labels = None
@@ -61,9 +69,9 @@ def _auto_params(data, c, discrete, cmap, legend):
     return c, labels, discrete, cmap, subplot_kw, legend
 
 
-def _scatter(*data, c=None, cmap=None, s=1, discrete=None,
-             ax=None, legend=True,
-             **plot_kwargs):
+def scatter(*data, c=None, cmap=None, s=1, discrete=None,
+            ax=None, legend=True,
+            **plot_kwargs):
     c, labels, discrete, cmap, subplot_kw, legend = _auto_params(
         data, c, discrete,
         cmap, legend)
@@ -99,14 +107,14 @@ def _scatter(*data, c=None, cmap=None, s=1, discrete=None,
 def scatter2d(data, c=None, cmap=None, s=1, discrete=None,
               ax=None, legend=True, **plot_kwargs):
     data = _get_plot_data(data)
-    _scatter(data[:, 0], data[:, 1],
-             c=c, cmap=cmap, s=s, discrete=discrete,
-             ax=ax, legend=legend)
+    scatter(data[:, 0], data[:, 1],
+            c=c, cmap=cmap, s=s, discrete=discrete,
+            ax=ax, legend=legend)
 
 
 def scatter3d(data, c=None, cmap=None, s=1, discrete=None,
               ax=None, legend=True, **plot_kwargs):
     data = _get_plot_data(data)
-    _scatter(data[:, 0], data[:, 1], data[:, 2],
-             c=c, cmap=cmap, s=s, discrete=discrete,
-             ax=ax, legend=legend)
+    scatter(data[:, 0], data[:, 1], data[:, 2],
+            c=c, cmap=cmap, s=s, discrete=discrete,
+            ax=ax, legend=legend)
