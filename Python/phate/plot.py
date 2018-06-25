@@ -70,14 +70,14 @@ def _auto_params(data, c, discrete, cmap, legend):
 
 
 def scatter(*data, c=None, cmap=None, s=1, discrete=None,
-            ax=None, legend=True,
+            ax=None, legend=True, figsize=None,
             **plot_kwargs):
     c, labels, discrete, cmap, subplot_kw, legend = _auto_params(
         data, c, discrete,
         cmap, legend)
     plot_idx = np.random.permutation(data[0].shape[0])
     if ax is None:
-        fig, ax = plt.subplots(subplot_kw=subplot_kw)
+        fig, ax = plt.subplots(figsize=figsize, subplot_kw=subplot_kw)
         show = True
     else:
         show = False
@@ -117,4 +117,4 @@ def scatter3d(data, c=None, cmap=None, s=1, discrete=None,
     data = _get_plot_data(data)
     scatter(data[:, 0], data[:, 1], data[:, 2],
             c=c, cmap=cmap, s=s, discrete=discrete,
-            ax=ax, legend=legend)
+            ax=ax, legend=legend, **plot_kwargs)
