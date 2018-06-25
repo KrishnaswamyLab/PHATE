@@ -58,7 +58,7 @@ def _auto_params(data, c, discrete, cmap, legend):
         else:
             labels = None
             if cmap is None:
-                cmap = 'viridis'
+                cmap = 'inferno'
     else:
         labels = None
         legend = False
