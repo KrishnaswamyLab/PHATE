@@ -6,6 +6,7 @@ from __future__ import print_function, division
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+from matplotlib import animation
 from mpl_toolkits.mplot3d import Axes3D  # NOQA: F401
 import pandas as pd
 import numbers
@@ -18,20 +19,22 @@ except ImportError:
     pass
 
 
-def _get_plot_data(data):
+def _get_plot_data(data, ndim=None):
     """Get plot data out of an input object
 
     Parameters
     ----------
     data : array-like, `phate.PHATE` or `scanpy.AnnData`
+    ndim : int, optional (default: None)
+        Minimum number of dimensions
     """
     if isinstance(data, PHATE):
-        data = data.transform()
+        out = data.transform()
     else:
         try:
             if isinstance(data, anndata.AnnData):
                 try:
-                    data = data.obsm['X_phate']
+                    out = data.obsm['X_phate']
                 except KeyError:
                     raise RuntimeError(
                         "data.obsm['X_phate'] not found. "
@@ -39,7 +42,15 @@ def _get_plot_data(data):
         except NameError:
             # anndata not installed
             pass
-    return data
+    if ndim is not None and out.shape[1] < ndim:
+        if isinstance(data, PHATE):
+            data.set_params(n_components=ndim)
+            out = data.transform()
+        else:
+            raise ValueError(
+                "Expected at least {}-dimensional data, got {}".format(
+                    ndim, out.shape[1]))
+    return out
 
 
 def _auto_params(data, c, discrete, cmap, legend):
@@ -53,9 +64,9 @@ def _auto_params(data, c, discrete, cmap, legend):
             else:
                 discrete = len(np.unique(c)) <= 20
             if discrete:
-                print("Assuming discrete data.")
+                print("Assuming discrete color vector.")
             else:
-                print("Assuming continuous data.")
+                print("Assuming continuous color vector.")
         if discrete:
             c, labels = pd.factorize(c)
             if cmap is None and len(np.unique(c)) <= 10:
@@ -243,7 +254,7 @@ def scatter2d(data, **kwargs):
     **kwargs : keyword arguments
         See `phate.plot.scatter`.
     """
-    data = _get_plot_data(data)
+    data = _get_plot_data(data, ndim=2)
     scatter(data[:, 0], data[:, 1], **kwargs)
 
 
@@ -260,16 +271,16 @@ def scatter3d(data, **kwargs):
     **kwargs : keyword arguments
         See `phate.plot.scatter`.
     """
-    data = _get_plot_data(data)
+    data = _get_plot_data(data, ndim=3)
     scatter(data[:, 0], data[:, 1], data[:, 2],
             **kwargs)
 
 
 def rotate_scatter3d(data,
                      filename=None,
-                     azim=10,
-                     interval=50,
-                     frames=90,
+                     elev=30,
+                     rotation_speed=45,
+                     fps=10,
                      ax=None,
                      figsize=None,
                      **kwargs):
@@ -284,12 +295,12 @@ def rotate_scatter3d(data,
         Input data. Only the first three dimensions are used.
     filename : str, optional (default: None)
         If not None, saves a .gif or .mp4 with the output
-    azim : float, optional (default: 10)
+    elev : float, optional (default: 30)
         Elevation of viewpoint from horizontal, in degrees
-    interval : float, optional (default: 50)
-        Number of milliseconds between frames
-    frames : int, optional (default: 90)
-        Total number of frames.
+    rotation_speed : float, optional (default: 45)
+        Speed of axis rotation, in degrees per second
+    fps : int, optional (default: 10)
+        Frames per second. Increase this for a smoother animation
     ax : `matplotlib.Axes` or None, optional (default: None)
         axis on which to plot. If None, an axis is created
     figsize : tuple, optional (default: None)
@@ -303,28 +314,38 @@ def rotate_scatter3d(data,
             raise ValueError(
                 "filename must end in .gif or .mp4. Got {}".format(filename))
 
-    if ax is not None:
+    if ax is None:
         fig, ax = plt.subplots(figsize=figsize,
                                subplot_kw={'projection': '3d'})
+        show = True
     else:
         fig = ax.get_figure()
+        show = False
 
-    degrees_per_frame = 360.0 / frames
+    degrees_per_frame = rotation_speed / fps
+    frames = int(round(360 / degrees_per_frame))
+    # fix rounding errors
+    degrees_per_frame = 360 / frames
+    interval = 1000 * degrees_per_frame / rotation_speed
+
+    scatter3d(data, ax=ax, **kwargs)
 
     def init():
-        # Plot the surface.
-        scatter3d(data, ax=ax, **kwargs)
-        return fig
+        ax.view_init(azim=0, elev=elev)
+        return ax
 
     def animate(i):
-        # elevation angle : -180 deg to 180 deg
-        ax.view_init(elev=-180 + i * degrees_per_frame, azim=azim)
-        return fig,
+        ax.view_init(azim=i * degrees_per_frame, elev=elev)
+        return ax
 
-    ani = mpl.animation.FuncAnimation(
+    ani = animation.FuncAnimation(
         fig, animate, init_func=init,
-        frames=frames, interval=interval, blit=True)
+        frames=range(frames), interval=interval, blit=False)
 
     if filename is not None:
         ani.save(filename)
+
+    if show:
+        plt.tight_layout()
+        plt.show(block=False)
     return ani
