@@ -6,11 +6,12 @@ from __future__ import print_function, division
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-from matplotlib import animation
+from matplotlib import animation, rc
 from mpl_toolkits.mplot3d import Axes3D  # NOQA: F401
 import pandas as pd
 import numbers
 from .phate import PHATE
+from .utils import in_ipynb
 
 try:
     import anndata
@@ -91,7 +92,8 @@ def _auto_params(data, c, discrete, cmap, legend):
     return c, labels, discrete, cmap, subplot_kw, legend
 
 
-def scatter(*data, c=None, cmap=None, s=1, discrete=None,
+def scatter(data,
+            c=None, cmap=None, s=1, discrete=None,
             ax=None, legend=True, figsize=None,
             xticks=False,
             yticks=False,
@@ -111,9 +113,8 @@ def scatter(*data, c=None, cmap=None, s=1, discrete=None,
 
     Parameters
     ----------
-    *data : array-like
-        positional arguments containing data, one argument for each axis
-        (min: 2, max: 3)
+    data : list of array-like
+        list containing one array for each axis (min: 2, max: 3)
     c : list-like or None, optional (default: None)
         Color vector. Can be an array of RGBA values, or a list of discrete or
         continuous values of any data type. The values in `c` will be used to
@@ -255,7 +256,7 @@ def scatter2d(data, **kwargs):
         See `phate.plot.scatter`.
     """
     data = _get_plot_data(data, ndim=2)
-    scatter(data[:, 0], data[:, 1], **kwargs)
+    scatter([data[:, 0], data[:, 1]], **kwargs)
 
 
 def scatter3d(data, **kwargs):
@@ -272,17 +273,18 @@ def scatter3d(data, **kwargs):
         See `phate.plot.scatter`.
     """
     data = _get_plot_data(data, ndim=3)
-    scatter(data[:, 0], data[:, 1], data[:, 2],
+    scatter([data[:, 0], data[:, 1], data[:, 2]],
             **kwargs)
 
 
 def rotate_scatter3d(data,
                      filename=None,
                      elev=30,
-                     rotation_speed=45,
+                     rotation_speed=30,
                      fps=10,
                      ax=None,
                      figsize=None,
+                     ipython_html="jshtml",
                      **kwargs):
     """Create a rotating 3D scatter plot
 
@@ -297,7 +299,7 @@ def rotate_scatter3d(data,
         If not None, saves a .gif or .mp4 with the output
     elev : float, optional (default: 30)
         Elevation of viewpoint from horizontal, in degrees
-    rotation_speed : float, optional (default: 45)
+    rotation_speed : float, optional (default: 30)
         Speed of axis rotation, in degrees per second
     fps : int, optional (default: 10)
         Frames per second. Increase this for a smoother animation
@@ -306,11 +308,22 @@ def rotate_scatter3d(data,
     figsize : tuple, optional (default: None)
         Tuple of floats for creation of new `matplotlib` figure. Only used if
         `ax` is None.
+    ipython_html : {'html5', 'jshtml'}
+        which html writer to use if using a Jupyter Notebook
     **kwargs : keyword arguments
         See `phate.plot.scatter`.
     """
+    if in_ipynb():
+        # credit to
+        # http://tiao.io/posts/notebooks/save-matplotlib-animations-as-gifs/
+        rc('animation', html=ipython_html)
+
     if filename is not None:
-        if not (filename.endswith(".mp4") or filename.endswith(".gif")):
+        if filename.endswith(".gif"):
+            writer = 'imagemagick'
+        elif filename.endswith(".mp4"):
+            writer = "ffmpeg"
+        else:
             raise ValueError(
                 "filename must end in .gif or .mp4. Got {}".format(filename))
 
@@ -343,9 +356,13 @@ def rotate_scatter3d(data,
         frames=range(frames), interval=interval, blit=False)
 
     if filename is not None:
-        ani.save(filename)
+        ani.save(filename, writer=writer)
 
-    if show:
+    if in_ipynb():
+        # credit to https://stackoverflow.com/a/45573903/3996580
+        plt.close()
+    elif show:
         plt.tight_layout()
         plt.show(block=False)
+
     return ani
