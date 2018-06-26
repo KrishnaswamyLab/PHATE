@@ -29,6 +29,7 @@ def _get_plot_data(data, ndim=None):
     ndim : int, optional (default: None)
         Minimum number of dimensions
     """
+    out = data
     if isinstance(data, PHATE):
         out = data.transform()
     else:
@@ -237,7 +238,7 @@ def scatter(data,
                 ncol=max(1, len(labels) // 10))
         else:
             plt.colorbar(im)
-    if show:
+    if show and not in_ipynb():
         plt.tight_layout()
         plt.show(block=False)
 
