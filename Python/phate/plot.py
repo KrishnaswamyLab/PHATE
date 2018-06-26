@@ -257,7 +257,7 @@ def scatter2d(data, **kwargs):
         See `phate.plot.scatter`.
     """
     data = _get_plot_data(data, ndim=2)
-    scatter([data[:, 0], data[:, 1]], **kwargs)
+    return scatter([data[:, 0], data[:, 1]], **kwargs)
 
 
 def scatter3d(data, **kwargs):
@@ -274,8 +274,8 @@ def scatter3d(data, **kwargs):
         See `phate.plot.scatter`.
     """
     data = _get_plot_data(data, ndim=3)
-    scatter([data[:, 0], data[:, 1], data[:, 2]],
-            **kwargs)
+    return scatter([data[:, 0], data[:, 1], data[:, 2]],
+                   **kwargs)
 
 
 def rotate_scatter3d(data,
