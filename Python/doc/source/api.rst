@@ -10,6 +10,14 @@ PHATE
     :inherited-members:
     :show-inheritance:
 
+Plotting
+--------
+
+.. automodule:: phate.plot
+    :members:
+    :inherited-members:
+    :show-inheritance:
+
 File Input/Output
 -----------------
 
