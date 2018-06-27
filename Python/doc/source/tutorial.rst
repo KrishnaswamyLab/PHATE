@@ -7,8 +7,8 @@ To run PHATE on your dataset, create a PHATE operator and run `fit_transform`. H
         tree_data, tree_clusters = phate.tree.gen_dla()
         phate_operator = phate.PHATE(k=15, t=100)
         tree_phate = phate_operator.fit_transform(tree_data)
-        phate.plot.scatter2d(phate_operator) # or phate.plot.scatter2d(tree_phate)
-        phate.plot.rotate_scatter3d(phate_operator)
+        phate.plot.scatter2d(phate_operator, c=tree_clusters) # or phate.plot.scatter2d(tree_phate, c=tree_clusters)
+        phate.plot.rotate_scatter3d(phate_operator, c=tree_clusters)
 
 A demo on PHATE usage and visualization for single cell RNA-seq data can be found in this notebook_: `https://nbviewer.jupyter.org/github/KrishnaswamyLab/PHATE/blob/master/Python/tutorial/PHATE_tree.ipynb`__
 
