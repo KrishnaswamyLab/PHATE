@@ -1,9 +1,10 @@
 from __future__ import absolute_import
 
 from .phate import PHATE
-from .tree import *
-from .io import *
-from .preprocessing import *
-from .mds import *
-from .vne import *
+import phate.tree
+import phate.io
+import phate.preprocessing
+import phate.mds
+import phate.vne
+import phate.plot
 from .version import __version__

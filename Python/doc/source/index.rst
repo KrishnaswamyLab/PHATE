@@ -50,13 +50,12 @@ Quick Start
 
 To run PHATE on your dataset, create a PHATE operator and run `fit_transform`. Here we show an example with an artificial tree::
 
-    import phate
-    import matplotlib.pyplot as plt
-    tree_data, tree_clusters = phate.tree.gen_dla()
-    phate_operator = phate.PHATE(k=15, t=100)
-    tree_phate = phate_operator.fit_transform(tree_data)
-    plt.scatter(tree_phate[:,0], tree_phate[:,1], c=tree_clusters)
-    plt.show()
+        import phate
+        tree_data, tree_clusters = phate.tree.gen_dla()
+        phate_operator = phate.PHATE(k=15, t=100)
+        tree_phate = phate_operator.fit_transform(tree_data)
+        phate.plot.scatter2d(phate_operator, c=tree_clusters) # or phate.plot.scatter2d(tree_phate, c=tree_clusters)
+        phate.plot.rotate_scatter3d(phate_operator, c=tree_clusters)
 
 .. autoclass:: phate.PHATE
     :members:
