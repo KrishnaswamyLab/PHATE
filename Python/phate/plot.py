@@ -258,6 +258,20 @@ def scatter2d(data, **kwargs):
         Input data. Only the first two dimensions are used.
     **kwargs : keyword arguments
         See `phate.plot.scatter`.
+
+    Examples
+    --------
+    >>> import phate
+    >>> import matplotlib.pyplot as plt
+    >>> tree_data, tree_clusters = phate.tree.gen_dla(n_dim=100, n_branch=20,
+    ...                                               branch_length=100)
+    >>> tree_data.shape
+    (2000, 100)
+    >>> phate_operator = phate.PHATE(k=5, a=20, t=150)
+    >>> tree_phate = phate_operator.fit_transform(tree_data)
+    >>> tree_phate.shape
+    (2000, 2)
+    >>> phate.plot.scatter2d(tree_phate, c=tree_clusters)
     """
     data = _get_plot_data(data, ndim=2)
     return scatter([data[:, 0], data[:, 1]], **kwargs)
@@ -275,6 +289,20 @@ def scatter3d(data, **kwargs):
         Input data. Only the first three dimensions are used.
     **kwargs : keyword arguments
         See `phate.plot.scatter`.
+
+    Examples
+    --------
+    >>> import phate
+    >>> import matplotlib.pyplot as plt
+    >>> tree_data, tree_clusters = phate.tree.gen_dla(n_dim=100, n_branch=20,
+    ...                                               branch_length=100)
+    >>> tree_data.shape
+    (2000, 100)
+    >>> phate_operator = phate.PHATE(n_components=3, k=5, a=20, t=150)
+    >>> tree_phate = phate_operator.fit_transform(tree_data)
+    >>> tree_phate.shape
+    (2000, 2)
+    >>> phate.plot.scatter3d(tree_phate, c=tree_clusters)
     """
     data = _get_plot_data(data, ndim=3)
     return scatter([data[:, 0], data[:, 1], data[:, 2]],
@@ -316,6 +344,20 @@ def rotate_scatter3d(data,
         which html writer to use if using a Jupyter Notebook
     **kwargs : keyword arguments
         See `phate.plot.scatter`.
+
+    Examples
+    --------
+    >>> import phate
+    >>> import matplotlib.pyplot as plt
+    >>> tree_data, tree_clusters = phate.tree.gen_dla(n_dim=100, n_branch=20,
+    ...                                               branch_length=100)
+    >>> tree_data.shape
+    (2000, 100)
+    >>> phate_operator = phate.PHATE(n_components=3, k=5, a=20, t=150)
+    >>> tree_phate = phate_operator.fit_transform(tree_data)
+    >>> tree_phate.shape
+    (2000, 2)
+    >>> phate.plot.rotate_scatter3d(tree_phate, c=tree_clusters)
     """
     if in_ipynb():
         # credit to

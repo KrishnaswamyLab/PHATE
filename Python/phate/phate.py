@@ -145,8 +145,7 @@ class PHATE(BaseEstimator):
     >>> tree_phate = phate_operator.fit_transform(tree_data)
     >>> tree_phate.shape
     (2000, 2)
-    >>> # plt.scatter(tree_phate[:,0], tree_phate[:,1], c=tree_clusters)
-    >>> # plt.show()
+    >>> phate.plot.scatter2d(tree_phate, c=tree_clusters)
 
     References
     ----------
