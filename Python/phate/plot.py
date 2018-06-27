@@ -12,6 +12,7 @@ import pandas as pd
 import numbers
 from .phate import PHATE
 from .utils import in_ipynb
+from .logging import log_warning
 
 try:
     import anndata
@@ -66,9 +67,11 @@ def _auto_params(data, c, discrete, cmap, legend):
             else:
                 discrete = len(np.unique(c)) <= 20
             if discrete:
-                print("Assuming discrete color vector.")
+                log_warning("Assuming discrete color vector. "
+                            "Override with `discrete=False`")
             else:
-                print("Assuming continuous color vector.")
+                log_warning("Assuming continuous color vector. "
+                            "Override with `discrete=True`")
         if discrete:
             c, labels = pd.factorize(c)
             if cmap is None and len(np.unique(c)) <= 10:
