@@ -78,7 +78,11 @@ class PHATE(BaseEstimator):
         Any metric from `scipy.spatial.distance` can be used
         distance metric for building kNN graph. If 'precomputed',
         `data` should be an n_samples x n_samples distance or
-        affinity matrix
+        affinity matrix. Distance matrices are assumed to have zeros
+        down the diagonal, while affinity matrices are assumed to have
+        non-zero values down the diagonal. This is detected automatically using
+        `data[0,0]`. You can override this detection with
+        `knn_dist='precomputed_distance'` or `knn_dist='precomputed_affinity'`.
 
     mds_dist : string, optional, default: 'euclidean'
         recommended values: 'euclidean' and 'cosine'
@@ -258,7 +262,8 @@ class PHATE(BaseEstimator):
                   'chebyshev', 'dice', 'hamming', 'jaccard',
                   'kulsinski', 'mahalanobis', 'matching', 'minkowski',
                   'rogerstanimoto', 'russellrao', 'seuclidean',
-                  'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'],
+                  'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule',
+                  'precomputed_affinity', 'precomputed_distance'],
                  knn_dist=self.knn_dist)
         check_in(['euclidean', 'cosine', 'correlation', 'braycurtis',
                   'canberra', 'chebyshev', 'cityblock', 'dice', 'hamming',
@@ -542,13 +547,24 @@ class PHATE(BaseEstimator):
             # anndata not installed
             pass
 
-        if self.knn_dist == 'precomputed':
-            if isinstance(X, sparse.coo_matrix):
-                X = X.tocsr()
-            if X[0, 0] == 0:
-                precomputed = "distance"
+        if self.knn_dist.startswith('precomputed'):
+            if self.knn_dist == 'precomputed':
+                # automatic detection
+                if isinstance(X, sparse.coo_matrix):
+                    X = X.tocsr()
+                if X[0, 0] == 0:
+                    precomputed = "distance"
+                else:
+                    precomputed = "affinity"
+            elif self.knn_dist in ['precomputed_affinity',
+                                   'precomputed_distance']:
+                precomputed = self.knn_dist.split("_")[1]
             else:
-                precomputed = "affinity"
+                raise ValueError(
+                    "knn_dist {} not recognized. Did you mean "
+                    "'precomputed_distance', "
+                    "'precomputed_affinity', or 'precomputed' "
+                    "(automatically detects distance or affinity)?")
             log_info("Using precomputed {} matrix...".format(precomputed))
             n_pca = None
         else:
