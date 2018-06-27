@@ -234,7 +234,7 @@ def scatter(data,
         if discrete:
             def handle(c):
                 return plt.Line2D([], [], color=c, ls="", marker="o")
-            plt.legend(
+            ax.legend(
                 handles=[handle(sc.cmap(sc.norm(i)))
                          for i in range(len(labels))],
                 labels=list(labels),
