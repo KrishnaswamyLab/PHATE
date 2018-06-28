@@ -66,12 +66,6 @@ def _auto_params(data, c, discrete, cmap, legend):
                 discrete = True
             else:
                 discrete = len(np.unique(c)) <= 20
-            if discrete:
-                log_warning("Assuming discrete color vector. "
-                            "Override with `discrete=False`")
-            else:
-                log_warning("Assuming continuous color vector. "
-                            "Override with `discrete=True`")
         if discrete:
             c, labels = pd.factorize(c)
             if cmap is None and len(np.unique(c)) <= 10:
@@ -80,6 +74,9 @@ def _auto_params(data, c, discrete, cmap, legend):
             elif cmap is None:
                 cmap = 'tab20'
         else:
+            if not np.all([isinstance(x, numbers.Number) for x in c]):
+                raise ValueError(
+                    "Cannot treat non-numeric data as continuous.")
             labels = None
             if cmap is None:
                 cmap = 'inferno'
@@ -129,9 +126,10 @@ def scatter(data,
     s : float, optional (default: 1)
         Point size.
     discrete : bool or None, optional (default: None)
-        States whether the data is discrete. If None, discreteness is
-        detected automatically. Data containing non-numeric `c` is always
-        discrete, and numeric data with 20 or less unique values is discrete.
+        If True, the legend is categorical. If False, the legend is a colobar.
+        If None, discreteness is detected automatically. Data containing
+        non-numeric `c` is always discrete, and numeric data with 20 or less
+        unique values is discrete.
     ax : `matplotlib.Axes` or None, optional (default: None)
         axis on which to plot. If None, an axis is created
     legend : bool, optional (default: True)
