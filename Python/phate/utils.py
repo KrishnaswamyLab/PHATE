@@ -101,8 +101,8 @@ def matrix_is_equivalent(X, Y):
     """
     Checks matrix equivalence with numpy, scipy and pandas
     """
-    return isinstance(X, Y.__class__) and X.shape == Y.shape and \
-        np.sum((X != Y).sum()) == 0
+    return X is Y or (isinstance(X, Y.__class__) and X.shape == Y.shape and
+                      np.sum((X != Y).sum()) == 0)
 
 
 def in_ipynb():
