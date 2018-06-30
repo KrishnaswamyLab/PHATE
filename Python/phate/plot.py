@@ -12,7 +12,6 @@ import pandas as pd
 import numbers
 from .phate import PHATE
 from .utils import in_ipynb
-from .logging import log_warning
 
 try:
     import anndata
@@ -120,6 +119,7 @@ def scatter(data,
             xlabel="PHATE1",
             ylabel="PHATE2",
             zlabel="PHATE3",
+            legend_title=None,
             **plot_kwargs):
     """Create a scatter plot
 
@@ -135,13 +135,15 @@ def scatter(data,
         Color vector. Can be an array of RGBA values, or a list of discrete or
         continuous values of any data type. The values in `c` will be used to
         populate the legend / colorbar
-    cmap : `matplotlib` colormap, str or None, optional (default: None)
+    cmap : `matplotlib` colormap, str, dict or None, optional (default: None)
         matplotlib colormap. If None, uses `tab20` for discrete data and
-        `inferno` for continuous data
+        `inferno` for continuous data. If a dictionary, expects one key
+        for every unique value in `c`, where values are valid matplotlib colors
+        (hsv, rbg, rgba, or named colors)
     s : float, optional (default: 1)
         Point size.
     discrete : bool or None, optional (default: None)
-        If True, the legend is categorical. If False, the legend is a colobar.
+        If True, the legend is categorical. If False, the legend is a colorbar.
         If None, discreteness is detected automatically. Data containing
         non-numeric `c` is always discrete, and numeric data with 20 or less
         unique values is discrete.
@@ -177,6 +179,8 @@ def scatter(data,
         Label for the y axis. If None, no label is set.
     zlabel : str or None (default : "PHATE3")
         Label for the z axis. If None, no label is set. Only used for 3D plots
+    legend_title : str or None (default: None)
+        title for the colorbar of legend
     **plot_kwargs : keyword arguments
         Extra arguments passed to `matplotlib.pyplot.scatter`.
 
@@ -261,9 +265,10 @@ def scatter(data,
                 handles=[handle(sc.cmap(sc.norm(i)))
                          for i in range(len(labels))],
                 labels=list(labels),
-                ncol=max(1, len(labels) // 10))
+                ncol=max(1, len(labels) // 10),
+                title=legend_title)
         else:
-            plt.colorbar(im)
+            plt.colorbar(im, label=legend_title)
     if show:
         plt.tight_layout()
         if not in_ipynb():
