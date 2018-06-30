@@ -176,7 +176,8 @@ def scatter(data,
         show = False
     if legend and not discrete:
         im = ax.imshow(np.arange(10).reshape(-1, 1),
-                       vmin=np.min(c), vmax=np.max(c), cmap=cmap)
+                       vmin=np.min(c), vmax=np.max(c), cmap=cmap,
+                       aspect='auto')
         ax.clear()
     sc = ax.scatter(*[d[plot_idx] for d in data],
                     c=c[plot_idx] if c is not None else c,
@@ -239,9 +240,10 @@ def scatter(data,
                 ncol=max(1, len(labels) // 10))
         else:
             plt.colorbar(im)
-    if show and not in_ipynb():
+    if show:
         plt.tight_layout()
-        plt.show(block=False)
+        if not in_ipynb():
+            plt.show(block=False)
 
 
 def scatter2d(data, **kwargs):
