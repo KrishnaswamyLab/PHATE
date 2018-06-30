@@ -62,7 +62,8 @@ def _auto_params(data, c, discrete, cmap, legend):
     if c is not None:
         if discrete is None:
             # guess
-            if not np.all([isinstance(x, numbers.Number) for x in c]):
+            if isinstance(cmap, dict) or \
+                    not np.all([isinstance(x, numbers.Number) for x in c]):
                 discrete = True
             else:
                 discrete = len(np.unique(c)) <= 20
@@ -80,6 +81,20 @@ def _auto_params(data, c, discrete, cmap, legend):
             labels = None
             if cmap is None:
                 cmap = 'inferno'
+        if isinstance(cmap, dict):
+            if not discrete:
+                raise ValueError("Cannot use dictionary cmap with "
+                                 "continuous data.")
+            elif np.any([l not in cmap for l in labels]):
+                missing = set(labels).difference(cmap.keys())
+                raise ValueError(
+                    "Dictionary cmap requires a color "
+                    "for every unique entry in `c`. "
+                    "Missing colors for [{}]".format(
+                        ", ".join([str(l) for l in missing])))
+            else:
+                cmap = mpl.colors.ListedColormap(
+                    [mpl.colors.to_rgba(cmap[l]) for l in labels])
     else:
         labels = None
         legend = False
@@ -164,6 +179,15 @@ def scatter(data,
         Label for the z axis. If None, no label is set. Only used for 3D plots
     **plot_kwargs : keyword arguments
         Extra arguments passed to `matplotlib.pyplot.scatter`.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import phate
+    >>> X = np.random.normal(0,1,[1000,2])
+    >>> c = np.random.choice(['a','b'], 1000, replace=True)
+    >>> X[c=='a'] += 10
+    >>> phate.plot.scatter2d(X, c=c, cmap={'a' : [1,0,0,1], 'b' : 'xkcd:sky blue'})
     """
     c, labels, discrete, cmap, subplot_kw, legend = _auto_params(
         data, c, discrete,
