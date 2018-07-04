@@ -9,10 +9,10 @@
   before_install:
     - pip install nose2
 
-addons:
-  apt:
-    packages:
-      - python-sphinx
+  addons:
+    apt:
+      packages:
+        - python-sphinx
 
   install:
     - cd Python
