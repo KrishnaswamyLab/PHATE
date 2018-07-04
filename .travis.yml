@@ -9,6 +9,11 @@
   before_install:
     - pip install nose2
 
+addons:
+  apt:
+    packages:
+      - python-sphinx
+
   install:
     - cd Python
     - python setup.py install
@@ -17,3 +22,6 @@
   script:
     - cd Python
     - python setup.py test
+    - cd doc
+    - pip install -r source/requirements.txt
+    - make html
