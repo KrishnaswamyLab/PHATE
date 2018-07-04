@@ -25,7 +25,7 @@ Y_mmds <- phate(M, ndim=2, alpha=10, k=5, t=30, mds.method='metric',
 print("DLA tree, metric MDS (sqrt)")
 Y_sqrt <- phate(M, ndim=2, alpha=10, k=5, t=30, mds.method='metric',
                 knn.dist.method='euclidean', mds.dist.method='euclidean',
-                n.landmark=NULL, potential.method='sqrt', init=Y_mmds)
+                n.landmark=NULL, gamma=0, init=Y_mmds)
 
 # run phate with classic MDS
 print("DLA tree, fast classic MDS")
@@ -43,7 +43,7 @@ Y_mmds_fast <- phate(M, ndim=2, alpha=10, k=5, t=90, mds.method='metric',
 print("DLA tree, fast metric MDS (sqrt)")
 Y_sqrt_fast <- phate(M, ndim=2, alpha=10, k=5, t=90, mds.method='metric',
                 knn.dist.method='euclidean', mds.dist.method='euclidean',
-                n.landmark=1000, potential.method='sqrt', init=Y_mmds_fast)
+                n.landmark=1000, gamma=0, init=Y_mmds_fast)
 
 p <- plot_grid(ggplot(Y_cmds) +
             geom_point(aes(PHATE1, PHATE2, color=C), show.legend=FALSE) +
