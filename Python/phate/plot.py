@@ -58,7 +58,7 @@ def _get_plot_data(data, ndim=None):
 def _auto_params(data, c, discrete, cmap, legend):
     """Automatically select nice parameters for a scatter plot
     """
-    if c is not None:
+    if c is not None and not mpl.colors.is_color_like(c):
         if discrete is None:
             # guess
             if isinstance(cmap, dict) or \
@@ -206,10 +206,12 @@ def scatter(data,
         im = ax.imshow(np.arange(10).reshape(-1, 1),
                        vmin=np.min(c), vmax=np.max(c), cmap=cmap,
                        aspect='auto')
-        ax.clear()
+        im.remove()
     try:
+        if c is not None and not mpl.colors.is_color_like(c):
+            c = c[plot_idx]
         sc = ax.scatter(*[d[plot_idx] for d in data],
-                        c=c[plot_idx] if c is not None else c,
+                        c=c,
                         cmap=cmap, s=s, **plot_kwargs)
     except TypeError as e:
         if not hasattr(ax, "get_zlim"):
