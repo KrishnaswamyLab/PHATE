@@ -207,9 +207,16 @@ def scatter(data,
                        vmin=np.min(c), vmax=np.max(c), cmap=cmap,
                        aspect='auto')
         ax.clear()
-    sc = ax.scatter(*[d[plot_idx] for d in data],
-                    c=c[plot_idx] if c is not None else c,
-                    cmap=cmap, s=s, **plot_kwargs)
+    try:
+        sc = ax.scatter(*[d[plot_idx] for d in data],
+                        c=c[plot_idx] if c is not None else c,
+                        cmap=cmap, s=s, **plot_kwargs)
+    except TypeError as e:
+        if not hasattr(ax, "get_zlim"):
+            raise TypeError("Expected ax with projection='3d'. "
+                            "Got 2D axis instead.")
+        else:
+            raise e
 
     if not xticks:
         ax.set_xticks([])
