@@ -57,7 +57,6 @@ To run PHATE on your dataset, create a PHATE operator and run `fit_transform`. H
         phate.plot.scatter2d(phate_operator, c=tree_clusters) # or phate.plot.scatter2d(tree_phate, c=tree_clusters)
         phate.plot.rotate_scatter3d(phate_operator, c=tree_clusters)
 
-
 Help
 ====
 
