@@ -113,9 +113,9 @@ def scatter(data,
             xticks=False,
             yticks=False,
             zticks=False,
-            xticklabels=False,
-            yticklabels=False,
-            zticklabels=False,
+            xticklabels=True,
+            yticklabels=True,
+            zticklabels=True,
             xlabel="PHATE1",
             ylabel="PHATE2",
             zlabel="PHATE3",
@@ -164,13 +164,13 @@ def scatter(data,
     zticks : True, False, or list-like (default: False)
         If True, keeps default z ticks. If False, removes z ticks.
         If a list, sets custom z ticks.  Only used for 3D plots
-    xticklabels : True, False, or list-like (default: False)
+    xticklabels : True, False, or list-like (default: True)
         If True, keeps default x tick labels. If False, removes x tick labels.
         If a list, sets custom x tick labels
-    yticklabels : True, False, or list-like (default: False)
+    yticklabels : True, False, or list-like (default: True)
         If True, keeps default y tick labels. If False, removes y tick labels.
         If a list, sets custom y tick labels
-    zticklabels : True, False, or list-like (default: False)
+    zticklabels : True, False, or list-like (default: True)
         If True, keeps default z tick labels. If False, removes z tick labels.
         If a list, sets custom z tick labels. Only used for 3D plots
     xlabel : str or None (default : "PHATE1")
