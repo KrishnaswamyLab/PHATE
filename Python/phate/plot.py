@@ -59,6 +59,11 @@ def _auto_params(data, c, discrete, cmap, legend):
     """Automatically select nice parameters for a scatter plot
     """
     if c is not None and not mpl.colors.is_color_like(c):
+        try:
+            c = c.values
+        except AttributeError:
+            # not a pandas Series
+            pass
         if discrete is None:
             # guess
             if isinstance(cmap, dict) or \
