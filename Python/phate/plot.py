@@ -208,10 +208,12 @@ def scatter(data,
     else:
         show = False
     if legend and not discrete:
-        im = ax.imshow(np.arange(10).reshape(-1, 1),
+        im = ax.imshow(np.linspace(np.min(data[1]), np.max(data[1]), 10).reshape(-1, 1),
                        vmin=np.min(c), vmax=np.max(c), cmap=cmap,
-                       aspect='auto')
+                       aspect='auto', origin='lower')
         im.remove()
+        ax.relim()
+        ax.autoscale()
     try:
         if c is not None and not mpl.colors.is_color_like(c):
             c = c[plot_idx]
