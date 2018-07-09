@@ -12,7 +12,6 @@ import pandas as pd
 import numbers
 from .phate import PHATE
 from .utils import in_ipynb
-from .logging import log_warning
 
 try:
     import anndata
@@ -59,10 +58,16 @@ def _get_plot_data(data, ndim=None):
 def _auto_params(data, c, discrete, cmap, legend):
     """Automatically select nice parameters for a scatter plot
     """
-    if c is not None:
+    if c is not None and not mpl.colors.is_color_like(c):
+        try:
+            c = c.values
+        except AttributeError:
+            # not a pandas Series
+            pass
         if discrete is None:
             # guess
-            if not np.all([isinstance(x, numbers.Number) for x in c]):
+            if isinstance(cmap, dict) or \
+                    not np.all([isinstance(x, numbers.Number) for x in c]):
                 discrete = True
             else:
                 discrete = len(np.unique(c)) <= 20
@@ -80,6 +85,20 @@ def _auto_params(data, c, discrete, cmap, legend):
             labels = None
             if cmap is None:
                 cmap = 'inferno'
+        if isinstance(cmap, dict):
+            if not discrete:
+                raise ValueError("Cannot use dictionary cmap with "
+                                 "continuous data.")
+            elif np.any([l not in cmap for l in labels]):
+                missing = set(labels).difference(cmap.keys())
+                raise ValueError(
+                    "Dictionary cmap requires a color "
+                    "for every unique entry in `c`. "
+                    "Missing colors for [{}]".format(
+                        ", ".join([str(l) for l in missing])))
+            else:
+                cmap = mpl.colors.ListedColormap(
+                    [mpl.colors.to_rgba(cmap[l]) for l in labels])
     else:
         labels = None
         legend = False
@@ -99,12 +118,13 @@ def scatter(data,
             xticks=False,
             yticks=False,
             zticks=False,
-            xticklabels=False,
-            yticklabels=False,
-            zticklabels=False,
+            xticklabels=True,
+            yticklabels=True,
+            zticklabels=True,
             xlabel="PHATE1",
             ylabel="PHATE2",
             zlabel="PHATE3",
+            legend_title=None,
             **plot_kwargs):
     """Create a scatter plot
 
@@ -120,13 +140,15 @@ def scatter(data,
         Color vector. Can be an array of RGBA values, or a list of discrete or
         continuous values of any data type. The values in `c` will be used to
         populate the legend / colorbar
-    cmap : `matplotlib` colormap, str or None, optional (default: None)
+    cmap : `matplotlib` colormap, str, dict or None, optional (default: None)
         matplotlib colormap. If None, uses `tab20` for discrete data and
-        `inferno` for continuous data
+        `inferno` for continuous data. If a dictionary, expects one key
+        for every unique value in `c`, where values are valid matplotlib colors
+        (hsv, rbg, rgba, or named colors)
     s : float, optional (default: 1)
         Point size.
     discrete : bool or None, optional (default: None)
-        If True, the legend is categorical. If False, the legend is a colobar.
+        If True, the legend is categorical. If False, the legend is a colorbar.
         If None, discreteness is detected automatically. Data containing
         non-numeric `c` is always discrete, and numeric data with 20 or less
         unique values is discrete.
@@ -147,13 +169,13 @@ def scatter(data,
     zticks : True, False, or list-like (default: False)
         If True, keeps default z ticks. If False, removes z ticks.
         If a list, sets custom z ticks.  Only used for 3D plots
-    xticklabels : True, False, or list-like (default: False)
+    xticklabels : True, False, or list-like (default: True)
         If True, keeps default x tick labels. If False, removes x tick labels.
         If a list, sets custom x tick labels
-    yticklabels : True, False, or list-like (default: False)
+    yticklabels : True, False, or list-like (default: True)
         If True, keeps default y tick labels. If False, removes y tick labels.
         If a list, sets custom y tick labels
-    zticklabels : True, False, or list-like (default: False)
+    zticklabels : True, False, or list-like (default: True)
         If True, keeps default z tick labels. If False, removes z tick labels.
         If a list, sets custom z tick labels. Only used for 3D plots
     xlabel : str or None (default : "PHATE1")
@@ -162,8 +184,19 @@ def scatter(data,
         Label for the y axis. If None, no label is set.
     zlabel : str or None (default : "PHATE3")
         Label for the z axis. If None, no label is set. Only used for 3D plots
+    legend_title : str or None (default: None)
+        title for the colorbar of legend
     **plot_kwargs : keyword arguments
         Extra arguments passed to `matplotlib.pyplot.scatter`.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import phate
+    >>> X = np.random.normal(0,1,[1000,2])
+    >>> c = np.random.choice(['a','b'], 1000, replace=True)
+    >>> X[c=='a'] += 10
+    >>> phate.plot.scatter2d(X, c=c, cmap={'a' : [1,0,0,1], 'b' : 'xkcd:sky blue'})
     """
     c, labels, discrete, cmap, subplot_kw, legend = _auto_params(
         data, c, discrete,
@@ -178,10 +211,19 @@ def scatter(data,
         im = ax.imshow(np.arange(10).reshape(-1, 1),
                        vmin=np.min(c), vmax=np.max(c), cmap=cmap,
                        aspect='auto')
-        ax.clear()
-    sc = ax.scatter(*[d[plot_idx] for d in data],
-                    c=c[plot_idx] if c is not None else c,
-                    cmap=cmap, s=s, **plot_kwargs)
+        im.remove()
+    try:
+        if c is not None and not mpl.colors.is_color_like(c):
+            c = c[plot_idx]
+        sc = ax.scatter(*[d[plot_idx] for d in data],
+                        c=c,
+                        cmap=cmap, s=s, **plot_kwargs)
+    except TypeError as e:
+        if not hasattr(ax, "get_zlim"):
+            raise TypeError("Expected ax with projection='3d'. "
+                            "Got 2D axis instead.")
+        else:
+            raise e
 
     if not xticks:
         ax.set_xticks([])
@@ -237,9 +279,10 @@ def scatter(data,
                 handles=[handle(sc.cmap(sc.norm(i)))
                          for i in range(len(labels))],
                 labels=list(labels),
-                ncol=max(1, len(labels) // 10))
+                ncol=max(1, len(labels) // 10),
+                title=legend_title)
         else:
-            plt.colorbar(im)
+            plt.colorbar(im, label=legend_title)
     if show:
         plt.tight_layout()
         if not in_ipynb():

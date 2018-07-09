@@ -17,3 +17,6 @@
   script:
     - cd Python
     - python setup.py test
+    - cd doc
+    - pip install -r source/requirements.txt
+    - make html

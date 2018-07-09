@@ -80,3 +80,9 @@ A demo on PHATE usage and visualization for single cell RNA-seq data can be foun
 A second tutorial is available here_ which works with the artificial tree shown above in more detail: http://nbviewer.jupyter.org/github/KrishnaswamyLab/PHATE/blob/master/Python/tutorial/PHATE_tree.ipynb
 
 .. _here: http://nbviewer.jupyter.org/github/KrishnaswamyLab/PHATE/blob/master/Python/tutorial/PHATE_tree.ipynb
+
+
+Help
+^^^^
+
+If you have any questions or require assistance using PHATE, please contact us at https://krishnaswamylab.org/get-help

@@ -29,6 +29,7 @@ PHATE has been implemented in [Python](#python) (2.7 and >=3.5), [MATLAB](#matla
     * [Installation with devtools and reticulate](#installation-with-devtools-and-reticulate)
     * [Installation from source](#installation-from-source-1)
     * [Tutorial and Reference](#tutorial-and-reference-2)
+* [Help](#help)
 
 ### Python
 
@@ -117,3 +118,7 @@ If the `phateR` folder is empty, you have may forgotten to use the `--recursive`
 #### Tutorial and Reference
 
 For more information and a tutorial, read the [phateR README](https://github.com/KrishnaswamyLab/phateR). Documentation is available in the R help viewer with `help(phateR::phate)`.
+
+### Help
+
+If you have any questions or require assistance using PHATE, please contact us at <https://krishnaswamylab.org/get-help>.
