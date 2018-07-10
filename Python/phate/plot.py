@@ -58,13 +58,17 @@ def _get_plot_data(data, ndim=None):
 def _auto_params(data, c, discrete, cmap, legend):
     """Automatically select nice parameters for a scatter plot
     """
+    for d in data[1:]:
+        if d.shape[0] != data[0].shape[0]:
+            raise ValueError("Expected all axis of data to have the same length"
+                             ". Got {}".format([d.shape[0] for d in data]))
     if c is not None and not mpl.colors.is_color_like(c):
         try:
             c = c.values
         except AttributeError:
             # not a pandas Series
             pass
-        if not len(c) == data.shape[0]:
+        if not len(c) == data[0].shape[0]:
             raise ValueError("Expected c of length {} or 1. Got {}".format(
                 len(c), data.shape[0]))
         if discrete is None:
