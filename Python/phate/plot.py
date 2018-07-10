@@ -64,6 +64,9 @@ def _auto_params(data, c, discrete, cmap, legend):
         except AttributeError:
             # not a pandas Series
             pass
+        if not len(c) == data.shape[0]:
+            raise ValueError("Expected c of length {} or 1. Got {}".format(
+                len(c), data.shape[0]))
         if discrete is None:
             # guess
             if isinstance(cmap, dict) or \
@@ -124,7 +127,7 @@ def scatter(data,
             xlabel="PHATE1",
             ylabel="PHATE2",
             zlabel="PHATE3",
-            legend_title=None,
+            legend_title="",
             **plot_kwargs):
     """Create a scatter plot
 
@@ -184,7 +187,7 @@ def scatter(data,
         Label for the y axis. If None, no label is set.
     zlabel : str or None (default : "PHATE3")
         Label for the z axis. If None, no label is set. Only used for 3D plots
-    legend_title : str or None (default: None)
+    legend_title : str (default: "")
         title for the colorbar of legend
     **plot_kwargs : keyword arguments
         Extra arguments passed to `matplotlib.pyplot.scatter`.
