@@ -2,6 +2,22 @@ import os
 import sys
 from setuptools import setup
 
+install_requires = [
+    'numpy>=1.14.0',
+    'pandas>=0.21.0',
+    'scipy>=1.1.0',
+    'matplotlib>=2.0.1',
+    'scikit-learn>=0.19.1',
+    'future',
+    'graphtools>=0.1.8.1']
+
+test_requires = [
+    'nose2']
+
+doc_requires = [
+    'sphinx',
+    'sphinxcontrib-napoleon']
+
 version_py = os.path.join(os.path.dirname(__file__), 'phate', 'version.py')
 version = open(version_py).read().strip().split(
     '=')[-1].replace('"', '').strip()
@@ -18,30 +34,10 @@ setup(name='phate',
       author_email='daniel.burkhardt@yale.edu',
       packages=['phate', ],
       license='GNU General Public License Version 2',
-      install_requires=['numpy>=1.14.0',
-                        'pandas>=0.21.0',
-                        'scipy>=1.1.0',
-                        'matplotlib>=2.0.1',
-                        'scikit-learn>=0.19.1',
-                        'future',
-                        'graphtools>=0.1.7'],
+      install_requires=install_requires,
       extras_require={
-          'tests': [
-              'doctest',
-              'nose2',
-          ],
-          'docs': [
-              'sphinx>=1.6.5',
-              'sphinx-rtd-theme<0.3',
-              'readthedocs-sphinx-ext<0.6',
-              'recommonmark>=0.4.0',
-              'commonmark>=0.5.4',
-              'alabaster!=0.7.5,<0.8,>=0.7',
-              'pillow==2.6.1',
-              'mock==1.0.1',
-              'docutils==0.13.1',
-              'Pygments==2.2.0',
-          ]},
+          'test': test_requires,
+          'doc': doc_requires},
       test_suite='nose2.collector.collector',
       long_description=readme,
       url='https://github.com/KrishnaswamyLab/PHATE',

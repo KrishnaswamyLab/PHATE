@@ -281,6 +281,17 @@ class PHATE(BaseEstimator):
             # graph not defined
             pass
 
+    def _reset_graph(self):
+        self.graph = None
+        self._reset_potential()
+
+    def _reset_potential(self):
+        self.diff_potential = None
+        self._reset_embedding()
+
+    def _reset_embedding(self):
+        self.embedding = None
+
     def set_params(self, **params):
         """Set the parameters on this estimator.
 
@@ -443,7 +454,7 @@ class PHATE(BaseEstimator):
         if 'n_landmark' in params and params['n_landmark'] != self.n_landmark:
             if self.n_landmark is None or params['n_landmark'] is None:
                 # need a different type of graph, reset entirely
-                self.graph = None
+                self._reset_graph()
             else:
                 self._set_graph_params(n_landmark=params['n_landmark'])
             self.n_landmark = params['n_landmark']
@@ -466,13 +477,11 @@ class PHATE(BaseEstimator):
 
         if reset_kernel:
             # can't reset the graph kernel without making a new graph
-            self.graph = None
-            reset_potential = True
+            self._reset_graph()
         if reset_potential:
-            reset_embedding = True
-            self.diff_potential = None
+            self._reset_potential()
         if reset_embedding:
-            self.embedding = None
+            self._reset_embedding()
 
         self._check_params()
         return self
@@ -583,7 +592,7 @@ class PHATE(BaseEstimator):
                 If the same data is used, we can reuse existing kernel and
                 diffusion matrices. Otherwise we have to recompute.
                 """
-                self.graph = None
+                self._reset_graph()
             else:
                 try:
                     self.graph.set_params(
@@ -596,7 +605,7 @@ class PHATE(BaseEstimator):
                 except ValueError as e:
                     # something changed that should have invalidated the graph
                     log_debug("Reset graph due to {}".format(str(e)))
-                    self.graph = None
+                    self._reset_graph()
 
         self.X = X
 

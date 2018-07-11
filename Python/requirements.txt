@@ -4,4 +4,4 @@ scipy>=1.1.0
 matplotlib>=2.0.1
 scikit-learn>=0.19.1
 future
-graphtools>=0.1.7
+graphtools>=0.1.8.1

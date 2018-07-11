@@ -58,12 +58,19 @@ def _get_plot_data(data, ndim=None):
 def _auto_params(data, c, discrete, cmap, legend):
     """Automatically select nice parameters for a scatter plot
     """
+    for d in data[1:]:
+        if d.shape[0] != data[0].shape[0]:
+            raise ValueError("Expected all axis of data to have the same length"
+                             ". Got {}".format([d.shape[0] for d in data]))
     if c is not None and not mpl.colors.is_color_like(c):
         try:
             c = c.values
         except AttributeError:
             # not a pandas Series
             pass
+        if not len(c) == data[0].shape[0]:
+            raise ValueError("Expected c of length {} or 1. Got {}".format(
+                len(c), data.shape[0]))
         if discrete is None:
             # guess
             if isinstance(cmap, dict) or \
@@ -124,7 +131,7 @@ def scatter(data,
             xlabel="PHATE1",
             ylabel="PHATE2",
             zlabel="PHATE3",
-            legend_title=None,
+            legend_title="",
             **plot_kwargs):
     """Create a scatter plot
 
@@ -184,7 +191,7 @@ def scatter(data,
         Label for the y axis. If None, no label is set.
     zlabel : str or None (default : "PHATE3")
         Label for the z axis. If None, no label is set. Only used for 3D plots
-    legend_title : str or None (default: None)
+    legend_title : str (default: "")
         title for the colorbar of legend
     **plot_kwargs : keyword arguments
         Extra arguments passed to `matplotlib.pyplot.scatter`.
@@ -208,10 +215,12 @@ def scatter(data,
     else:
         show = False
     if legend and not discrete:
-        im = ax.imshow(np.arange(10).reshape(-1, 1),
+        im = ax.imshow(np.linspace(np.min(data[1]), np.max(data[1]), 10).reshape(-1, 1),
                        vmin=np.min(c), vmax=np.max(c), cmap=cmap,
-                       aspect='auto')
+                       aspect='auto', origin='lower')
         im.remove()
+        ax.relim()
+        ax.autoscale()
     try:
         if c is not None and not mpl.colors.is_color_like(c):
             c = c[plot_idx]
