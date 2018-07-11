@@ -12,7 +12,6 @@ install_requires = [
     'graphtools>=0.1.8.1']
 
 test_requires = [
-    'doctest',
     'nose2']
 
 doc_requires = [
