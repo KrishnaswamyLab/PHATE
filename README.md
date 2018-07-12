@@ -117,7 +117,7 @@ If the `phateR` folder is empty, you have may forgotten to use the `--recursive`
 
 #### Tutorial and Reference
 
-For more information and a tutorial, read the [phateR README](https://github.com/KrishnaswamyLab/phateR). Documentation is available in the R help viewer with `help(phateR::phate)`.
+For more information and a tutorial, read the [phateR README](https://github.com/KrishnaswamyLab/phateR). Documentation is available in the R help viewer with `help(phateR::phate)`. A tutorial notebook running PHATE on a single-cell RNA-seq dataset is available at <https://github.com/KrishnaswamyLab/phateR/blob/master/inst/examples/bonemarrow_tutorial.md> or in `phateR/inst/examples`.
 
 ### Help
 
