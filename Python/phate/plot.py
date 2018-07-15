@@ -68,6 +68,12 @@ def _auto_params(data, c, discrete, cmap, legend):
         except AttributeError:
             # not a pandas Series
             pass
+        try:
+            c = c.toarray()
+        except AttributeError:
+            # not a scipy spmatrix
+            pass
+        c = np.array(c).flatten()
         if not len(c) == data[0].shape[0]:
             raise ValueError("Expected c of length {} or 1. Got {}".format(
                 len(c), data.shape[0]))
@@ -128,9 +134,10 @@ def scatter(data,
             xticklabels=True,
             yticklabels=True,
             zticklabels=True,
-            xlabel="PHATE1",
-            ylabel="PHATE2",
-            zlabel="PHATE3",
+            label_prefix="PHATE",
+            xlabel=None,
+            ylabel=None,
+            zlabel=None,
             legend_title="",
             **plot_kwargs):
     """Create a scatter plot
@@ -185,6 +192,10 @@ def scatter(data,
     zticklabels : True, False, or list-like (default: True)
         If True, keeps default z tick labels. If False, removes z tick labels.
         If a list, sets custom z tick labels. Only used for 3D plots
+    label_prefix : str or None (default: "PHATE")
+        Prefix for all axis labels. Axes will be labelled `label_prefix`1,
+        `label_prefix`2, etc. Can be overriden by setting `xlabel`,
+        `ylabel`, and `zlabel`.
     xlabel : str or None (default : "PHATE1")
         Label for the x axis. If None, no label is set.
     ylabel : str or None (default : "PHATE2")
@@ -198,8 +209,30 @@ def scatter(data,
 
     Examples
     --------
-    >>> import numpy as np
     >>> import phate
+    >>> import matplotlib.pyplot as plt
+    >>> ###
+    >>> # Running PHATE
+    >>> ###
+    >>> tree_data, tree_clusters = phate.tree.gen_dla(n_dim=100, n_branch=20,
+    ...                                               branch_length=100)
+    >>> tree_data.shape
+    (2000, 100)
+    >>> phate_operator = phate.PHATE(k=5, a=20, t=150)
+    >>> tree_phate = phate_operator.fit_transform(tree_data)
+    >>> tree_phate.shape
+    (2000, 2)
+    >>> ###
+    >>> # Plotting using phate.plot
+    >>> ###
+    >>> phate.plot.scatter2d(tree_phate, c=tree_clusters)
+    >>> # You can also pass the PHATE operator instead of data
+    >>> phate.plot.scatter2d(phate_operator, c=tree_clusters)
+    >>> phate.plot.scatter3d(phate_operator, c=tree_clusters)
+    >>> ###
+    >>> # Using a cmap dictionary
+    >>> ###
+    >>> import numpy as np
     >>> X = np.random.normal(0,1,[1000,2])
     >>> c = np.random.choice(['a','b'], 1000, replace=True)
     >>> X[c=='a'] += 10
@@ -208,6 +241,7 @@ def scatter(data,
     c, labels, discrete, cmap, subplot_kw, legend = _auto_params(
         data, c, discrete,
         cmap, legend)
+
     plot_idx = np.random.permutation(data[0].shape[0])
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize, subplot_kw=subplot_kw)
@@ -233,6 +267,15 @@ def scatter(data,
                             "Got 2D axis instead.")
         else:
             raise e
+
+    if label_prefix is None:
+        label_prefix = ""
+    if xlabel is not None:
+        xlabel = label_prefix + "1"
+    if ylabel is not None:
+        ylabel = label_prefix + "2"
+    if zlabel is not None:
+        zlabel = label_prefix + "3"
 
     if not xticks:
         ax.set_xticks([])
@@ -306,15 +349,72 @@ def scatter2d(data, **kwargs):
 
     Parameters
     ----------
-    data : array-like, `phate.PHATE` or `scanpy.AnnData`
-        Input data. Only the first two dimensions are used.
-    **kwargs : keyword arguments
-        See `phate.plot.scatter`.
+    data : array-like, shape=[n_samples, n_features]
+        Input data. Only the first two components will be used.
+    c : list-like or None, optional (default: None)
+        Color vector. Can be an array of RGBA values, or a list of discrete or
+        continuous values of any data type. The values in `c` will be used to
+        populate the legend / colorbar
+    cmap : `matplotlib` colormap, str, dict or None, optional (default: None)
+        matplotlib colormap. If None, uses `tab20` for discrete data and
+        `inferno` for continuous data. If a dictionary, expects one key
+        for every unique value in `c`, where values are valid matplotlib colors
+        (hsv, rbg, rgba, or named colors)
+    s : float, optional (default: 1)
+        Point size.
+    discrete : bool or None, optional (default: None)
+        If True, the legend is categorical. If False, the legend is a colorbar.
+        If None, discreteness is detected automatically. Data containing
+        non-numeric `c` is always discrete, and numeric data with 20 or less
+        unique values is discrete.
+    ax : `matplotlib.Axes` or None, optional (default: None)
+        axis on which to plot. If None, an axis is created
+    legend : bool, optional (default: True)
+        States whether or not to create a legend. If data is continuous,
+        the legend is a colorbar.
+    figsize : tuple, optional (default: None)
+        Tuple of floats for creation of new `matplotlib` figure. Only used if
+        `ax` is None.
+    xticks : True, False, or list-like (default: False)
+        If True, keeps default x ticks. If False, removes x ticks.
+        If a list, sets custom x ticks
+    yticks : True, False, or list-like (default: False)
+        If True, keeps default y ticks. If False, removes y ticks.
+        If a list, sets custom y ticks
+    zticks : True, False, or list-like (default: False)
+        If True, keeps default z ticks. If False, removes z ticks.
+        If a list, sets custom z ticks.  Only used for 3D plots
+    xticklabels : True, False, or list-like (default: True)
+        If True, keeps default x tick labels. If False, removes x tick labels.
+        If a list, sets custom x tick labels
+    yticklabels : True, False, or list-like (default: True)
+        If True, keeps default y tick labels. If False, removes y tick labels.
+        If a list, sets custom y tick labels
+    zticklabels : True, False, or list-like (default: True)
+        If True, keeps default z tick labels. If False, removes z tick labels.
+        If a list, sets custom z tick labels. Only used for 3D plots
+    label_prefix : str or None (default: "PHATE")
+        Prefix for all axis labels. Axes will be labelled `label_prefix`1,
+        `label_prefix`2, etc. Can be overriden by setting `xlabel`,
+        `ylabel`, and `zlabel`.
+    xlabel : str or None (default : "PHATE1")
+        Label for the x axis. If None, no label is set.
+    ylabel : str or None (default : "PHATE2")
+        Label for the y axis. If None, no label is set.
+    zlabel : str or None (default : "PHATE3")
+        Label for the z axis. If None, no label is set. Only used for 3D plots
+    legend_title : str (default: "")
+        title for the colorbar of legend
+    **plot_kwargs : keyword arguments
+        Extra arguments passed to `matplotlib.pyplot.scatter`.
 
     Examples
     --------
     >>> import phate
     >>> import matplotlib.pyplot as plt
+    >>> ###
+    >>> # Running PHATE
+    >>> ###
     >>> tree_data, tree_clusters = phate.tree.gen_dla(n_dim=100, n_branch=20,
     ...                                               branch_length=100)
     >>> tree_data.shape
@@ -323,10 +423,27 @@ def scatter2d(data, **kwargs):
     >>> tree_phate = phate_operator.fit_transform(tree_data)
     >>> tree_phate.shape
     (2000, 2)
+    >>> ###
+    >>> # Plotting using phate.plot
+    >>> ###
     >>> phate.plot.scatter2d(tree_phate, c=tree_clusters)
+    >>> # You can also pass the PHATE operator instead of data
+    >>> phate.plot.scatter2d(phate_operator, c=tree_clusters)
+    >>> phate.plot.scatter3d(phate_operator, c=tree_clusters)
+    >>> ###
+    >>> # Using a cmap dictionary
+    >>> ###
+    >>> import numpy as np
+    >>> X = np.random.normal(0,1,[1000,2])
+    >>> c = np.random.choice(['a','b'], 1000, replace=True)
+    >>> X[c=='a'] += 10
+    >>> phate.plot.scatter2d(X, c=c, cmap={'a' : [1,0,0,1], 'b' : 'xkcd:sky blue'})
     """
     data = _get_plot_data(data, ndim=2)
     return scatter([data[:, 0], data[:, 1]], **kwargs)
+
+
+scatter2d.__doc__ = scatter.__doc__
 
 
 def scatter3d(data, **kwargs):
@@ -337,24 +454,95 @@ def scatter3d(data, **kwargs):
 
     Parameters
     ----------
-    data : array-like, `phate.PHATE` or `scanpy.AnnData`
-        Input data. Only the first three dimensions are used.
-    **kwargs : keyword arguments
-        See `phate.plot.scatter`.
+    data : array-like, shape=[n_samples, n_features]
+        Input data. Only the first three components will be used.
+    c : list-like or None, optional (default: None)
+        Color vector. Can be an array of RGBA values, or a list of discrete or
+        continuous values of any data type. The values in `c` will be used to
+        populate the legend / colorbar
+    cmap : `matplotlib` colormap, str, dict or None, optional (default: None)
+        matplotlib colormap. If None, uses `tab20` for discrete data and
+        `inferno` for continuous data. If a dictionary, expects one key
+        for every unique value in `c`, where values are valid matplotlib colors
+        (hsv, rbg, rgba, or named colors)
+    s : float, optional (default: 1)
+        Point size.
+    discrete : bool or None, optional (default: None)
+        If True, the legend is categorical. If False, the legend is a colorbar.
+        If None, discreteness is detected automatically. Data containing
+        non-numeric `c` is always discrete, and numeric data with 20 or less
+        unique values is discrete.
+    ax : `matplotlib.Axes` or None, optional (default: None)
+        axis on which to plot. If None, an axis is created
+    legend : bool, optional (default: True)
+        States whether or not to create a legend. If data is continuous,
+        the legend is a colorbar.
+    figsize : tuple, optional (default: None)
+        Tuple of floats for creation of new `matplotlib` figure. Only used if
+        `ax` is None.
+    xticks : True, False, or list-like (default: False)
+        If True, keeps default x ticks. If False, removes x ticks.
+        If a list, sets custom x ticks
+    yticks : True, False, or list-like (default: False)
+        If True, keeps default y ticks. If False, removes y ticks.
+        If a list, sets custom y ticks
+    zticks : True, False, or list-like (default: False)
+        If True, keeps default z ticks. If False, removes z ticks.
+        If a list, sets custom z ticks.  Only used for 3D plots
+    xticklabels : True, False, or list-like (default: True)
+        If True, keeps default x tick labels. If False, removes x tick labels.
+        If a list, sets custom x tick labels
+    yticklabels : True, False, or list-like (default: True)
+        If True, keeps default y tick labels. If False, removes y tick labels.
+        If a list, sets custom y tick labels
+    zticklabels : True, False, or list-like (default: True)
+        If True, keeps default z tick labels. If False, removes z tick labels.
+        If a list, sets custom z tick labels. Only used for 3D plots
+    label_prefix : str or None (default: "PHATE")
+        Prefix for all axis labels. Axes will be labelled `label_prefix`1,
+        `label_prefix`2, etc. Can be overriden by setting `xlabel`,
+        `ylabel`, and `zlabel`.
+    xlabel : str or None (default : "PHATE1")
+        Label for the x axis. If None, no label is set.
+    ylabel : str or None (default : "PHATE2")
+        Label for the y axis. If None, no label is set.
+    zlabel : str or None (default : "PHATE3")
+        Label for the z axis. If None, no label is set. Only used for 3D plots
+    legend_title : str (default: "")
+        title for the colorbar of legend
+    **plot_kwargs : keyword arguments
+        Extra arguments passed to `matplotlib.pyplot.scatter`.
 
     Examples
     --------
     >>> import phate
     >>> import matplotlib.pyplot as plt
+    >>> ###
+    >>> # Running PHATE
+    >>> ###
     >>> tree_data, tree_clusters = phate.tree.gen_dla(n_dim=100, n_branch=20,
     ...                                               branch_length=100)
     >>> tree_data.shape
     (2000, 100)
-    >>> phate_operator = phate.PHATE(n_components=3, k=5, a=20, t=150)
+    >>> phate_operator = phate.PHATE(k=5, a=20, t=150)
     >>> tree_phate = phate_operator.fit_transform(tree_data)
     >>> tree_phate.shape
     (2000, 2)
-    >>> phate.plot.scatter3d(tree_phate, c=tree_clusters)
+    >>> ###
+    >>> # Plotting using phate.plot
+    >>> ###
+    >>> phate.plot.scatter2d(tree_phate, c=tree_clusters)
+    >>> # You can also pass the PHATE operator instead of data
+    >>> phate.plot.scatter2d(phate_operator, c=tree_clusters)
+    >>> phate.plot.scatter3d(phate_operator, c=tree_clusters)
+    >>> ###
+    >>> # Using a cmap dictionary
+    >>> ###
+    >>> import numpy as np
+    >>> X = np.random.normal(0,1,[1000,2])
+    >>> c = np.random.choice(['a','b'], 1000, replace=True)
+    >>> X[c=='a'] += 10
+    >>> phate.plot.scatter2d(X, c=c, cmap={'a' : [1,0,0,1], 'b' : 'xkcd:sky blue'})
     """
     data = _get_plot_data(data, ndim=3)
     return scatter([data[:, 0], data[:, 1], data[:, 2]],
@@ -395,7 +583,7 @@ def rotate_scatter3d(data,
     ipython_html : {'html5', 'jshtml'}
         which html writer to use if using a Jupyter Notebook
     **kwargs : keyword arguments
-        See `phate.plot.scatter`.
+        See :~func:`phate.plot.scatter3d`.
 
     Examples
     --------
