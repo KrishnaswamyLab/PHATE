@@ -217,7 +217,7 @@ def scatter(data,
         file to which the output is saved
     dpi : int or None, optional (default: None)
         The resolution in dots per inch. If None it will default to the value
-        savefig.dpi in the matplotlibrc file. If ‘figure’ it will set the dpi
+        savefig.dpi in the matplotlibrc file. If 'figure' it will set the dpi
         to be the value of the figure. Only used if filename is not None.
     **plot_kwargs : keyword arguments
         Extra arguments passed to `matplotlib.pyplot.scatter`.
