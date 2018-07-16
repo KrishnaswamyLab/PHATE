@@ -138,7 +138,10 @@ def scatter(data,
             xlabel=None,
             ylabel=None,
             zlabel=None,
+            title=None,
             legend_title="",
+            filename=None,
+            dpi=None,
             **plot_kwargs):
     """Create a scatter plot
 
@@ -182,7 +185,7 @@ def scatter(data,
         If a list, sets custom y ticks
     zticks : True, False, or list-like (default: False)
         If True, keeps default z ticks. If False, removes z ticks.
-        If a list, sets custom z ticks.  Only used for 3D plots
+        If a list, sets custom z ticks.  Only used for 3D plots.
     xticklabels : True, False, or list-like (default: True)
         If True, keeps default x tick labels. If False, removes x tick labels.
         If a list, sets custom x tick labels
@@ -191,19 +194,31 @@ def scatter(data,
         If a list, sets custom y tick labels
     zticklabels : True, False, or list-like (default: True)
         If True, keeps default z tick labels. If False, removes z tick labels.
-        If a list, sets custom z tick labels. Only used for 3D plots
+        If a list, sets custom z tick labels. Only used for 3D plots.
     label_prefix : str or None (default: "PHATE")
         Prefix for all axis labels. Axes will be labelled `label_prefix`1,
         `label_prefix`2, etc. Can be overriden by setting `xlabel`,
         `ylabel`, and `zlabel`.
-    xlabel : str or None (default : "PHATE1")
-        Label for the x axis. If None, no label is set.
-    ylabel : str or None (default : "PHATE2")
-        Label for the y axis. If None, no label is set.
-    zlabel : str or None (default : "PHATE3")
-        Label for the z axis. If None, no label is set. Only used for 3D plots
+    xlabel : str or None (default : None)
+        Label for the x axis. Overrides the automatic label given by
+        label_prefix. If None and label_prefix is None, no label is set.
+    ylabel : str or None (default : None)
+        Label for the y axis. Overrides the automatic label given by
+        label_prefix. If None and label_prefix is None, no label is set.
+    zlabel : str or None (default : None)
+        Label for the z axis. Overrides the automatic label given by
+        label_prefix. If None and label_prefix is None, no label is set.
+        Only used for 3D plots.
+    title : str or None (default: None)
+        axis title. If None, no title is set.
     legend_title : str (default: "")
         title for the colorbar of legend
+    filename : str or None (default: None)
+        file to which the output is saved
+    dpi : int or None, optional (default: None)
+        The resolution in dots per inch. If None it will default to the value
+        savefig.dpi in the matplotlibrc file. If ‘figure’ it will set the dpi
+        to be the value of the figure. Only used if filename is not None.
     **plot_kwargs : keyword arguments
         Extra arguments passed to `matplotlib.pyplot.scatter`.
 
@@ -247,6 +262,7 @@ def scatter(data,
         fig, ax = plt.subplots(figsize=figsize, subplot_kw=subplot_kw)
         show = True
     else:
+        fig = ax.get_figure()
         show = False
     if legend and not discrete:
         im = ax.imshow(np.linspace(np.min(data[1]), np.max(data[1]), 10).reshape(-1, 1),
@@ -268,14 +284,13 @@ def scatter(data,
         else:
             raise e
 
-    if label_prefix is None:
-        label_prefix = ""
-    if xlabel is not None:
-        xlabel = label_prefix + "1"
-    if ylabel is not None:
-        ylabel = label_prefix + "2"
-    if zlabel is not None:
-        zlabel = label_prefix + "3"
+    if label_prefix is not None:
+        if xlabel is None:
+            xlabel = label_prefix + "1"
+        if ylabel is None:
+            ylabel = label_prefix + "2"
+        if zlabel is None:
+            zlabel = label_prefix + "3"
 
     if not xticks:
         ax.set_xticks([])
@@ -335,8 +350,12 @@ def scatter(data,
                 title=legend_title)
         else:
             plt.colorbar(im, label=legend_title)
-    if show:
+
+    if show or filename is not None:
         plt.tight_layout()
+    if filename is not None:
+        fig.savefig(filename, dpi=dpi)
+    if show:
         if not in_ipynb():
             plt.show(block=False)
 
