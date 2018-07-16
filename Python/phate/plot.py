@@ -322,6 +322,9 @@ def scatter(data,
     if ylabel is not None:
         ax.set_ylabel(ylabel)
 
+    if title is not None:
+        ax.set_title(title)
+
     if len(data) == 3:
         if not zticks:
             ax.set_zticks([])
@@ -402,7 +405,7 @@ def scatter2d(data, **kwargs):
         If a list, sets custom y ticks
     zticks : True, False, or list-like (default: False)
         If True, keeps default z ticks. If False, removes z ticks.
-        If a list, sets custom z ticks.  Only used for 3D plots
+        If a list, sets custom z ticks.  Only used for 3D plots.
     xticklabels : True, False, or list-like (default: True)
         If True, keeps default x tick labels. If False, removes x tick labels.
         If a list, sets custom x tick labels
@@ -411,19 +414,31 @@ def scatter2d(data, **kwargs):
         If a list, sets custom y tick labels
     zticklabels : True, False, or list-like (default: True)
         If True, keeps default z tick labels. If False, removes z tick labels.
-        If a list, sets custom z tick labels. Only used for 3D plots
+        If a list, sets custom z tick labels. Only used for 3D plots.
     label_prefix : str or None (default: "PHATE")
         Prefix for all axis labels. Axes will be labelled `label_prefix`1,
         `label_prefix`2, etc. Can be overriden by setting `xlabel`,
         `ylabel`, and `zlabel`.
-    xlabel : str or None (default : "PHATE1")
-        Label for the x axis. If None, no label is set.
-    ylabel : str or None (default : "PHATE2")
-        Label for the y axis. If None, no label is set.
-    zlabel : str or None (default : "PHATE3")
-        Label for the z axis. If None, no label is set. Only used for 3D plots
+    xlabel : str or None (default : None)
+        Label for the x axis. Overrides the automatic label given by
+        label_prefix. If None and label_prefix is None, no label is set.
+    ylabel : str or None (default : None)
+        Label for the y axis. Overrides the automatic label given by
+        label_prefix. If None and label_prefix is None, no label is set.
+    zlabel : str or None (default : None)
+        Label for the z axis. Overrides the automatic label given by
+        label_prefix. If None and label_prefix is None, no label is set.
+        Only used for 3D plots.
+    title : str or None (default: None)
+        axis title. If None, no title is set.
     legend_title : str (default: "")
         title for the colorbar of legend
+    filename : str or None (default: None)
+        file to which the output is saved
+    dpi : int or None, optional (default: None)
+        The resolution in dots per inch. If None it will default to the value
+        savefig.dpi in the matplotlibrc file. If 'figure' it will set the dpi
+        to be the value of the figure. Only used if filename is not None.
     **plot_kwargs : keyword arguments
         Extra arguments passed to `matplotlib.pyplot.scatter`.
 
@@ -474,6 +489,7 @@ def scatter3d(data, **kwargs):
     Parameters
     ----------
     data : array-like, shape=[n_samples, n_features]
+        to be the value of the figure. Only used if filename is not None.
         Input data. Only the first three components will be used.
     c : list-like or None, optional (default: None)
         Color vector. Can be an array of RGBA values, or a list of discrete or
@@ -507,7 +523,7 @@ def scatter3d(data, **kwargs):
         If a list, sets custom y ticks
     zticks : True, False, or list-like (default: False)
         If True, keeps default z ticks. If False, removes z ticks.
-        If a list, sets custom z ticks.  Only used for 3D plots
+        If a list, sets custom z ticks.  Only used for 3D plots.
     xticklabels : True, False, or list-like (default: True)
         If True, keeps default x tick labels. If False, removes x tick labels.
         If a list, sets custom x tick labels
@@ -516,19 +532,31 @@ def scatter3d(data, **kwargs):
         If a list, sets custom y tick labels
     zticklabels : True, False, or list-like (default: True)
         If True, keeps default z tick labels. If False, removes z tick labels.
-        If a list, sets custom z tick labels. Only used for 3D plots
+        If a list, sets custom z tick labels. Only used for 3D plots.
     label_prefix : str or None (default: "PHATE")
         Prefix for all axis labels. Axes will be labelled `label_prefix`1,
         `label_prefix`2, etc. Can be overriden by setting `xlabel`,
         `ylabel`, and `zlabel`.
-    xlabel : str or None (default : "PHATE1")
-        Label for the x axis. If None, no label is set.
-    ylabel : str or None (default : "PHATE2")
-        Label for the y axis. If None, no label is set.
-    zlabel : str or None (default : "PHATE3")
-        Label for the z axis. If None, no label is set. Only used for 3D plots
+    xlabel : str or None (default : None)
+        Label for the x axis. Overrides the automatic label given by
+        label_prefix. If None and label_prefix is None, no label is set.
+    ylabel : str or None (default : None)
+        Label for the y axis. Overrides the automatic label given by
+        label_prefix. If None and label_prefix is None, no label is set.
+    zlabel : str or None (default : None)
+        Label for the z axis. Overrides the automatic label given by
+        label_prefix. If None and label_prefix is None, no label is set.
+        Only used for 3D plots.
+    title : str or None (default: None)
+        axis title. If None, no title is set.
     legend_title : str (default: "")
         title for the colorbar of legend
+    filename : str or None (default: None)
+        file to which the output is saved
+    dpi : int or None, optional (default: None)
+        The resolution in dots per inch. If None it will default to the value
+        savefig.dpi in the matplotlibrc file. If 'figure' it will set the dpi
+        to be the value of the figure. Only used if filename is not None.
     **plot_kwargs : keyword arguments
         Extra arguments passed to `matplotlib.pyplot.scatter`.
 
