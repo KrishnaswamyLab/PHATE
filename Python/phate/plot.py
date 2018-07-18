@@ -140,6 +140,7 @@ def scatter(data,
             zlabel=None,
             title=None,
             legend_title="",
+            legend_loc='best',
             filename=None,
             dpi=None,
             **plot_kwargs):
@@ -212,7 +213,11 @@ def scatter(data,
     title : str or None (default: None)
         axis title. If None, no title is set.
     legend_title : str (default: "")
-        title for the colorbar of legend
+        title for the colorbar of legend. Only used for discrete data.
+    legend_loc : int or string or pair of floats, default: 'best'
+        Matplotlib legend location. Only used for discrete data.
+        See <https://matplotlib.org/api/_as_gen/matplotlib.pyplot.legend.html>
+        for details.
     filename : str or None (default: None)
         file to which the output is saved
     dpi : int or None, optional (default: None)
@@ -350,7 +355,8 @@ def scatter(data,
                          for i in range(len(labels))],
                 labels=list(labels),
                 ncol=max(1, len(labels) // 10),
-                title=legend_title)
+                title=legend_title,
+                loc=legend_loc)
         else:
             plt.colorbar(im, label=legend_title)
 
@@ -433,6 +439,10 @@ def scatter2d(data, **kwargs):
         axis title. If None, no title is set.
     legend_title : str (default: "")
         title for the colorbar of legend
+    legend_loc : int or string or pair of floats, default: 'best'
+        Matplotlib legend location. Only used for discrete data.
+        See <https://matplotlib.org/api/_as_gen/matplotlib.pyplot.legend.html>
+        for details.
     filename : str or None (default: None)
         file to which the output is saved
     dpi : int or None, optional (default: None)
@@ -475,9 +485,6 @@ def scatter2d(data, **kwargs):
     """
     data = _get_plot_data(data, ndim=2)
     return scatter([data[:, 0], data[:, 1]], **kwargs)
-
-
-scatter2d.__doc__ = scatter.__doc__
 
 
 def scatter3d(data, **kwargs):
@@ -551,6 +558,10 @@ def scatter3d(data, **kwargs):
         axis title. If None, no title is set.
     legend_title : str (default: "")
         title for the colorbar of legend
+    legend_loc : int or string or pair of floats, default: 'best'
+        Matplotlib legend location. Only used for discrete data.
+        See <https://matplotlib.org/api/_as_gen/matplotlib.pyplot.legend.html>
+        for details.
     filename : str or None (default: None)
         file to which the output is saved
     dpi : int or None, optional (default: None)
