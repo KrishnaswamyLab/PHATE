@@ -44,14 +44,14 @@ def _get_plot_data(data, ndim=None):
         except NameError:
             # anndata not installed
             pass
-    if ndim is not None and out.shape[1] < ndim:
+    if ndim is not None and out[0].shape[0] < ndim:
         if isinstance(data, PHATE):
             data.set_params(n_components=ndim)
             out = data.transform()
         else:
             raise ValueError(
                 "Expected at least {}-dimensional data, got {}".format(
-                    ndim, out.shape[1]))
+                    ndim, out[0].shape[0]))
     return out
 
 
@@ -98,23 +98,26 @@ def _auto_params(data, c, discrete, cmap, legend):
             labels = None
             if cmap is None:
                 cmap = 'inferno'
-        if isinstance(cmap, dict):
-            if not discrete:
-                raise ValueError("Cannot use dictionary cmap with "
-                                 "continuous data.")
-            elif np.any([l not in cmap for l in labels]):
-                missing = set(labels).difference(cmap.keys())
-                raise ValueError(
-                    "Dictionary cmap requires a color "
-                    "for every unique entry in `c`. "
-                    "Missing colors for [{}]".format(
-                        ", ".join([str(l) for l in missing])))
-            else:
-                cmap = mpl.colors.ListedColormap(
-                    [mpl.colors.to_rgba(cmap[l]) for l in labels])
     else:
         labels = None
         legend = False
+    if isinstance(cmap, dict):
+        if c is None or mpl.colors.is_color_like(c):
+            raise ValueError("Expected list-like `c` with dictionary cmap. "
+                             "Got {}".format(c))
+        elif not discrete:
+            raise ValueError("Cannot use dictionary cmap with "
+                             "continuous data.")
+        elif np.any([l not in cmap for l in labels]):
+            missing = set(labels).difference(cmap.keys())
+            raise ValueError(
+                "Dictionary cmap requires a color "
+                "for every unique entry in `c`. "
+                "Missing colors for [{}]".format(
+                    ", ".join([str(l) for l in missing])))
+        else:
+            cmap = mpl.colors.ListedColormap(
+                [mpl.colors.to_rgba(cmap[l]) for l in labels])
     if len(data) == 3:
         subplot_kw = {'projection': '3d'}
     elif len(data) == 2:
@@ -125,7 +128,7 @@ def _auto_params(data, c, discrete, cmap, legend):
     return c, labels, discrete, cmap, subplot_kw, legend
 
 
-def scatter(data,
+def scatter(x, y, z=None,
             c=None, cmap=None, s=1, discrete=None,
             ax=None, legend=True, figsize=None,
             xticks=False,
@@ -152,8 +155,12 @@ def scatter(data,
 
     Parameters
     ----------
-    data : list of array-like
-        list containing one array for each axis (min: 2, max: 3)
+    x : list-like
+        data for x axis
+    y : list-like
+        data for y axis
+    z : list-like, optional (default: None)
+        data for z axis
     c : list-like or None, optional (default: None)
         Color vector. Can be an array of RGBA values, or a list of discrete or
         continuous values of any data type. The values in `c` will be used to
@@ -258,6 +265,7 @@ def scatter(data,
     >>> X[c=='a'] += 10
     >>> phate.plot.scatter2d(X, c=c, cmap={'a' : [1,0,0,1], 'b' : 'xkcd:sky blue'})
     """
+    data = [x, y] if z is None else [x, y, z]
     c, labels, discrete, cmap, subplot_kw, legend = _auto_params(
         data, c, discrete,
         cmap, legend)
@@ -270,7 +278,8 @@ def scatter(data,
         fig = ax.get_figure()
         show = False
     if legend and not discrete:
-        im = ax.imshow(np.linspace(np.min(data[1]), np.max(data[1]), 10).reshape(-1, 1),
+        im = ax.imshow(np.linspace(np.min(data[1]),
+                                   np.max(data[1]), 10).reshape(-1, 1),
                        vmin=np.min(c), vmax=np.max(c), cmap=cmap,
                        aspect='auto', origin='lower')
         im.remove()
@@ -484,7 +493,7 @@ def scatter2d(data, **kwargs):
     >>> phate.plot.scatter2d(X, c=c, cmap={'a' : [1,0,0,1], 'b' : 'xkcd:sky blue'})
     """
     data = _get_plot_data(data, ndim=2)
-    return scatter([data[:, 0], data[:, 1]], **kwargs)
+    return scatter(x=data[:, 0], y=data[:, 1], **kwargs)
 
 
 def scatter3d(data, **kwargs):
@@ -603,7 +612,7 @@ def scatter3d(data, **kwargs):
     >>> phate.plot.scatter2d(X, c=c, cmap={'a' : [1,0,0,1], 'b' : 'xkcd:sky blue'})
     """
     data = _get_plot_data(data, ndim=3)
-    return scatter([data[:, 0], data[:, 1], data[:, 2]],
+    return scatter(x=data[:, 0], y=data[:, 1], z=data[:, 2],
                    **kwargs)
 
 
