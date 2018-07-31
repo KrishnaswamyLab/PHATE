@@ -21,6 +21,7 @@ set(gca,'yticklabel',[]);
 axis tight
 xlabel 'PCA1'
 ylabel 'PCA2'
+drawnow
 
 %% PHATE 2D
 Y_PHATE_2D = phate(M, 't', 20, 'gamma', 0);
@@ -34,6 +35,7 @@ set(gca,'yticklabel',[]);
 axis tight
 xlabel 'PHATE1'
 ylabel 'PHATE2'
+drawnow
 
 %% PHATE 3D
 Y_PHATE_3D = phate(M, 'ndim', 3, 't', 20);
@@ -49,6 +51,7 @@ axis tight
 xlabel 'PHATE1'
 ylabel 'PHATE2'
 zlabel 'PHATE3'
+drawnow
 
 %% tSNE
 tic;
@@ -64,6 +67,7 @@ set(gca,'yticklabel',[]);
 axis tight
 xlabel 'tSNE1'
 ylabel 'tSNE2'
+drawnow
 
 %% plot combined
 figure;
