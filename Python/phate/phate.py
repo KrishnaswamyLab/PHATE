@@ -691,6 +691,8 @@ class PHATE(BaseEstimator):
                 else:
                     t = self.t
                 self.diff_potential = self.calculate_potential(self.diff_op, t)
+            elif plot_optimal_t:
+                self.optimal_t(t_max=t_max, plot=plot_optimal_t, ax=ax)
             if self.embedding is None:
                 tasklogger.log_start("{} MDS".format(self.mds))
                 self.embedding = embed_MDS(
