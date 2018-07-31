@@ -1,4 +1,4 @@
-function W = compute_kernel_sparse(data, varargin)
+function [W,Wns] = compute_kernel_sparse(data, varargin)
 % W = compute_kernel_sparse(data, varargin)
 %   computes kernel W
 % varargin:
@@ -50,10 +50,10 @@ disp '   Computing distances'
 i = repmat((1:N)',1,size(idx,2));
 i = i(:);
 j = idx(:);
-W = sparse(i, j, ones(size(j)));
+Wns = sparse(i, j, ones(size(j)));
 
 disp '   Symmetrize affinities'
-W = W + W';
+W = Wns + Wns';
 
 disp '   Done computing kernel'
 
