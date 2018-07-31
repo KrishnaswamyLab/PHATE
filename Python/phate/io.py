@@ -82,10 +82,10 @@ def load_10X(data_dir, sparse=True, gene_labels='symbol'):
         columns = pd.Index(genes[gene_labels])
         if sparse and np.sum(columns.duplicated()) > 0:
             warnings.warn(
-                "Duplicate gene names detected! Forcing `gene_labels='both'`."
+                "Duplicate gene names detected! Forcing `gene_labels='id'`."
                 "Alternatively, try loading the matrix with "
                 "`sparse=False`", RuntimeWarning)
-            columns = _combine_gene_id(genes)
+            columns = genes['id']
 
     if sparse:
         data = pd.SparseDataFrame(m.T, index=index,

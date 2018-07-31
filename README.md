@@ -29,6 +29,7 @@ PHATE has been implemented in [Python](#python) (2.7 and >=3.5), [MATLAB](#matla
     * [Installation with devtools and reticulate](#installation-with-devtools-and-reticulate)
     * [Installation from source](#installation-from-source-1)
     * [Tutorial and Reference](#tutorial-and-reference-2)
+* [Help](#help)
 
 ### Python
 
@@ -79,6 +80,8 @@ Install `phate` in Python by running the following code from a terminal:
 
     pip install --user phate
 
+If `python` or `pip` are not installed, you will need to install them. We recommend [Miniconda3](https://conda.io/miniconda.html) to install Python and `pip` together, or otherwise you can install `pip` from https://pip.pypa.io/en/stable/installing/.
+
 #### Installation with `devtools` and `reticulate`
 
 The development version of PHATE can be installed directly from R with `devtools`:
@@ -89,7 +92,7 @@ The development version of PHATE can be installed directly from R with `devtools
 If you have the development version of `reticulate`, you can also install `phate` in Python by running the following code in R:
 
     devtools::install_github("rstudio/reticulate")
-    reticulate::py_install("phate")
+    reticulate::py_install("phate", pip=TRUE)
 
 #### Installation from source
 
@@ -114,4 +117,8 @@ If the `phateR` folder is empty, you have may forgotten to use the `--recursive`
 
 #### Tutorial and Reference
 
-For more information and a tutorial, read the [phateR README](https://github.com/KrishnaswamyLab/phateR). Documentation is available in the R help viewer with `help(phateR::phate)`.
+For more information and a tutorial, read the [phateR README](https://github.com/KrishnaswamyLab/phateR). Documentation is available in the R help viewer with `help(phateR::phate)`. A tutorial notebook running PHATE on a single-cell RNA-seq dataset is available at <http://htmlpreview.github.io/?https://github.com/KrishnaswamyLab/phateR/blob/master/inst/examples/bonemarrow_tutorial.html> or in `phateR/inst/examples`.
+
+### Help
+
+If you have any questions or require assistance using PHATE, please contact us at <https://krishnaswamylab.org/get-help>.

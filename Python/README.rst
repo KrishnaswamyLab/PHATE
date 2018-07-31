@@ -64,12 +64,11 @@ check out our notebook below.
 If you want to try running our test script on a DLA fractal tree, run the following in a Python interpreter::
 
         import phate
-        import matplotlib.pyplot as plt
         tree_data, tree_clusters = phate.tree.gen_dla()
         phate_operator = phate.PHATE(k=15, t=100)
         tree_phate = phate_operator.fit_transform(tree_data)
-        plt.scatter(tree_phate[:,0], tree_phate[:,1], c=tree_clusters)
-        plt.show()
+        phate.plot.scatter2d(phate_operator, c=tree_clusters) # or phate.plot.scatter2d(tree_phate, c=tree_clusters)
+        phate.plot.rotate_scatter3d(phate_operator, c=tree_clusters)
 
 Jupyter Notebooks
 ~~~~~~~~~~~~~~~~~
@@ -81,3 +80,9 @@ A demo on PHATE usage and visualization for single cell RNA-seq data can be foun
 A second tutorial is available here_ which works with the artificial tree shown above in more detail: http://nbviewer.jupyter.org/github/KrishnaswamyLab/PHATE/blob/master/Python/tutorial/PHATE_tree.ipynb
 
 .. _here: http://nbviewer.jupyter.org/github/KrishnaswamyLab/PHATE/blob/master/Python/tutorial/PHATE_tree.ipynb
+
+
+Help
+^^^^
+
+If you have any questions or require assistance using PHATE, please contact us at https://krishnaswamylab.org/get-help

@@ -9,6 +9,7 @@ import nose2
 import phate
 import numpy as np
 import pandas as pd
+from scipy.spatial.distance import pdist, squareform
 
 
 def test_simple():
@@ -31,7 +32,7 @@ def test_vne():
 
 def test_tree():
     # generate DLA tree
-    M, C = phate.tree.gen_dla(n_dim=100, n_branch=10, branch_length=300,
+    M, C = phate.tree.gen_dla(n_dim=50, n_branch=4, branch_length=50,
                               rand_multiplier=2, seed=37, sigma=4)
 
     # instantiate phate_operator
@@ -52,31 +53,27 @@ def test_tree():
     assert Y_mmds.shape == (M.shape[0], 2)
 
     # run phate with nonmetric MDS
-    phate_operator.set_params(potential_method="sqrt")
+    phate_operator.set_params(gamma=0)
     print("DLA tree, metric MDS (sqrt)")
     Y_sqrt = phate_operator.fit_transform(M)
     assert Y_sqrt.shape == (M.shape[0], 2)
 
-    phate_fast_operator = phate.PHATE(
-        n_components=2, a=10, t=90, k=5, mds='classic', mds_dist='euclidean',
-        n_landmark=1000)
-    # run phate with classic MDS
-    print("DLA tree, fast classic MDS")
-    Y_cmds_fast = phate_fast_operator.fit_transform(M)
-    assert Y_cmds_fast.shape == (M.shape[0], 2)
+    D = squareform(pdist(M))
+    K = phate_operator.graph.kernel
+    phate_operator.set_params(knn_dist="precomputed", random_state=42)
+    phate_precomputed_D = phate_operator.fit_transform(D)
+    phate_precomputed_K = phate_operator.fit_transform(K)
 
-    # run phate with metric MDS
-    # change the MDS embedding without recalculating diffusion potential
-    phate_fast_operator.set_params(mds="metric")
-    print("DLA tree, fast metric MDS (log)")
-    Y_mmds_fast = phate_fast_operator.fit_transform(M)
-    assert Y_mmds_fast.shape == (M.shape[0], 2)
+    phate_operator.set_params(knn_dist="precomputed_distance")
+    phate_precomputed_distance = phate_operator.fit_transform(D)
 
-    # run phate with nonmetric MDS
-    phate_fast_operator.set_params(potential_method="sqrt")
-    print("DLA tree, fast metric MDS (sqrt)")
-    Y_sqrt_fast = phate_fast_operator.fit_transform(M)
-    assert Y_sqrt_fast.shape == (M.shape[0], 2)
+    phate_operator.set_params(knn_dist="precomputed_affinity")
+    phate_precomputed_affinity = phate_operator.fit_transform(K)
+
+    np.testing.assert_allclose(
+        phate_precomputed_K, phate_precomputed_affinity, atol=5e-4)
+    np.testing.assert_allclose(
+        phate_precomputed_D, phate_precomputed_distance, atol=5e-4)
     return 0
 
 
@@ -90,20 +87,13 @@ def test_bmmsc():
     # library_size_normalize performs L1 normalization on each cell
     bmmsc_norm = phate.preprocessing.library_size_normalize(bmmsc)
     bmmsc_norm = np.sqrt(bmmsc_norm)
-    phate_operator = phate.PHATE(
-        n_components=2, t='auto', a=200, k=10, mds='metric', mds_dist='euclidean',
-        n_landmark=None)
     phate_fast_operator = phate.PHATE(
         n_components=2, t='auto', a=200, k=10, mds='metric', mds_dist='euclidean',
         n_landmark=1000)
 
-    print("BMMSC, exact PHATE")
-    Y_mmds = phate_operator.fit_transform(bmmsc_norm, t_max=100)
-    assert Y_mmds.shape == (bmmsc_norm.shape[0], 2)
     print("BMMSC, fast PHATE")
     Y_mmds_fast = phate_fast_operator.fit_transform(bmmsc_norm, t_max=100)
     assert Y_mmds_fast.shape == (bmmsc_norm.shape[0], 2)
-    print("BMMSC, fast PHATE")
     return 0
 
 

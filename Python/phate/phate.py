@@ -12,13 +12,18 @@ from sklearn.base import BaseEstimator
 from sklearn.exceptions import NotFittedError
 from scipy import sparse
 import warnings
+import tasklogger
 
 import matplotlib.pyplot as plt
 
 from .mds import embed_MDS
 from .vne import compute_von_neumann_entropy, find_knee_point
-from .utils import check_int, check_positive, check_between, check_in, check_if_not
-from .logging import set_logging, log_start, log_complete, log_info, log_debug
+from .utils import (check_int,
+                    check_positive,
+                    check_between,
+                    check_in,
+                    check_if_not,
+                    matrix_is_equivalent)
 
 try:
     import anndata
@@ -41,10 +46,10 @@ class PHATE(BaseEstimator):
     n_components : int, optional, default: 2
         number of dimensions in which the data will be embedded
 
-    k : int, optional, default: 10
+    k : int, optional, default: 5
         number of nearest neighbors on which to build kernel
 
-    a : int, optional, default: 10
+    a : int, optional, default: 15
         sets decay rate of kernel tails.
         If None, alpha decaying kernel is not used
 
@@ -73,7 +78,11 @@ class PHATE(BaseEstimator):
         Any metric from `scipy.spatial.distance` can be used
         distance metric for building kNN graph. If 'precomputed',
         `data` should be an n_samples x n_samples distance or
-        affinity matrix
+        affinity matrix. Distance matrices are assumed to have zeros
+        down the diagonal, while affinity matrices are assumed to have
+        non-zero values down the diagonal. This is detected automatically using
+        `data[0,0]`. You can override this detection with
+        `knn_dist='precomputed_distance'` or `knn_dist='precomputed_affinity'`.
 
     mds_dist : string, optional, default: 'euclidean'
         recommended values: 'euclidean' and 'cosine'
@@ -136,8 +145,7 @@ class PHATE(BaseEstimator):
     >>> tree_phate = phate_operator.fit_transform(tree_data)
     >>> tree_phate.shape
     (2000, 2)
-    >>> # plt.scatter(tree_phate[:,0], tree_phate[:,1], c=tree_clusters)
-    >>> # plt.show()
+    >>> phate.plot.scatter2d(tree_phate, c=tree_clusters)
 
     References
     ----------
@@ -147,7 +155,7 @@ class PHATE(BaseEstimator):
         `BioRxiv <http://biorxiv.org/content/early/2017/03/24/120378>`_.
     """
 
-    def __init__(self, n_components=2, k=10, a=10,
+    def __init__(self, n_components=2, k=5, a=15,
                  n_landmark=2000, t='auto', gamma=1,
                  n_pca=100, knn_dist='euclidean', mds_dist='euclidean',
                  mds='metric', n_jobs=1, random_state=None, verbose=1,
@@ -191,11 +199,13 @@ class PHATE(BaseEstimator):
                                  "use gamma between -1 and 1".format(
                                      potential_method))
             warnings.warn(
-                "potential_method is deprecated. Setting gamma to {} to achieve"
+                "potential_method is deprecated. "
+                "Setting gamma to {} to achieve"
                 " {} transformation.".format(gamma, potential_method),
                 FutureWarning)
         elif gamma > 0.99 and gamma < 1:
-            warnings.warn("0.99 < gamma < 1 is numerically unstable. Setting gamma to 0.99",
+            warnings.warn("0.99 < gamma < 1 is numerically unstable. "
+                          "Setting gamma to 0.99",
                           RuntimeWarning)
             gamma = 0.99
         self.gamma = gamma
@@ -206,7 +216,7 @@ class PHATE(BaseEstimator):
             verbose = 0
         self.verbose = verbose
         self._check_params()
-        set_logging(verbose)
+        tasklogger.set_level(verbose)
 
     @property
     def diff_op(self):
@@ -253,7 +263,8 @@ class PHATE(BaseEstimator):
                   'chebyshev', 'dice', 'hamming', 'jaccard',
                   'kulsinski', 'mahalanobis', 'matching', 'minkowski',
                   'rogerstanimoto', 'russellrao', 'seuclidean',
-                  'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule'],
+                  'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule',
+                  'precomputed_affinity', 'precomputed_distance'],
                  knn_dist=self.knn_dist)
         check_in(['euclidean', 'cosine', 'correlation', 'braycurtis',
                   'canberra', 'chebyshev', 'cityblock', 'dice', 'hamming',
@@ -272,6 +283,17 @@ class PHATE(BaseEstimator):
             # graph not defined
             pass
 
+    def _reset_graph(self):
+        self.graph = None
+        self._reset_potential()
+
+    def _reset_potential(self):
+        self.diff_potential = None
+        self._reset_embedding()
+
+    def _reset_embedding(self):
+        self.embedding = None
+
     def set_params(self, **params):
         """Set the parameters on this estimator.
 
@@ -284,10 +306,10 @@ class PHATE(BaseEstimator):
         n_components : int, optional, default: 2
             number of dimensions in which the data will be embedded
 
-        k : int, optional, default: 10
+        k : int, optional, default: 5
             number of nearest neighbors on which to build kernel
 
-        a : int, optional, default: 10
+        a : int, optional, default: 15
             sets decay rate of kernel tails.
             If None, alpha decaying kernel is not used
 
@@ -374,7 +396,8 @@ class PHATE(BaseEstimator):
         reset_embedding = False
 
         # mds parameters
-        if 'n_components' in params and params['n_components'] != self.n_components:
+        if 'n_components' in params and \
+                params['n_components'] != self.n_components:
             self.n_components = params['n_components']
             reset_embedding = True
             del params['n_components']
@@ -434,7 +457,7 @@ class PHATE(BaseEstimator):
         if 'n_landmark' in params and params['n_landmark'] != self.n_landmark:
             if self.n_landmark is None or params['n_landmark'] is None:
                 # need a different type of graph, reset entirely
-                self.graph = None
+                self._reset_graph()
             else:
                 self._set_graph_params(n_landmark=params['n_landmark'])
             self.n_landmark = params['n_landmark']
@@ -451,19 +474,17 @@ class PHATE(BaseEstimator):
             del params['random_state']
         if 'verbose' in params:
             self.verbose = params['verbose']
-            set_logging(self.verbose)
+            tasklogger.set_level(self.verbose)
             self._set_graph_params(verbose=params['verbose'])
             del params['verbose']
 
         if reset_kernel:
             # can't reset the graph kernel without making a new graph
-            self.graph = None
-            reset_potential = True
+            self._reset_graph()
         if reset_potential:
-            reset_embedding = True
-            self.diff_potential = None
+            self._reset_potential()
         if reset_embedding:
-            self.embedding = None
+            self._reset_embedding()
 
         self._check_params()
         return self
@@ -537,14 +558,26 @@ class PHATE(BaseEstimator):
             # anndata not installed
             pass
 
-        if self.knn_dist == 'precomputed':
-            if isinstance(X, sparse.coo_matrix):
-                X = X.tocsr()
-            if X[0, 0] == 0:
-                precomputed = "distance"
+        if self.knn_dist.startswith('precomputed'):
+            if self.knn_dist == 'precomputed':
+                # automatic detection
+                if isinstance(X, sparse.coo_matrix):
+                    X = X.tocsr()
+                if X[0, 0] == 0:
+                    precomputed = "distance"
+                else:
+                    precomputed = "affinity"
+            elif self.knn_dist in ['precomputed_affinity',
+                                   'precomputed_distance']:
+                precomputed = self.knn_dist.split("_")[1]
             else:
-                precomputed = "affinity"
-            log_info("Using precomputed {} matrix...".format(precomputed))
+                raise ValueError(
+                    "knn_dist {} not recognized. Did you mean "
+                    "'precomputed_distance', "
+                    "'precomputed_affinity', or 'precomputed' "
+                    "(automatically detects distance or affinity)?")
+            tasklogger.log_info(
+                "Using precomputed {} matrix...".format(precomputed))
             n_pca = None
         else:
             precomputed = None
@@ -558,12 +591,12 @@ class PHATE(BaseEstimator):
             n_landmark = self.n_landmark
 
         if self.graph is not None:
-            if self.X is not None and not (X != self.X).sum() == 0:
+            if self.X is not None and not matrix_is_equivalent(X, self.X):
                 """
                 If the same data is used, we can reuse existing kernel and
                 diffusion matrices. Otherwise we have to recompute.
                 """
-                self.graph = None
+                self._reset_graph()
             else:
                 try:
                     self.graph.set_params(
@@ -572,16 +605,18 @@ class PHATE(BaseEstimator):
                         n_jobs=self.n_jobs, verbose=self.verbose, n_pca=n_pca,
                         thresh=1e-4, n_landmark=n_landmark,
                         random_state=self.random_state)
-                    log_info("Using precomputed graph and diffusion operator...")
+                    tasklogger.log_info(
+                        "Using precomputed graph and diffusion operator...")
                 except ValueError as e:
                     # something changed that should have invalidated the graph
-                    log_debug("Reset graph due to {}".format(str(e)))
-                    self.graph = None
+                    tasklogger.log_debug("Reset graph due to {}".format(
+                        str(e)))
+                    self._reset_graph()
 
         self.X = X
 
         if self.graph is None:
-            log_start("graph and diffusion operator")
+            tasklogger.log_start("graph and diffusion operator")
             self.graph = graphtools.Graph(
                 X,
                 n_pca=n_pca,
@@ -594,7 +629,7 @@ class PHATE(BaseEstimator):
                 n_jobs=self.n_jobs,
                 verbose=self.verbose,
                 random_state=self.random_state)
-            log_complete("graph and diffusion operator")
+            tasklogger.log_complete("graph and diffusion operator")
 
         # landmark op doesn't build unless forced
         self.diff_op
@@ -634,7 +669,7 @@ class PHATE(BaseEstimator):
             raise NotFittedError("This PHATE instance is not fitted yet. Call "
                                  "'fit' with appropriate arguments before "
                                  "using this method.")
-        elif X is not None and not (X != self.X).sum() == 0:
+        elif X is not None and not matrix_is_equivalent(X, self.X):
             # fit to external data
             warnings.warn("Pre-fit PHATE cannot be used to transform a "
                           "new data matrix. Please fit PHATE to the new"
@@ -651,19 +686,20 @@ class PHATE(BaseEstimator):
             if self.diff_potential is None:
                 if self.t == 'auto':
                     t = self.optimal_t(t_max=t_max, plot=plot_optimal_t, ax=ax)
-                    log_info("Automatically selected t = {}".format(t))
+                    tasklogger.log_info(
+                        "Automatically selected t = {}".format(t))
                 else:
                     t = self.t
                 self.diff_potential = self.calculate_potential(self.diff_op, t)
             if self.embedding is None:
-                log_start("{} MDS".format(self.mds))
+                tasklogger.log_start("{} MDS".format(self.mds))
                 self.embedding = embed_MDS(
                     self.diff_potential, ndim=self.n_components, how=self.mds,
                     distance_metric=self.mds_dist, n_jobs=self.n_jobs,
                     seed=self.random_state, verbose=self.verbose - 1)
-                log_complete("{} MDS".format(self.mds))
+                tasklogger.log_complete("{} MDS".format(self.mds))
             if isinstance(self.graph, graphtools.graphs.LandmarkGraph):
-                log_debug("Extending to original data...")
+                tasklogger.log_debug("Extending to original data...")
                 return self.graph.interpolate(self.embedding)
             else:
                 return self.embedding
@@ -689,10 +725,10 @@ class PHATE(BaseEstimator):
         embedding : array, shape=[n_samples, n_dimensions]
             The cells embedded in a lower dimensional space using PHATE
         """
-        log_start('PHATE')
+        tasklogger.log_start('PHATE')
         self.fit(X)
         embedding = self.transform(**kwargs)
-        log_complete('PHATE')
+        tasklogger.log_complete('PHATE')
         return embedding
 
     def calculate_potential(self, diff_op, t):
@@ -714,7 +750,7 @@ class PHATE(BaseEstimator):
         diff_potential : array-like, shape=[n_samples, n_samples]
             The diffusion potential fit on the input data
         """
-        log_start("diffusion potential")
+        tasklogger.log_start("diffusion potential")
         # diffused diffusion operator
         diff_op_t = np.linalg.matrix_power(diff_op, t)
 
@@ -727,7 +763,7 @@ class PHATE(BaseEstimator):
         else:
             c = (1 - self.gamma) / 2
             diff_potential = ((diff_op_t)**c) / c
-        log_complete("diffusion potential")
+        tasklogger.log_complete("diffusion potential")
         return diff_potential
 
     def von_neumann_entropy(self, t_max=100):
@@ -776,10 +812,10 @@ class PHATE(BaseEstimator):
         t_opt : int
             The optimal value of t
         """
-        log_start("optimal t")
+        tasklogger.log_start("optimal t")
         t, h = self.von_neumann_entropy(t_max=t_max)
         t_opt = find_knee_point(y=h, x=t)
-        log_complete("optimal t")
+        tasklogger.log_complete("optimal t")
 
         if plot:
             if ax is None:

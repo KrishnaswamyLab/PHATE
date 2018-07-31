@@ -6,14 +6,10 @@
 
   sudo: required
 
-  before_install:
-    - pip install nose2
-
   install:
-    - cd Python
-    - python setup.py install
-    - cd ..
+    - cd Python; python setup.py install; cd ..
 
   script:
-    - cd Python
+    - cd Python; pip install -U .[test,doc]
     - python setup.py test
+    - cd doc; make html; cd ../..
