@@ -14,7 +14,8 @@ install_requires = [
 ]
 
 test_requires = [
-    'nose2']
+    'nose2',
+    'scprep>=0.5.0']
 
 doc_requires = [
     'sphinx',
