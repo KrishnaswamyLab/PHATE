@@ -49,7 +49,7 @@ class PHATE(BaseEstimator):
     k : int, optional, default: 5
         number of nearest neighbors on which to build kernel
 
-    a : int, optional, default: 15
+    a : int, optional, default: 40
         sets decay rate of kernel tails.
         If None, alpha decaying kernel is not used
 
@@ -155,7 +155,7 @@ class PHATE(BaseEstimator):
         `BioRxiv <http://biorxiv.org/content/early/2017/03/24/120378>`_.
     """
 
-    def __init__(self, n_components=2, k=5, a=15,
+    def __init__(self, n_components=2, k=5, a=40,
                  n_landmark=2000, t='auto', gamma=1,
                  n_pca=100, knn_dist='euclidean', mds_dist='euclidean',
                  mds='metric', n_jobs=1, random_state=None, verbose=1,
@@ -309,7 +309,7 @@ class PHATE(BaseEstimator):
         k : int, optional, default: 5
             number of nearest neighbors on which to build kernel
 
-        a : int, optional, default: 15
+        a : int, optional, default: 40
             sets decay rate of kernel tails.
             If None, alpha decaying kernel is not used
 
