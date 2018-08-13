@@ -1,4 +1,4 @@
-function Y = phate(data, varargin)
+function [Y, P, K] = phate(data, varargin)
 % phate  Run PHATE for visualizing noisy non-linear data in lower dimensions
 %   Y = phate(data) runs PHATE on data (rows: samples, columns: features)
 %   with default parameter settings and returns a 2 dimensional embedding.
@@ -20,7 +20,7 @@ function Y = phate(data, varargin)
 %   e.g. 10 or 15. Defaults to 5.
 %
 %   'a' - alpha of alpha decaying kernel. when a=[] knn (unweighted) kernel
-%   is used. Defaults to 15.
+%   is used. Defaults to 40.
 %
 %   't' - number of diffusion steps. Defaults to [] wich autmatically picks
 %   the optimal t.
@@ -85,7 +85,7 @@ distfun = 'euclidean';
 distfun_mds = 'euclidean';
 pot_method = 'log';
 K = [];
-a = 15;
+a = 40;
 Pnm = [];
 t_max = 100;
 pot_eps = 1e-7;

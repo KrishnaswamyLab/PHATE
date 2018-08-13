@@ -41,6 +41,7 @@ set(gca,'ytick',[])
 title 'PCA'
 h = colorbar;
 ylabel(h, gene);
+drawnow
 
 %% PHATE 2D
 Y_PHATE_2D = phate(M);
@@ -59,6 +60,7 @@ set(gca,'yticklabel',[])
 title 'PHATE 2D'
 h = colorbar;
 ylabel(h, gene);
+drawnow
 
 %% PHATE 3D
 Y_PHATE_3D = phate(M, 'ndim', 3);
@@ -79,6 +81,7 @@ set(gca,'zticklabel',[])
 title 'PHATE 3D'
 h = colorbar;
 ylabel(h, gene);
+drawnow
 
 %% tSNE
 tic;
@@ -99,6 +102,7 @@ set(gca,'yticklabel',[])
 title 'tSNE'
 h = colorbar;
 ylabel(h, gene);
+drawnow
 
 
 %% plot combined

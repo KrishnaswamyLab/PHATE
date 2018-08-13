@@ -12,6 +12,7 @@ from sklearn.base import BaseEstimator
 from sklearn.exceptions import NotFittedError
 from scipy import sparse
 import warnings
+import tasklogger
 
 import matplotlib.pyplot as plt
 
@@ -23,7 +24,6 @@ from .utils import (check_int,
                     check_in,
                     check_if_not,
                     matrix_is_equivalent)
-from .logging import set_logging, log_start, log_complete, log_info, log_debug
 
 try:
     import anndata
@@ -49,7 +49,7 @@ class PHATE(BaseEstimator):
     k : int, optional, default: 5
         number of nearest neighbors on which to build kernel
 
-    a : int, optional, default: 15
+    a : int, optional, default: 40
         sets decay rate of kernel tails.
         If None, alpha decaying kernel is not used
 
@@ -155,7 +155,7 @@ class PHATE(BaseEstimator):
         `BioRxiv <http://biorxiv.org/content/early/2017/03/24/120378>`_.
     """
 
-    def __init__(self, n_components=2, k=5, a=15,
+    def __init__(self, n_components=2, k=5, a=40,
                  n_landmark=2000, t='auto', gamma=1,
                  n_pca=100, knn_dist='euclidean', mds_dist='euclidean',
                  mds='metric', n_jobs=1, random_state=None, verbose=1,
@@ -199,11 +199,13 @@ class PHATE(BaseEstimator):
                                  "use gamma between -1 and 1".format(
                                      potential_method))
             warnings.warn(
-                "potential_method is deprecated. Setting gamma to {} to achieve"
+                "potential_method is deprecated. "
+                "Setting gamma to {} to achieve"
                 " {} transformation.".format(gamma, potential_method),
                 FutureWarning)
         elif gamma > 0.99 and gamma < 1:
-            warnings.warn("0.99 < gamma < 1 is numerically unstable. Setting gamma to 0.99",
+            warnings.warn("0.99 < gamma < 1 is numerically unstable. "
+                          "Setting gamma to 0.99",
                           RuntimeWarning)
             gamma = 0.99
         self.gamma = gamma
@@ -214,7 +216,7 @@ class PHATE(BaseEstimator):
             verbose = 0
         self.verbose = verbose
         self._check_params()
-        set_logging(verbose)
+        tasklogger.set_level(verbose)
 
     @property
     def diff_op(self):
@@ -307,7 +309,7 @@ class PHATE(BaseEstimator):
         k : int, optional, default: 5
             number of nearest neighbors on which to build kernel
 
-        a : int, optional, default: 15
+        a : int, optional, default: 40
             sets decay rate of kernel tails.
             If None, alpha decaying kernel is not used
 
@@ -394,7 +396,8 @@ class PHATE(BaseEstimator):
         reset_embedding = False
 
         # mds parameters
-        if 'n_components' in params and params['n_components'] != self.n_components:
+        if 'n_components' in params and \
+                params['n_components'] != self.n_components:
             self.n_components = params['n_components']
             reset_embedding = True
             del params['n_components']
@@ -471,7 +474,7 @@ class PHATE(BaseEstimator):
             del params['random_state']
         if 'verbose' in params:
             self.verbose = params['verbose']
-            set_logging(self.verbose)
+            tasklogger.set_level(self.verbose)
             self._set_graph_params(verbose=params['verbose'])
             del params['verbose']
 
@@ -573,7 +576,8 @@ class PHATE(BaseEstimator):
                     "'precomputed_distance', "
                     "'precomputed_affinity', or 'precomputed' "
                     "(automatically detects distance or affinity)?")
-            log_info("Using precomputed {} matrix...".format(precomputed))
+            tasklogger.log_info(
+                "Using precomputed {} matrix...".format(precomputed))
             n_pca = None
         else:
             precomputed = None
@@ -601,16 +605,18 @@ class PHATE(BaseEstimator):
                         n_jobs=self.n_jobs, verbose=self.verbose, n_pca=n_pca,
                         thresh=1e-4, n_landmark=n_landmark,
                         random_state=self.random_state)
-                    log_info("Using precomputed graph and diffusion operator...")
+                    tasklogger.log_info(
+                        "Using precomputed graph and diffusion operator...")
                 except ValueError as e:
                     # something changed that should have invalidated the graph
-                    log_debug("Reset graph due to {}".format(str(e)))
+                    tasklogger.log_debug("Reset graph due to {}".format(
+                        str(e)))
                     self._reset_graph()
 
         self.X = X
 
         if self.graph is None:
-            log_start("graph and diffusion operator")
+            tasklogger.log_start("graph and diffusion operator")
             self.graph = graphtools.Graph(
                 X,
                 n_pca=n_pca,
@@ -623,7 +629,7 @@ class PHATE(BaseEstimator):
                 n_jobs=self.n_jobs,
                 verbose=self.verbose,
                 random_state=self.random_state)
-            log_complete("graph and diffusion operator")
+            tasklogger.log_complete("graph and diffusion operator")
 
         # landmark op doesn't build unless forced
         self.diff_op
@@ -680,19 +686,22 @@ class PHATE(BaseEstimator):
             if self.diff_potential is None:
                 if self.t == 'auto':
                     t = self.optimal_t(t_max=t_max, plot=plot_optimal_t, ax=ax)
-                    log_info("Automatically selected t = {}".format(t))
+                    tasklogger.log_info(
+                        "Automatically selected t = {}".format(t))
                 else:
                     t = self.t
                 self.diff_potential = self.calculate_potential(self.diff_op, t)
+            elif plot_optimal_t:
+                self.optimal_t(t_max=t_max, plot=plot_optimal_t, ax=ax)
             if self.embedding is None:
-                log_start("{} MDS".format(self.mds))
+                tasklogger.log_start("{} MDS".format(self.mds))
                 self.embedding = embed_MDS(
                     self.diff_potential, ndim=self.n_components, how=self.mds,
                     distance_metric=self.mds_dist, n_jobs=self.n_jobs,
                     seed=self.random_state, verbose=self.verbose - 1)
-                log_complete("{} MDS".format(self.mds))
+                tasklogger.log_complete("{} MDS".format(self.mds))
             if isinstance(self.graph, graphtools.graphs.LandmarkGraph):
-                log_debug("Extending to original data...")
+                tasklogger.log_debug("Extending to original data...")
                 return self.graph.interpolate(self.embedding)
             else:
                 return self.embedding
@@ -718,10 +727,10 @@ class PHATE(BaseEstimator):
         embedding : array, shape=[n_samples, n_dimensions]
             The cells embedded in a lower dimensional space using PHATE
         """
-        log_start('PHATE')
+        tasklogger.log_start('PHATE')
         self.fit(X)
         embedding = self.transform(**kwargs)
-        log_complete('PHATE')
+        tasklogger.log_complete('PHATE')
         return embedding
 
     def calculate_potential(self, diff_op, t):
@@ -743,7 +752,7 @@ class PHATE(BaseEstimator):
         diff_potential : array-like, shape=[n_samples, n_samples]
             The diffusion potential fit on the input data
         """
-        log_start("diffusion potential")
+        tasklogger.log_start("diffusion potential")
         # diffused diffusion operator
         diff_op_t = np.linalg.matrix_power(diff_op, t)
 
@@ -756,7 +765,7 @@ class PHATE(BaseEstimator):
         else:
             c = (1 - self.gamma) / 2
             diff_potential = ((diff_op_t)**c) / c
-        log_complete("diffusion potential")
+        tasklogger.log_complete("diffusion potential")
         return diff_potential
 
     def von_neumann_entropy(self, t_max=100):
@@ -805,10 +814,10 @@ class PHATE(BaseEstimator):
         t_opt : int
             The optimal value of t
         """
-        log_start("optimal t")
+        tasklogger.log_start("optimal t")
         t, h = self.von_neumann_entropy(t_max=t_max)
         t_opt = find_knee_point(y=h, x=t)
-        log_complete("optimal t")
+        tasklogger.log_complete("optimal t")
 
         if plot:
             if ax is None:

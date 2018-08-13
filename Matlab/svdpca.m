@@ -1,10 +1,11 @@
-function [pc,U,S] = svdpca(X, k, method)
+function [pc,U,S,mu] = svdpca(X, k, method)
 
 if ~exist('method','var')
     method = 'svd';
 end
 
-X = bsxfun(@minus, X, mean(X));
+mu = mean(X);
+X = bsxfun(@minus, X, mu);
 
 switch method
     case 'svd'

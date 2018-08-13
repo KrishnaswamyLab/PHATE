@@ -58,7 +58,9 @@ def load_10X(data_dir, sparse=True, gene_labels='symbol'):
     data : pandas.DataFrame shape=(n_cell, n_genes)
         imported data matrix
     """
-
+    warnings.warn("phate.io is deprecated. Please use scprep.io instead. "
+                  "Read more at http://scprep.readthedocs.io",
+                  FutureWarning)
     if gene_labels not in ['id', 'symbol', 'both']:
         raise ValueError("gene_labels not in ['id', 'symbol', 'both']")
 

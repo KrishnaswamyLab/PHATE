@@ -30,6 +30,7 @@ title 'PCA'
 h = colorbar;
 set(h,'xtick',1:5);
 ylabel(h, 'time');
+drawnow
 
 %% PHATE 2D
 Y_PHATE_2D = phate(data, 't', 20);
@@ -47,6 +48,7 @@ title 'PHATE'
 h = colorbar;
 set(h,'xtick',1:5);
 ylabel(h, 'time');
+drawnow
 
 %% PHATE 3D
 Y_PHATE_3D = phate(data, 't', 20, 'ndim', 3);
@@ -62,11 +64,12 @@ axis tight
 xlabel 'PHATE1'
 ylabel 'PHATE2'
 zlabel 'PHATE3'
-title 'PHATE'
+title 'PHATE 3D'
 h = colorbar;
 set(h,'xtick',1:5);
 ylabel(h, 'time');
 view([-170 15]);
+drawnow
 
 %% tSNE -- slow!!!
 % tic;
@@ -129,4 +132,11 @@ view([-170 15]);
 h = colorbar;
 set(h,'xtick',1:5);
 ylabel(h, 'time');
+
+
+
+
+
+
+
 

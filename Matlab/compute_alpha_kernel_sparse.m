@@ -69,8 +69,8 @@ below_thresh=kdist(:,end)>=bth*epsilon;
 
 idx_thresh=find(below_thresh);
 
-if ~isempty(idx_thresh) 
-    K=exp(-(kdist(idx_thresh,:)./epsilon(idx_thresh)).^a);
+if ~isempty(idx_thresh)
+    K=exp(-(kdist(idx_thresh,:)./repmat(epsilon(idx_thresh),1,size(kdist,2))).^a);
     K(K<=th)=0;
     K=K(:);
     i = repmat(idx_thresh',1,size(idx,2));
@@ -94,7 +94,7 @@ while length(idx_thresh)<.9*N
     idx_thresh2=find(below_thresh2);
     
     if ~isempty(idx_thresh2)
-        K2=exp(-(kdist2(idx_thresh2,:)./epsilon2(idx_thresh2)).^a);
+        K2=exp(-(kdist2(idx_thresh2,:)./repmat(epsilon2(idx_thresh2),1,size(kdist2,2))).^a);
         K2(K2<=th)=0;
         idx_notthresh=find(~below_thresh);
         i2=repmat(idx_notthresh(idx_thresh2)',1,size(idx2,2));

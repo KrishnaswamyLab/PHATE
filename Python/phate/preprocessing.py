@@ -30,6 +30,10 @@ def library_size_normalize(data, verbose=False):
     data_norm : ndarray [n, p]
         2 dimensional array with normalized gene expression values
     """
+    warnings.warn("phate.preprocessing is deprecated. "
+                  "Please use scprep.normalize instead. "
+                  "Read more at http://scprep.readthedocs.io",
+                  FutureWarning)
     if verbose:
         print("Normalizing library sizes for %s cells" % (data.shape[0]))
 

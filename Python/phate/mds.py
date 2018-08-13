@@ -6,9 +6,7 @@ from sklearn.manifold import smacof
 from sklearn.decomposition import PCA
 from scipy.spatial.distance import pdist
 from scipy.spatial.distance import squareform
-
-from .logging import log_debug
-
+import tasklogger
 # Fast classical MDS using random svd
 
 
@@ -25,7 +23,7 @@ def cmdscale_fast(D, ndim):
     -------
     Y : array-like, embedded data [n_sample, ndim]
     """
-    log_debug("Performing classic MDS on {} of shape {}...".format(
+    tasklogger.log_debug("Performing classic MDS on {} of shape {}...".format(
         type(D).__name__, D.shape))
     D = D**2
     D = D - D.mean(axis=0)[None, :]
@@ -88,15 +86,15 @@ def embed_MDS(X, ndim=2, how='metric', distance_metric='euclidean',
     # initialize all by CMDS
     Y = cmdscale_fast(X_dist, ndim)
     if how in ['metric', 'nonmetric']:
-        log_debug("Performing metric MDS on "
-                  "{} of shape {}...".format(type(X_dist),
-                                             X_dist.shape))
+        tasklogger.log_debug("Performing metric MDS on "
+                             "{} of shape {}...".format(type(X_dist),
+                                                        X_dist.shape))
         # Metric MDS from sklearn
         Y, _ = smacof(X_dist, n_components=ndim, metric=True, max_iter=3000,
                       eps=1e-6, random_state=seed, n_jobs=n_jobs,
                       n_init=1, init=Y, verbose=verbose)
     if how == 'nonmetric':
-        log_debug(
+        tasklogger.log_debug(
             "Performing non-metric MDS on "
             "{} of shape {}...".format(type(X_dist),
                                        X_dist.shape))

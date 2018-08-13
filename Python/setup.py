@@ -9,10 +9,13 @@ install_requires = [
     'matplotlib>=2.0.1',
     'scikit-learn>=0.19.1',
     'future',
-    'graphtools>=0.1.8.1']
+    'graphtools>=0.1.10',
+    'tasklogger>=0.2',
+]
 
 test_requires = [
-    'nose2']
+    'nose2',
+    'scprep>=0.5.0']
 
 doc_requires = [
     'sphinx',
