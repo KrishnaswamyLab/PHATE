@@ -76,7 +76,7 @@ def _auto_params(data, c, discrete, cmap, legend):
         c = np.array(c).flatten()
         if not len(c) == data[0].shape[0]:
             raise ValueError("Expected c of length {} or 1. Got {}".format(
-                len(c), data.shape[0]))
+                len(c), data[0].shape[0]))
         if discrete is None:
             # guess
             if isinstance(cmap, dict) or \
@@ -275,7 +275,14 @@ def scatter(x, y, z=None,
         fig, ax = plt.subplots(figsize=figsize, subplot_kw=subplot_kw)
         show = True
     else:
-        fig = ax.get_figure()
+        try:
+            fig = ax.get_figure()
+        except AttributeError as e:
+            if not isinstance(ax, mpl.axes.Axes):
+                raise TypeError("Expected ax as a matplotlib.axes.Axes. "
+                                "Got {}".format(type(ax)))
+            else:
+                raise e
         show = False
     if legend and not discrete:
         im = ax.imshow(np.linspace(np.min(data[1]),
