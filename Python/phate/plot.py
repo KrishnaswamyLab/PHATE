@@ -382,7 +382,7 @@ def scatter(x, y, z=None,
                 title=legend_title,
                 loc=legend_loc)
         else:
-            plt.colorbar(im, label=legend_title)
+            fig.colorbar(im, label=legend_title, ax=ax)
 
     if show or filename is not None:
         plt.tight_layout()
