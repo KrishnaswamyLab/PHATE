@@ -58,6 +58,14 @@ def _get_plot_data(data, ndim=None):
 def _auto_params(data, c, discrete, cmap, legend):
     """Automatically select nice parameters for a scatter plot
     """
+    if isinstance(data[0], (pd.Series, pd.DataFrame)):
+        data[0] = data[0].values
+    if isinstance(data[1], (pd.Series, pd.DataFrame)):
+        data[1] = data[1].values
+    if len(data) > 2 and isinstance(data[2], (pd.Series, pd.DataFrame)):
+        data[2] = data[2].values
+    if isinstance(c, (pd.Series, pd.DataFrame)):
+        c = c.values
     for d in data[1:]:
         if d.shape[0] != data[0].shape[0]:
             raise ValueError("Expected all axis of data to have the same length"
