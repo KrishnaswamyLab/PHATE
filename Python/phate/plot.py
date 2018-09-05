@@ -58,6 +58,14 @@ def _get_plot_data(data, ndim=None):
 def _auto_params(data, c, discrete, cmap, legend):
     """Automatically select nice parameters for a scatter plot
     """
+    if isinstance(data[0], (pd.Series, pd.DataFrame)):
+        data[0] = data[0].values
+    if isinstance(data[1], (pd.Series, pd.DataFrame)):
+        data[1] = data[1].values
+    if len(data) > 2 and isinstance(data[2], (pd.Series, pd.DataFrame)):
+        data[2] = data[2].values
+    if isinstance(c, (pd.Series, pd.DataFrame)):
+        c = c.values
     for d in data[1:]:
         if d.shape[0] != data[0].shape[0]:
             raise ValueError("Expected all axis of data to have the same length"
@@ -76,7 +84,7 @@ def _auto_params(data, c, discrete, cmap, legend):
         c = np.array(c).flatten()
         if not len(c) == data[0].shape[0]:
             raise ValueError("Expected c of length {} or 1. Got {}".format(
-                len(c), data.shape[0]))
+                len(c), data[0].shape[0]))
         if discrete is None:
             # guess
             if isinstance(cmap, dict) or \
@@ -275,7 +283,14 @@ def scatter(x, y, z=None,
         fig, ax = plt.subplots(figsize=figsize, subplot_kw=subplot_kw)
         show = True
     else:
-        fig = ax.get_figure()
+        try:
+            fig = ax.get_figure()
+        except AttributeError as e:
+            if not isinstance(ax, mpl.axes.Axes):
+                raise TypeError("Expected ax as a matplotlib.axes.Axes. "
+                                "Got {}".format(type(ax)))
+            else:
+                raise e
         show = False
     if legend and not discrete:
         im = ax.imshow(np.linspace(np.min(data[1]),
