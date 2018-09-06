@@ -10,6 +10,7 @@ from matplotlib import animation, rc
 from mpl_toolkits.mplot3d import Axes3D  # NOQA: F401
 import pandas as pd
 import numbers
+from scipy import sparse
 from .phate import PHATE
 from .utils import in_ipynb
 
@@ -55,33 +56,30 @@ def _get_plot_data(data, ndim=None):
     return out
 
 
+def _to_numpy(data):
+    if isinstance(data, (pd.SparseSeries, pd.SparseDataFrame)):
+        data = data.to_dense().values
+    elif isinstance(data, (pd.Series, pd.DataFrame)):
+        data = data.values
+    elif sparse.issparse(data):
+        data = data.toarray()
+    else:
+        data = np.array(data)
+    data = data.flatten()
+    return data
+
+
 def _auto_params(data, c, discrete, cmap, legend):
     """Automatically select nice parameters for a scatter plot
     """
-    if isinstance(data[0], (pd.Series, pd.DataFrame)):
-        data[0] = data[0].values
-    if isinstance(data[1], (pd.Series, pd.DataFrame)):
-        data[1] = data[1].values
-    if len(data) > 2 and isinstance(data[2], (pd.Series, pd.DataFrame)):
-        data[2] = data[2].values
-    if isinstance(c, (pd.Series, pd.DataFrame)):
-        c = c.values
+    for i in range(len(data)):
+        data[i] = _to_numpy(data[i])
     for d in data[1:]:
         if d.shape[0] != data[0].shape[0]:
             raise ValueError("Expected all axis of data to have the same length"
                              ". Got {}".format([d.shape[0] for d in data]))
     if c is not None and not mpl.colors.is_color_like(c):
-        try:
-            c = c.values
-        except AttributeError:
-            # not a pandas Series
-            pass
-        try:
-            c = c.toarray()
-        except AttributeError:
-            # not a scipy spmatrix
-            pass
-        c = np.array(c).flatten()
+        c = _to_numpy(c)
         if not len(c) == data[0].shape[0]:
             raise ValueError("Expected c of length {} or 1. Got {}".format(
                 len(c), data[0].shape[0]))
@@ -390,7 +388,7 @@ def scatter(x, y, z=None,
         fig.savefig(filename, dpi=dpi)
     if show:
         if not in_ipynb():
-            plt.show(block=False)
+            fig.show()
 
 
 def scatter2d(data, **kwargs):
