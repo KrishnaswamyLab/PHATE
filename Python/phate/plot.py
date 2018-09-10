@@ -729,6 +729,6 @@ def rotate_scatter3d(data,
         plt.close()
     elif show:
         plt.tight_layout()
-        plt.show(block=False)
+        fig.show()
 
     return ani
