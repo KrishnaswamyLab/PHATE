@@ -82,7 +82,7 @@ def _auto_params(data, c, discrete, cmap, legend):
         c = _to_numpy(c)
         if not len(c) == data[0].shape[0]:
             raise ValueError("Expected c of length {} or 1. Got {}".format(
-                len(c), data[0].shape[0]))
+                data[0].shape[0], len(c)))
         if discrete is None:
             # guess
             if isinstance(cmap, dict) or \
