@@ -50,6 +50,17 @@ The Python version of PHATE can be installed from GitHub by running the followin
        cd Python
        python setup.py install --user
 
+Quick Start
+~~~~~~~~~~~
+
+If you have loaded a data matrix ``data`` in Python (cells on rows, genes on columns) you can run PHATE as follows::
+
+    import phate
+    phate_op = phate.PHATE()
+    data_phate = phate_op.fit_transform(data)
+
+PHATE accepts the following data types: ``numpy.array``, ``scipy.spmatrix``, ``pandas.DataFrame`` and ``anndata.AnnData``.
+
 Usage
 ~~~~~
 
@@ -73,14 +84,7 @@ If you want to try running our test script on a DLA fractal tree, run the follow
 Jupyter Notebooks
 ~~~~~~~~~~~~~~~~~
 
-A demo on PHATE usage and visualization for single cell RNA-seq data can be found in this notebook_: http://nbviewer.jupyter.org/github/KrishnaswamyLab/PHATE/blob/master/Python/tutorial/EmbryoidBody.ipynb
-
-.. _notebook: http://nbviewer.jupyter.org/github/KrishnaswamyLab/PHATE/blob/master/Python/tutorial/EmbryoidBody.ipynb
-
-A second tutorial is available here_ which works with the artificial tree shown above in more detail: http://nbviewer.jupyter.org/github/KrishnaswamyLab/PHATE/blob/master/Python/tutorial/PHATE_tree.ipynb
-
-.. _here: http://nbviewer.jupyter.org/github/KrishnaswamyLab/PHATE/blob/master/Python/tutorial/PHATE_tree.ipynb
-
+A demo on PHATE usage and visualization for single cell RNA-seq data can be found in this `Jupyter notebook <http://nbviewer.jupyter.org/github/KrishnaswamyLab/PHATE/blob/master/Python/tutorial/EmbryoidBody.ipynb>`_. A second tutorial is available `here <http://nbviewer.jupyter.org/github/KrishnaswamyLab/PHATE/blob/master/Python/tutorial/PHATE_tree.ipynb>`_ which works with the artificial tree shown above in more detail. You can also access interactive versions of these tutorials on Google Colaboratory: `single cell RNA seq <https://colab.research.google.com/github/KrishnaswamyLab/PHATE/blob/master/Python/tutorial/EmbryoidBody.ipynb>`_, `artificial tree <https://colab.research.google.com/github/KrishnaswamyLab/PHATE/blob/master/Python/tutorial/PHATE_tree.ipynb>`_.
 
 Help
 ^^^^

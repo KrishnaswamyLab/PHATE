@@ -675,7 +675,8 @@ class PHATE(BaseEstimator):
                           "new data matrix. Please fit PHATE to the new"
                           " data by running 'fit' with the new data.",
                           RuntimeWarning)
-            if isinstance(self.graph, graphtools.TraditionalGraph):
+            if isinstance(self.graph, graphtools.graphs.TraditionalGraph) and \
+                    self.graph.precomputed is not None:
                 raise ValueError("Cannot transform additional data using a "
                                  "precomputed distance matrix.")
             else:
