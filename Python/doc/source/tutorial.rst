@@ -10,14 +10,4 @@ To run PHATE on your dataset, create a PHATE operator and run `fit_transform`. H
         phate.plot.scatter2d(phate_operator, c=tree_clusters) # or phate.plot.scatter2d(tree_phate, c=tree_clusters)
         phate.plot.rotate_scatter3d(phate_operator, c=tree_clusters)
 
-A demo on PHATE usage and visualization for single cell RNA-seq data can be found in this notebook_: `https://nbviewer.jupyter.org/github/KrishnaswamyLab/PHATE/blob/master/Python/tutorial/PHATE_tree.ipynb`__
-
-.. _notebook: http://nbviewer.jupyter.org/github/KrishnaswamyLab/PHATE/blob/master/Python/tutorial/EmbryoidBody.ipynb
-
-__ notebook_
-
-A second tutorial is available here_ which works with the artificial tree shown above in more detail: `https://nbviewer.jupyter.org/github/KrishnaswamyLab/PHATE/blob/master/Python/tutorial/PHATE_tree.ipynb`__
-
-.. _here: http://nbviewer.jupyter.org/github/KrishnaswamyLab/PHATE/blob/master/Python/tutorial/PHATE_tree.ipynb
-
-__ here_
+A demo on PHATE usage and visualization for single cell RNA-seq data can be found in this `Jupyter notebook <http://nbviewer.jupyter.org/github/KrishnaswamyLab/PHATE/blob/master/Python/tutorial/EmbryoidBody.ipynb>`_. A second tutorial is available `here <http://nbviewer.jupyter.org/github/KrishnaswamyLab/PHATE/blob/master/Python/tutorial/PHATE_tree.ipynb>`_ which works with the artificial tree shown above in more detail. You can also access interactive versions of these tutorials on Google Colaboratory: `single cell RNA seq <https://colab.research.google.com/github/KrishnaswamyLab/PHATE/blob/master/Python/tutorial/EmbryoidBody.ipynb>`_, `artificial tree <https://colab.research.google.com/github/KrishnaswamyLab/PHATE/blob/master/Python/tutorial/PHATE_tree.ipynb>`_.
