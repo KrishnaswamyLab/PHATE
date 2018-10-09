@@ -139,10 +139,6 @@ If the `phateR` folder is empty, you have may forgotten to use the `--recursive`
     cd ../Python
     python setup.py install --user
 
-#### Tutorial and Reference
-
-For more information and a tutorial, read the [phateR README](https://github.com/KrishnaswamyLab/phateR). Documentation is available in the R help viewer with `help(phateR::phate)`. A tutorial notebook running PHATE on a single-cell RNA-seq dataset is available at <http://htmlpreview.github.io/?https://github.com/KrishnaswamyLab/phateR/blob/master/inst/examples/bonemarrow_tutorial.html> or in `phateR/inst/examples`.
-
 #### Quick Start
 
 If you have loaded a data matrix `data` in R (cells on rows, genes on columns) you can run PHATE as follows::
@@ -151,6 +147,10 @@ If you have loaded a data matrix `data` in R (cells on rows, genes on columns) y
     data_phate <- phate(data)
 
 phateR accepts R matrices, `Matrix` sparse matrices, `data.frame`s, and any other data type that can be converted to a matrix with the function `as.matrix`.
+
+#### Tutorial and Reference
+
+For more information and a tutorial, read the [phateR README](https://github.com/KrishnaswamyLab/phateR). Documentation is available in the R help viewer with `help(phateR::phate)`. A tutorial notebook running PHATE on a single-cell RNA-seq dataset is available at <http://htmlpreview.github.io/?https://github.com/KrishnaswamyLab/phateR/blob/master/inst/examples/bonemarrow_tutorial.html> or in `phateR/inst/examples`.
 
 ### Help
 
