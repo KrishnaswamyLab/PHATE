@@ -699,7 +699,7 @@ class PHATE(BaseEstimator):
                 self.embedding = embed_MDS(
                     self.diff_potential, ndim=self.n_components, how=self.mds,
                     distance_metric=self.mds_dist, n_jobs=self.n_jobs,
-                    seed=self.random_state, verbose=self.verbose - 1)
+                    seed=self.random_state, verbose=max(self.verbose - 1, 0))
                 tasklogger.log_complete("{} MDS".format(self.mds))
             if isinstance(self.graph, graphtools.graphs.LandmarkGraph):
                 tasklogger.log_debug("Extending to original data...")
