@@ -69,6 +69,13 @@ def _to_numpy(data):
     return data
 
 
+def _is_hex_color(c):
+    try:
+        return np.all([mpl.colors.hex2color(val) for val in c])
+    except ValueError:
+        return False
+
+
 def _auto_params(data, c, discrete, cmap, legend):
     """Automatically select nice parameters for a scatter plot
     """
@@ -78,7 +85,7 @@ def _auto_params(data, c, discrete, cmap, legend):
         if d.shape[0] != data[0].shape[0]:
             raise ValueError("Expected all axis of data to have the same length"
                              ". Got {}".format([d.shape[0] for d in data]))
-    if c is not None and not mpl.colors.is_color_like(c):
+    if c is not None and not mpl.colors.is_color_like(c) and not _is_hex_color(c):
         c = _to_numpy(c)
         if not len(c) == data[0].shape[0]:
             raise ValueError("Expected c of length {} or 1. Got {}".format(
@@ -108,7 +115,7 @@ def _auto_params(data, c, discrete, cmap, legend):
         labels = None
         legend = False
     if isinstance(cmap, dict):
-        if c is None or mpl.colors.is_color_like(c):
+        if c is None or mpl.colors.is_color_like(c) or _is_hex_color(c):
             raise ValueError("Expected list-like `c` with dictionary cmap. "
                              "Got {}".format(c))
         elif not discrete:
@@ -299,7 +306,7 @@ def scatter(x, y, z=None,
         ax.relim()
         ax.autoscale()
     try:
-        if c is not None and not mpl.colors.is_color_like(c):
+        if c is not None and not mpl.colors.is_color_like(c) and not _is_hex_color(c):
             c = c[plot_idx]
         sc = ax.scatter(*[d[plot_idx] for d in data],
                         c=c,
