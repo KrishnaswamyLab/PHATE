@@ -4,6 +4,8 @@
 
 # Generating random fractal tree via DLA
 from __future__ import print_function, division, absolute_import
+import matplotlib
+matplotlib.use("Agg")
 import scprep
 import nose2
 import phate
@@ -94,6 +96,28 @@ def test_bmmsc():
     Y_mmds_fast = phate_fast_operator.fit_transform(bmmsc_norm, t_max=100)
     assert Y_mmds_fast.shape == (bmmsc_norm.shape[0], 2)
     return 0
+
+
+def test_plot():
+    tree_data, tree_clusters = phate.tree.gen_dla()
+    # discrete values
+    phate.plot.scatter2d(tree_data, c=tree_clusters, discrete=True)
+    # continuous values
+    phate.plot.scatter2d(tree_data, c=tree_clusters, discrete=False)
+    phate.plot.scatter2d(tree_data, c=np.random.uniform(
+        0, 1, [len(tree_clusters), 3]), discrete=False)
+    # RGBA
+    phate.plot.scatter2d(tree_data, c=np.random.uniform(
+        0, 1, [len(tree_clusters), 4]), discrete=False)
+    # named color vector
+    phate.plot.scatter2d(tree_data,
+                         c=np.random.choice(
+                             ['red', 'blue', 'orange'], len(tree_clusters)))
+    # dictionary
+    phate.plot.scatter2d(tree_data,
+                         c=np.random.choice(
+                             ['foo', 'bar', 'baz'], len(tree_clusters),
+                             cmap={'foo': 'red', 'bar': 'blue', 'baz': 'orange'}))
 
 
 if __name__ == "__main__":
