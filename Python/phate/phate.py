@@ -687,8 +687,6 @@ class PHATE(BaseEstimator):
             if self.diff_potential is None:
                 if self.t == 'auto':
                     t = self.optimal_t(t_max=t_max, plot=plot_optimal_t, ax=ax)
-                    tasklogger.log_info(
-                        "Automatically selected t = {}".format(t))
                 else:
                     t = self.t
                 self.diff_potential = self.calculate_potential(self.diff_op, t)
@@ -818,6 +816,7 @@ class PHATE(BaseEstimator):
         tasklogger.log_start("optimal t")
         t, h = self.von_neumann_entropy(t_max=t_max)
         t_opt = find_knee_point(y=h, x=t)
+        tasklogger.log_info("Automatically selected t = {}".format(t_opt))
         tasklogger.log_complete("optimal t")
 
         if plot:
