@@ -395,6 +395,7 @@ def scatter(x, y, z=None,
     if show:
         if not in_ipynb():
             fig.show()
+    return ax
 
 
 def scatter2d(data, **kwargs):
