@@ -116,8 +116,8 @@ def test_plot():
     # dictionary
     phate.plot.scatter2d(tree_data,
                          c=np.random.choice(
-                             ['foo', 'bar', 'baz'], len(tree_clusters),
-                             cmap={'foo': 'red', 'bar': 'blue', 'baz': 'orange'}))
+                             ['foo', 'bar', 'baz'], len(tree_clusters)),
+                         cmap={'foo': 'red', 'bar': 'blue', 'baz': 'orange'})
 
 
 if __name__ == "__main__":
