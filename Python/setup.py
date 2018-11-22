@@ -9,8 +9,8 @@ install_requires = [
     'matplotlib>=2.0.1',
     'scikit-learn>=0.19.1',
     'future',
-    'graphtools>=0.1.10',
-    'tasklogger>=0.2.1',
+    'graphtools>=0.2.0',
+    'tasklogger>=0.4.0',
 ]
 
 test_requires = [
