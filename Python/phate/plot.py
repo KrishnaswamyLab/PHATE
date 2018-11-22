@@ -246,6 +246,11 @@ def scatter(x, y, z=None,
     **plot_kwargs : keyword arguments
         Extra arguments passed to `matplotlib.pyplot.scatter`.
 
+    Returns
+    -------
+    ax : `matplotlib.Axes`
+        axis on which plot was drawn
+
     Examples
     --------
     >>> import phate
@@ -483,6 +488,11 @@ def scatter2d(data, **kwargs):
     **plot_kwargs : keyword arguments
         Extra arguments passed to `matplotlib.pyplot.scatter`.
 
+    Returns
+    -------
+    ax : `matplotlib.Axes`
+        axis on which plot was drawn
+
     Examples
     --------
     >>> import phate
@@ -604,6 +614,11 @@ def scatter3d(data, **kwargs):
     **plot_kwargs : keyword arguments
         Extra arguments passed to `matplotlib.pyplot.scatter`.
 
+    Returns
+    -------
+    ax : `matplotlib.Axes`
+        axis on which plot was drawn
+
     Examples
     --------
     >>> import phate
@@ -675,6 +690,11 @@ def rotate_scatter3d(data,
         which html writer to use if using a Jupyter Notebook
     **kwargs : keyword arguments
         See :~func:`phate.plot.scatter3d`.
+
+    Returns
+    -------
+    ani : `matplotlib.animation.FuncAnimation`
+        animation object
 
     Examples
     --------
