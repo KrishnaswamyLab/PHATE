@@ -69,6 +69,10 @@ def _to_numpy(data):
     return data
 
 
+def is_color_array(c):
+    return np.all([mpl.colors.is_color_like(val) for val in c])
+
+
 def _auto_params(data, c, discrete, cmap, legend):
     """Automatically select nice parameters for a scatter plot
     """
@@ -78,7 +82,7 @@ def _auto_params(data, c, discrete, cmap, legend):
         if d.shape[0] != data[0].shape[0]:
             raise ValueError("Expected all axis of data to have the same length"
                              ". Got {}".format([d.shape[0] for d in data]))
-    if c is not None and not mpl.colors.is_color_like(c):
+    if c is not None and not mpl.colors.is_color_like(c) and not is_color_array(c):
         c = _to_numpy(c)
         if not len(c) == data[0].shape[0]:
             raise ValueError("Expected c of length {} or 1. Got {}".format(
@@ -110,7 +114,7 @@ def _auto_params(data, c, discrete, cmap, legend):
     if isinstance(cmap, dict):
         if c is None or mpl.colors.is_color_like(c):
             raise ValueError("Expected list-like `c` with dictionary cmap. "
-                             "Got {}".format(c))
+                             "Got {}".format(type(c)))
         elif not discrete:
             raise ValueError("Cannot use dictionary cmap with "
                              "continuous data.")
@@ -168,9 +172,11 @@ def scatter(x, y, z=None,
     z : list-like, optional (default: None)
         data for z axis
     c : list-like or None, optional (default: None)
-        Color vector. Can be an array of RGBA values, or a list of discrete or
-        continuous values of any data type. The values in `c` will be used to
-        populate the legend / colorbar
+        Color vector. Can be a single color value (RGB, RGBA, or named
+        matplotlib colors), an array of these of length n_samples, or a list of
+        discrete or continuous values of any data type. If `c` is not a single
+        or list of matplotlib colors, the values in `c` will be used to
+        populate the legend / colorbar with colors from `cmap`
     cmap : `matplotlib` colormap, str, dict or None, optional (default: None)
         matplotlib colormap. If None, uses `tab20` for discrete data and
         `inferno` for continuous data. If a dictionary, expects one key
@@ -239,6 +245,11 @@ def scatter(x, y, z=None,
         to be the value of the figure. Only used if filename is not None.
     **plot_kwargs : keyword arguments
         Extra arguments passed to `matplotlib.pyplot.scatter`.
+
+    Returns
+    -------
+    ax : `matplotlib.Axes`
+        axis on which plot was drawn
 
     Examples
     --------
@@ -389,6 +400,7 @@ def scatter(x, y, z=None,
     if show:
         if not in_ipynb():
             fig.show()
+    return ax
 
 
 def scatter2d(data, **kwargs):
@@ -402,9 +414,11 @@ def scatter2d(data, **kwargs):
     data : array-like, shape=[n_samples, n_features]
         Input data. Only the first two components will be used.
     c : list-like or None, optional (default: None)
-        Color vector. Can be an array of RGBA values, or a list of discrete or
-        continuous values of any data type. The values in `c` will be used to
-        populate the legend / colorbar
+        Color vector. Can be a single color value (RGB, RGBA, or named
+        matplotlib colors), an array of these of length n_samples, or a list of
+        discrete or continuous values of any data type. If `c` is not a single
+        or list of matplotlib colors, the values in `c` will be used to
+        populate the legend / colorbar with colors from `cmap`
     cmap : `matplotlib` colormap, str, dict or None, optional (default: None)
         matplotlib colormap. If None, uses `tab20` for discrete data and
         `inferno` for continuous data. If a dictionary, expects one key
@@ -473,6 +487,11 @@ def scatter2d(data, **kwargs):
         to be the value of the figure. Only used if filename is not None.
     **plot_kwargs : keyword arguments
         Extra arguments passed to `matplotlib.pyplot.scatter`.
+
+    Returns
+    -------
+    ax : `matplotlib.Axes`
+        axis on which plot was drawn
 
     Examples
     --------
@@ -521,9 +540,11 @@ def scatter3d(data, **kwargs):
         to be the value of the figure. Only used if filename is not None.
         Input data. Only the first three components will be used.
     c : list-like or None, optional (default: None)
-        Color vector. Can be an array of RGBA values, or a list of discrete or
-        continuous values of any data type. The values in `c` will be used to
-        populate the legend / colorbar
+        Color vector. Can be a single color value (RGB, RGBA, or named
+        matplotlib colors), an array of these of length n_samples, or a list of
+        discrete or continuous values of any data type. If `c` is not a single
+        or list of matplotlib colors, the values in `c` will be used to
+        populate the legend / colorbar with colors from `cmap`
     cmap : `matplotlib` colormap, str, dict or None, optional (default: None)
         matplotlib colormap. If None, uses `tab20` for discrete data and
         `inferno` for continuous data. If a dictionary, expects one key
@@ -592,6 +613,11 @@ def scatter3d(data, **kwargs):
         to be the value of the figure. Only used if filename is not None.
     **plot_kwargs : keyword arguments
         Extra arguments passed to `matplotlib.pyplot.scatter`.
+
+    Returns
+    -------
+    ax : `matplotlib.Axes`
+        axis on which plot was drawn
 
     Examples
     --------
@@ -664,6 +690,11 @@ def rotate_scatter3d(data,
         which html writer to use if using a Jupyter Notebook
     **kwargs : keyword arguments
         See :~func:`phate.plot.scatter3d`.
+
+    Returns
+    -------
+    ani : `matplotlib.animation.FuncAnimation`
+        animation object
 
     Examples
     --------

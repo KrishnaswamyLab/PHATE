@@ -6,6 +6,8 @@
 
   sudo: required
 
+  cache: pip
+
   install:
     - cd Python; python setup.py install; cd ..
 
