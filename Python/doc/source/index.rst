@@ -30,9 +30,9 @@ PHATE - Potential of Heat-diffusion for Affinity-based Trajectory Embedding
 
     <a href="https://github.com/KrishnaswamyLab/PHATE/"><img src="https://img.shields.io/github/stars/KrishnaswamyLab/PHATE.svg?style=social&label=Stars" alt="GitHub stars"></a>
 
-PHATE is a tool for visualizing high dimensional single-cell data with natural progressions or trajectories. PHATE uses a novel conceptual framework for learning and visualizing the manifold inherent to biological systems in which smooth transitions mark the progressions of cells from one state to another. To see how PHATE can be applied to single-cell RNA-seq datasets from hematopoietic stem cells, human embryonic stem cells, and bone marrow samples, check out our `preprint on BioRxiv`_.
+PHATE is a tool for visualizing high dimensional data. In particular, PHATE is well-suited for visualizing data with natural progressions or trajectories such as single-cell data. PHATE uses a novel conceptual framework for learning and visualizing the manifold inherent to the system in which smooth transitions mark the progressions of data points (e.g. cells) from one state to another. To see how PHATE can be applied to datasets such as facial images and single-cell data from human embryonic stem cells, check out our `preprint on BioRxiv`_.
 
-`Kevin R. Moon, David van Dijk, Zheng Wang, et al. PHATE: A Dimensionality Reduction Method for Visualizing Trajectory Structures in High-Dimensional Biological Data. 2017. BioRxiv.`__
+`Kevin R. Moon, David van Dijk, Zheng Wang, et al. **Visualizing Transitions and Structure for Biological Data Exploration**. 2018. *BioRxiv*.`__
 
 .. _`preprint on BioRxiv`: https://www.biorxiv.org/content/early/2017/03/24/120378
 
