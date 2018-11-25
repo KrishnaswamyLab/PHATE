@@ -76,12 +76,12 @@ For more information, read the [documentation on ReadTheDocs](http://phate.readt
 
 #### Installation
 
-1. The MATLAB version of PHATE can be accessed by running the following from a terminal:
+The MATLAB version of PHATE can be accessed by running the following from a terminal:
 
     git clone --recursive git://github.com/KrishnaswamyLab/PHATE.git
     cd PHATE/Matlab
 
-2. Add the PHATE/Matlab directory to your MATLAB path.
+Then, add the PHATE/Matlab directory to your MATLAB path.
 
 Installation of PHATE should take no more than five minutes.
 
