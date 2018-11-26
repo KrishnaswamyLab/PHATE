@@ -16,14 +16,7 @@ import tasklogger
 
 import matplotlib.pyplot as plt
 
-from .mds import embed_MDS
-from .vne import compute_von_neumann_entropy, find_knee_point
-from .utils import (check_int,
-                    check_positive,
-                    check_between,
-                    check_in,
-                    check_if_not,
-                    matrix_is_equivalent)
+from . import utils, vne, mds
 
 try:
     import anndata
@@ -76,7 +69,8 @@ class PHATE(BaseEstimator):
     knn_dist : string, optional, default: 'euclidean'
         recommended values: 'euclidean', 'cosine', 'precomputed'
         Any metric from `scipy.spatial.distance` can be used
-        distance metric for building kNN graph. If 'precomputed',
+        distance metric for building kNN graph. Custom distance
+        functions of form `f(x, y) = d` are also accepted. If 'precomputed',
         `data` should be an n_samples x n_samples distance or
         affinity matrix. Distance matrices are assumed to have zeros
         down the diagonal, while affinity matrices are assumed to have
@@ -107,7 +101,6 @@ class PHATE(BaseEstimator):
 
     verbose : `int` or `boolean`, optional (default: 1)
         If `True` or `> 0`, print status messages
-
 
     potential_method : deprecated.
         Use `gamma=1` for log transformation and `gamma=0` for square root
@@ -246,35 +239,39 @@ class PHATE(BaseEstimator):
         ------
         ValueError : unacceptable choice of parameters
         """
-        check_positive(n_components=self.n_components,
-                       k=self.k)
-        check_int(n_components=self.n_components,
-                  k=self.k,
-                  n_jobs=self.n_jobs)
-        check_between(0, 1, gamma=self.gamma)
-        check_if_not(None, check_positive, a=self.a)
-        check_if_not(None, check_positive, check_int,
-                     n_landmark=self.n_landmark,
-                     n_pca=self.n_pca)
-        check_if_not('auto', check_positive, check_int,
-                     t=self.t)
-        check_in(['euclidean', 'precomputed', 'cosine', 'correlation', 'cityblock',
-                  'l1', 'l2', 'manhattan', 'braycurtis', 'canberra',
-                  'chebyshev', 'dice', 'hamming', 'jaccard',
-                  'kulsinski', 'mahalanobis', 'matching', 'minkowski',
-                  'rogerstanimoto', 'russellrao', 'seuclidean',
-                  'sokalmichener', 'sokalsneath', 'sqeuclidean', 'yule',
-                  'precomputed_affinity', 'precomputed_distance'],
-                 knn_dist=self.knn_dist)
-        check_in(['euclidean', 'cosine', 'correlation', 'braycurtis',
-                  'canberra', 'chebyshev', 'cityblock', 'dice', 'hamming',
-                  'jaccard', 'kulsinski', 'mahalanobis', 'matching',
-                  'minkowski', 'rogerstanimoto', 'russellrao',
-                  'seuclidean', 'sokalmichener', 'sokalsneath',
-                  'sqeuclidean', 'yule'],
-                 mds_dist=self.mds_dist)
-        check_in(['classic', 'metric', 'nonmetric'],
-                 mds=self.mds)
+        utils.check_positive(n_components=self.n_components,
+                             k=self.k)
+        utils.check_int(n_components=self.n_components,
+                        k=self.k,
+                        n_jobs=self.n_jobs)
+        utils.check_between(0, 1, gamma=self.gamma)
+        utils.check_if_not(None, utils.check_positive, a=self.a)
+        utils.check_if_not(None, utils.check_positive, utils.check_int,
+                           n_landmark=self.n_landmark,
+                           n_pca=self.n_pca)
+        utils.check_if_not('auto', utils.check_positive, utils.check_int,
+                           t=self.t)
+        if not callable(self.knn_dist):
+            utils.check_in(['euclidean', 'precomputed', 'cosine',
+                            'correlation', 'cityblock', 'l1', 'l2',
+                            'manhattan', 'braycurtis', 'canberra',
+                            'chebyshev', 'dice', 'hamming', 'jaccard',
+                            'kulsinski', 'mahalanobis', 'matching',
+                            'minkowski', 'rogerstanimoto', 'russellrao',
+                            'seuclidean', 'sokalmichener', 'sokalsneath',
+                            'sqeuclidean', 'yule',
+                            'precomputed_affinity', 'precomputed_distance'],
+                           knn_dist=self.knn_dist)
+        if not callable(self.mds_dist):
+            utils.check_in(['euclidean', 'cosine', 'correlation', 'braycurtis',
+                            'canberra', 'chebyshev', 'cityblock', 'dice',
+                            'hamming', 'jaccard', 'kulsinski', 'mahalanobis',
+                            'matching', 'minkowski', 'rogerstanimoto',
+                            'russellrao', 'seuclidean', 'sokalmichener',
+                            'sokalsneath', 'sqeuclidean', 'yule'],
+                           mds_dist=self.mds_dist)
+        utils.check_in(['classic', 'metric', 'nonmetric'],
+                       mds=self.mds)
 
     def _set_graph_params(self, **params):
         try:
@@ -336,9 +333,14 @@ class PHATE(BaseEstimator):
         knn_dist : string, optional, default: 'euclidean'
             recommended values: 'euclidean', 'cosine', 'precomputed'
             Any metric from `scipy.spatial.distance` can be used
-            distance metric for building kNN graph. If 'precomputed',
+            distance metric for building kNN graph. Custom distance
+            functions of form `f(x, y) = d` are also accepted. If 'precomputed',
             `data` should be an n_samples x n_samples distance or
-            affinity matrix
+            affinity matrix. Distance matrices are assumed to have zeros
+            down the diagonal, while affinity matrices are assumed to have
+            non-zero values down the diagonal. This is detected automatically
+            using `data[0,0]`. You can override this detection with
+            `knn_dist='precomputed_distance'` or `knn_dist='precomputed_affinity'`.
 
         mds_dist : string, optional, default: 'euclidean'
             recommended values: 'euclidean' and 'cosine'
@@ -351,8 +353,8 @@ class PHATE(BaseEstimator):
 
         n_jobs : integer, optional, default: 1
             The number of jobs to use for the computation.
-            If -1 all CPUs are used. If 1 is given, no parallel computing code is
-            used at all, which is useful for debugging.
+            If -1 all CPUs are used. If 1 is given, no parallel computing code
+            is used at all, which is useful for debugging.
             For n_jobs below -1, (n_cpus + 1 + n_jobs) are used. Thus for
             n_jobs = -2, all CPUs but one are used
 
@@ -591,7 +593,8 @@ class PHATE(BaseEstimator):
             n_landmark = self.n_landmark
 
         if self.graph is not None:
-            if self.X is not None and not matrix_is_equivalent(X, self.X):
+            if self.X is not None and not utils.matrix_is_equivalent(
+                    X, self.X):
                 """
                 If the same data is used, we can reuse existing kernel and
                 diffusion matrices. Otherwise we have to recompute.
@@ -669,7 +672,7 @@ class PHATE(BaseEstimator):
             raise NotFittedError("This PHATE instance is not fitted yet. Call "
                                  "'fit' with appropriate arguments before "
                                  "using this method.")
-        elif X is not None and not matrix_is_equivalent(X, self.X):
+        elif X is not None and not utils.matrix_is_equivalent(X, self.X):
             # fit to external data
             warnings.warn("Pre-fit PHATE cannot be used to transform a "
                           "new data matrix. Please fit PHATE to the new"
@@ -694,7 +697,7 @@ class PHATE(BaseEstimator):
                 self.optimal_t(t_max=t_max, plot=plot_optimal_t, ax=ax)
             if self.embedding is None:
                 tasklogger.log_start("{} MDS".format(self.mds))
-                self.embedding = embed_MDS(
+                self.embedding = mds.embed_MDS(
                     self.diff_potential, ndim=self.n_components, how=self.mds,
                     distance_metric=self.mds_dist, n_jobs=self.n_jobs,
                     seed=self.random_state, verbose=max(self.verbose - 1, 0))
@@ -788,7 +791,7 @@ class PHATE(BaseEstimator):
             The entropy of the diffusion affinities for each value of `t`
         """
         t = np.arange(t_max)
-        return t, compute_von_neumann_entropy(self.diff_op, t_max=t_max)
+        return t, vne.compute_von_neumann_entropy(self.diff_op, t_max=t_max)
 
     def optimal_t(self, t_max=100, plot=False, ax=None):
         """Find the optimal value of t
@@ -815,7 +818,7 @@ class PHATE(BaseEstimator):
         """
         tasklogger.log_start("optimal t")
         t, h = self.von_neumann_entropy(t_max=t_max)
-        t_opt = find_knee_point(y=h, x=t)
+        t_opt = vne.find_knee_point(y=h, x=t)
         tasklogger.log_info("Automatically selected t = {}".format(t_opt))
         tasklogger.log_complete("optimal t")
 
