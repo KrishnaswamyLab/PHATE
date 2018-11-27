@@ -79,9 +79,9 @@ class PHATE(BaseEstimator):
         `knn_dist='precomputed_distance'` or `knn_dist='precomputed_affinity'`.
 
     mds_dist : string, optional, default: 'euclidean'
-        recommended values: 'euclidean' and 'cosine'
-        Any metric from `scipy.spatial.distance` can be used
-        distance metric for MDS
+        Distance metric for MDS. Recommended values: 'euclidean' and 'cosine'
+        Any metric from `scipy.spatial.distance` can be used. Custom distance
+        functions of form `f(x, y) = d` are also accepted
 
     mds : string, optional, default: 'metric'
         choose from ['classic', 'metric', 'nonmetric'].
