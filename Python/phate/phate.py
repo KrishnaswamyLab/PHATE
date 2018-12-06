@@ -583,7 +583,7 @@ class PHATE(BaseEstimator):
             n_pca = None
         else:
             precomputed = None
-            if X.shape[1] <= self.n_pca:
+            if not self.n_pca is None and X.shape[1] <= self.n_pca:
                 n_pca = None
             else:
                 n_pca = self.n_pca
