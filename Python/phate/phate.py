@@ -152,7 +152,8 @@ class PHATE(BaseEstimator):
                  n_landmark=2000, t='auto', gamma=1,
                  n_pca=100, knn_dist='euclidean', mds_dist='euclidean',
                  mds='metric', n_jobs=1, random_state=None, verbose=1,
-                 potential_method=None, alpha_decay=None, njobs=None):
+                 potential_method=None, alpha_decay=None, njobs=None,
+                 **kwargs):
         self.n_components = n_components
         self.a = a
         self.k = k
@@ -163,6 +164,7 @@ class PHATE(BaseEstimator):
         self.knn_dist = knn_dist
         self.mds_dist = mds_dist
         self.random_state = random_state
+        self.kwargs = kwargs
 
         self.graph = None
         self.diff_potential = None
@@ -480,6 +482,8 @@ class PHATE(BaseEstimator):
             self._set_graph_params(verbose=params['verbose'])
             del params['verbose']
 
+        self._set_graph_params(**params)
+
         if reset_kernel:
             # can't reset the graph kernel without making a new graph
             self._reset_graph()
@@ -560,7 +564,7 @@ class PHATE(BaseEstimator):
             # anndata not installed
             pass
 
-        if self.knn_dist.startswith('precomputed'):
+        if not callable(self.knn_dist) and self.knn_dist.startswith('precomputed'):
             if self.knn_dist == 'precomputed':
                 # automatic detection
                 if isinstance(X, sparse.coo_matrix):
@@ -631,7 +635,8 @@ class PHATE(BaseEstimator):
                 thresh=1e-4,
                 n_jobs=self.n_jobs,
                 verbose=self.verbose,
-                random_state=self.random_state)
+                random_state=self.random_state,
+                **(self.kwargs))
             tasklogger.log_complete("graph and diffusion operator")
 
         # landmark op doesn't build unless forced
