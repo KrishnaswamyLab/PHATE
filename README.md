@@ -1,4 +1,4 @@
-PHATE - Potential of Heat-diffusion for Affinity-based Transition Embedding
+PHATE - Visualizing Transitions and Structure for Biological Data Exploration
 ---------------------------------------------------------------------------
 
 [![Latest PyPI version](https://img.shields.io/pypi/v/phate.svg)](https://pypi.org/project/phate/)
@@ -8,8 +8,15 @@ PHATE - Potential of Heat-diffusion for Affinity-based Transition Embedding
 [![bioRxiv Preprint](https://zenodo.org/badge/DOI/10.1101/120378.svg)](https://www.biorxiv.org/content/early/2017/12/01/120378)
 [![Twitter](https://img.shields.io/twitter/follow/KrishnaswamyLab.svg?style=social&label=Follow)](https://twitter.com/KrishnaswamyLab)
 
-PHATE is a tool for visualizing high dimensional data. In particular, PHATE is well-suited for visualizing data with natural progressions or trajectories such as single-cell data. PHATE uses a novel conceptual framework for learning and visualizing the manifold inherent to the system in which smooth transitions mark the progressions of data points (e.g. cells) from one state to another. To see how PHATE can be applied to datasets such as facial images and single-cell data from human embryonic stem cells, check out our preprint on BioRxiv.
+### Quick Start
+If you would like to get started using PHATE, check out the following tutorials.
 
+* [**Guided tutorial in Python**](http://nbviewer.jupyter.org/github/KrishnaswamyLab/PHATE/blob/master/Python/tutorial/EmbryoidBody.ipynb)  
+* [**Guided turorial in R**](http://htmlpreview.github.io/?https://github.com/KrishnaswamyLab/phateR/blob/master/inst/examples/bonemarrow_tutorial.html)
+
+### Introduction
+
+PHATE is a tool for visualizing high dimensional data. In particular, PHATE is well-suited for visualizing data with natural progressions or trajectories such as single-cell data. PHATE uses a novel conceptual framework for learning and visualizing the manifold inherent to the system in which smooth transitions mark the progressions of data points (e.g. cells) from one state to another. To see how PHATE can be applied to datasets such as facial images and single-cell data from human embryonic stem cells, check out our preprint on BioRxiv.
 [Kevin R. Moon, David van Dijk, Zheng Wang, et al. **Visualizing Transitions and Structure for Biological Data Exploration**. 2018. *BioRxiv*](https://doi.org/10.1101/120378)
 
 PHATE has been implemented in [Python](#python) (2.7 and >=3.5), [MATLAB](#matlab) and [R](#r).
@@ -76,12 +83,12 @@ For more information, read the [documentation on ReadTheDocs](http://phate.readt
 
 #### Installation
 
-1. The MATLAB version of PHATE can be accessed by running the following from a terminal:
+The MATLAB version of PHATE can be accessed by running the following from a terminal:
 
     git clone --recursive git://github.com/KrishnaswamyLab/PHATE.git
     cd PHATE/Matlab
 
-2. Add the PHATE/Matlab directory to your MATLAB path.
+Then, add the PHATE/Matlab directory to your MATLAB path.
 
 Installation of PHATE should take no more than five minutes.
 
@@ -93,17 +100,17 @@ Run any of our `run_*` scripts to get a feel for PHATE. Documentation is availab
 
 In order to use PHATE in R, you must also install the Python package.
 
+If `python` or `pip` are not installed, you will need to install them. We recommend [Miniconda3](https://conda.io/miniconda.html) to install Python and `pip` together, or otherwise you can install `pip` from https://pip.pypa.io/en/stable/installing/.
+
 #### Installation from CRAN and PyPi
 
-Install `phate` in Python by running the following code from a terminal:
+First install `phate` in Python by running the following code from a terminal:
 
     pip install --user phate
 
 Then, install `phateR` from CRAN by running the following code in R:
 
     install.packages("phateR")
-
-If `python` or `pip` are not installed, you will need to install them. We recommend [Miniconda3](https://conda.io/miniconda.html) to install Python and `pip` together, or otherwise you can install `pip` from https://pip.pypa.io/en/stable/installing/.
 
 Installation of PHATE and all dependencies should take no more than five minutes.
 
@@ -112,36 +119,32 @@ Installation of PHATE and all dependencies should take no more than five minutes
 The development version of PHATE can be installed directly from R with `devtools`:
 
     if (!suppressWarnings(require(devtools))) install.packages("devtools")
-    devtools::install_github("KrishnaswamyLab/phateR")
-
-If you have the development version of `reticulate`, you can also install `phate` in Python by running the following code in R:
-
-    devtools::install_github("rstudio/reticulate")
     reticulate::py_install("phate", pip=TRUE)
+    devtools::install_github("KrishnaswamyLab/phateR")
 
 #### Installation from source
 
 The latest source version of PHATE can be accessed by running the following in a terminal:
 
     git clone --recursive git://github.com/SmitaKrishnaswamy/PHATE.git
-    cd PHATE/phateR
-    R CMD INSTALL
-    cd ../Python
+    cd PHATE/Python
     python setup.py install --user
+    cd ../phateR
+    R CMD INSTALL
 
 If the `phateR` folder is empty, you have may forgotten to use the `--recursive` option for `git clone`. You can rectify this by running the following in a terminal:
 
     cd PHATE
     git submodule init
     git submodule update
-    cd phateR
-    R CMD INSTALL
-    cd ../Python
+    cd Python
     python setup.py install --user
+    cd ../phateR
+    R CMD INSTALL
 
 #### Quick Start
 
-If you have loaded a data matrix `data` in R (cells on rows, genes on columns) you can run PHATE as follows::
+If you have loaded a data matrix `data` in R (cells on rows, genes on columns) you can run PHATE as follows:
 
     library(phateR)
     data_phate <- phate(data)
