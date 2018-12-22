@@ -25,8 +25,8 @@ version_py = os.path.join(os.path.dirname(__file__), 'phate', 'version.py')
 version = open(version_py).read().strip().split(
     '=')[-1].replace('"', '').strip()
 
-if sys.version_info[:2] < (2, 7) or (3, 0) <= sys.version_info[:2] < (3, 5):
-    raise RuntimeError("Python version 2.7 or >=3.5 required.")
+if sys.version_info[:2] < (3, 5):
+    raise RuntimeError("Python version >=3.5 required.")
 
 readme = open('README.rst').read()
 
@@ -62,11 +62,10 @@ setup(name='phate',
           'Operating System :: MacOS :: MacOS X',
           'Operating System :: Microsoft :: Windows',
           'Operating System :: POSIX :: Linux',
-          'Programming Language :: Python :: 2',
-          'Programming Language :: Python :: 2.7',
           'Programming Language :: Python :: 3',
           'Programming Language :: Python :: 3.5',
           'Programming Language :: Python :: 3.6',
+          'Programming Language :: Python :: 3.7',
           'Topic :: Scientific/Engineering :: Bio-Informatics',
           'Topic :: Scientific/Engineering :: Visualization',
       ]
