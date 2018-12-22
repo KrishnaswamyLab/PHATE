@@ -1,17 +1,29 @@
-  language: python
-  python:
-    - "2.7"
-    - "3.5"
-    - "3.6"
+language: python
+python:
+  - "2.7"
+  - "3.5"
+  - "3.6"
+  - "3.7-dev"
 
-  sudo: required
+sudo: required
 
-  cache: pip
+cache: pip
 
-  install:
-    - cd Python; python setup.py install; cd ..
+install:
+  - cd Python; python setup.py install; cd ..
 
-  script:
-    - cd Python; pip install -U .[test,doc]
-    - python setup.py test
-    - cd doc; make html; cd ../..
+script:
+  - cd Python; pip install -U .[test,doc]
+  - python setup.py test
+  - cd doc; make html; cd ../..
+
+deploy:
+  provider: pypi
+  user: scottgigante
+  password: ${PYPI_PASSWORD}
+  distributions: sdist bdist_wheel
+  skip_existing: true
+  skip_cleanup: true
+  on:
+    tags: true
+    branch: master
