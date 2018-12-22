@@ -19,7 +19,7 @@ If you would like to get started using PHATE, check out the following tutorials.
 PHATE is a tool for visualizing high dimensional data. In particular, PHATE is well-suited for visualizing data with natural progressions or trajectories such as single-cell data. PHATE uses a novel conceptual framework for learning and visualizing the manifold inherent to the system in which smooth transitions mark the progressions of data points (e.g. cells) from one state to another. To see how PHATE can be applied to datasets such as facial images and single-cell data from human embryonic stem cells, check out our preprint on BioRxiv.
 [Kevin R. Moon, David van Dijk, Zheng Wang, et al. **Visualizing Transitions and Structure for Biological Data Exploration**. 2018. *BioRxiv*](https://doi.org/10.1101/120378)
 
-PHATE has been implemented in [Python](#python) (2.7 and >=3.5), [MATLAB](#matlab) and [R](#r).
+PHATE has been implemented in [Python >=3.5](#python), [MATLAB](#matlab) and [R](#r).
 
 ### Table of Contents
 
@@ -43,7 +43,7 @@ PHATE has been implemented in [Python](#python) (2.7 and >=3.5), [MATLAB](#matla
 ### System Requirements
 
 * Windows (>= 7), Mac OS X (>= 10.8) or Linux
-* [Python](https://www.python.org/downloads/) (2.7 or >=3.5) or [MATLAB](https://www.mathworks.com/products/matlab.html) (>= 2015a)
+* [Python >= 3.5](https://www.python.org/downloads/) or [MATLAB](https://www.mathworks.com/products/matlab.html) (>= 2015a)
 
 All other software dependencies are installed automatically when installing PHATE.
 
