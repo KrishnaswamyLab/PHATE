@@ -662,6 +662,7 @@ def rotate_scatter3d(data,
                      fps=10,
                      ax=None,
                      figsize=None,
+                     dpi=None,
                      ipython_html="jshtml",
                      **kwargs):
     """Create a rotating 3D scatter plot
@@ -686,6 +687,10 @@ def rotate_scatter3d(data,
     figsize : tuple, optional (default: None)
         Tuple of floats for creation of new `matplotlib` figure. Only used if
         `ax` is None.
+    dpi : number, optional (default: None)
+        Controls the dots per inch for the movie frames. This combined with
+        the figure's size in inches controls the size of the movie.
+        If None, defaults to rcParams["savefig.dpi"]
     ipython_html : {'html5', 'jshtml'}
         which html writer to use if using a Jupyter Notebook
     **kwargs : keyword arguments
@@ -753,7 +758,7 @@ def rotate_scatter3d(data,
         frames=range(frames), interval=interval, blit=False)
 
     if filename is not None:
-        ani.save(filename, writer=writer)
+        ani.save(filename, dpi=dpi, writer=writer)
 
     if in_ipynb():
         # credit to https://stackoverflow.com/a/45573903/3996580
