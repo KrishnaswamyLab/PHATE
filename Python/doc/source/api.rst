@@ -10,6 +10,14 @@ PHATE
     :inherited-members:
     :show-inheritance:
 
+Clustering
+----------
+
+.. automodule:: phate.cluster
+    :members:
+    :inherited-members:
+    :show-inheritance:
+
 Plotting
 --------
 

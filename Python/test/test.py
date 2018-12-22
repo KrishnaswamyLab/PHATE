@@ -18,6 +18,10 @@ def test_simple():
     phate_operator = phate.PHATE(k=15, t=100)
     tree_phate = phate_operator.fit_transform(tree_data)
     assert tree_phate.shape == (tree_data.shape[0], 2)
+    clusters = phate.cluster.kmeans(phate_operator, k=20)
+    assert np.issubdtype(clusters.dtype, int)
+    assert len(clusters.shape) == 1
+    assert len(clusters) == tree_data.shape[0]
 
 
 def test_vne():

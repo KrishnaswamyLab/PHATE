@@ -692,18 +692,12 @@ class PHATE(BaseEstimator):
                 return self.graph.interpolate(self.embedding,
                                               transitions)
         else:
-            if self.diff_potential is None:
-                if self.t == 'auto':
-                    t = self.optimal_t(t_max=t_max, plot=plot_optimal_t, ax=ax)
-                else:
-                    t = self.t
-                self.diff_potential = self.calculate_potential(self.diff_op, t)
-            elif plot_optimal_t:
-                self.optimal_t(t_max=t_max, plot=plot_optimal_t, ax=ax)
+            diff_potential = self.calculate_potential(
+                t_max=t_max, plot_optimal_t=plot_optimal_t, ax=ax)
             if self.embedding is None:
                 tasklogger.log_start("{} MDS".format(self.mds))
                 self.embedding = mds.embed_MDS(
-                    self.diff_potential, ndim=self.n_components, how=self.mds,
+                    diff_potential, ndim=self.n_components, how=self.mds,
                     distance_metric=self.mds_dist, n_jobs=self.n_jobs,
                     seed=self.random_state, verbose=max(self.verbose - 1, 0))
                 tasklogger.log_complete("{} MDS".format(self.mds))
@@ -740,18 +734,26 @@ class PHATE(BaseEstimator):
         tasklogger.log_complete('PHATE')
         return embedding
 
-    def calculate_potential(self, diff_op, t):
+    def calculate_potential(self, t=None,
+                            t_max=100, plot_optimal_t=False, ax=None):
         """Calculates the diffusion potential
 
         Parameters
         ----------
 
-        diff_op : array-like, shape=[n_samples, n_samples] or [n_landmarks, n_landmarks]
-            The diffusion operator fit on the input data
-
         t : int
             power to which the diffusion operator is powered
             sets the level of diffusion
+
+        t_max : int, default: 100
+            Maximum value of `t` to test
+
+        plot_optimal_t : boolean, default: False
+            If true, plots the Von Neumann Entropy and knee point
+
+        ax : matplotlib.Axes, default: None
+            If plot=True and ax is not None, plots the VNE on the given axis
+            Otherwise, creates a new axis and displays the plot
 
         Returns
         -------
@@ -759,21 +761,30 @@ class PHATE(BaseEstimator):
         diff_potential : array-like, shape=[n_samples, n_samples]
             The diffusion potential fit on the input data
         """
-        tasklogger.log_start("diffusion potential")
-        # diffused diffusion operator
-        diff_op_t = np.linalg.matrix_power(diff_op, t)
+        if t is None:
+            t = self.t
+        if self.diff_potential is None:
+            if t == 'auto':
+                t = self.optimal_t(t_max=t_max, plot=plot_optimal_t, ax=ax)
+            else:
+                t = self.t
+            tasklogger.log_start("diffusion potential")
+            # diffused diffusion operator
+            diff_op_t = np.linalg.matrix_power(self.diff_op, t)
+            if self.gamma == 1:
+                # handling small values
+                diff_op_t = diff_op_t + 1e-7
+                self.diff_potential = -1 * np.log(diff_op_t)
+            elif self.gamma == -1:
+                self.diff_potential = diff_op_t
+            else:
+                c = (1 - self.gamma) / 2
+                self.diff_potential = ((diff_op_t)**c) / c
+            tasklogger.log_complete("diffusion potential")
+        elif plot_optimal_t:
+            self.optimal_t(t_max=t_max, plot=plot_optimal_t, ax=ax)
 
-        if self.gamma == 1:
-            # handling small values
-            diff_op_t = diff_op_t + 1e-7
-            diff_potential = -1 * np.log(diff_op_t)
-        elif self.gamma == -1:
-            diff_potential = diff_op_t
-        else:
-            c = (1 - self.gamma) / 2
-            diff_potential = ((diff_op_t)**c) / c
-        tasklogger.log_complete("diffusion potential")
-        return diff_potential
+        return self.diff_potential
 
     def von_neumann_entropy(self, t_max=100):
         """Calculate Von Neumann Entropy
