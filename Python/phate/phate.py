@@ -450,10 +450,13 @@ class PHATE(BaseEstimator):
             self.a = params['a']
             reset_kernel = True
             del params['a']
-        if 'n_pca' in params and params['n_pca'] != self.n_pca:
-            self.n_pca = params['n_pca']
-            reset_kernel = True
-            del params['n_pca']
+        if 'n_pca' in params:
+            if params['n_pca'] >= self.X.shape[1]:
+                params['n_pca'] = None
+            if params['n_pca'] != self.n_pca:
+                self.n_pca = params['n_pca']
+                reset_kernel = True
+                del params['n_pca']
         if 'knn_dist' in params and params['knn_dist'] != self.knn_dist:
             self.knn_dist = params['knn_dist']
             reset_kernel = True
@@ -482,8 +485,6 @@ class PHATE(BaseEstimator):
             self._set_graph_params(verbose=params['verbose'])
             del params['verbose']
 
-        self._set_graph_params(**params)
-
         if reset_kernel:
             # can't reset the graph kernel without making a new graph
             self._reset_graph()
@@ -491,6 +492,8 @@ class PHATE(BaseEstimator):
             self._reset_potential()
         if reset_embedding:
             self._reset_embedding()
+
+        self._set_graph_params(**params)
 
         self._check_params()
         return self
