@@ -1,6 +1,5 @@
 import graphtools
-from sklearn.exceptions import NotFittedError
-from sklearn.cluster import KMeans
+from sklearn import cluster, exceptions
 
 
 def kmeans(phate_op, k=8):
@@ -26,8 +25,9 @@ def kmeans(phate_op, k=8):
         diff_potential = phate_op.calculate_potential()
         if isinstance(phate_op.graph, graphtools.graphs.LandmarkGraph):
             diff_potential = phate_op.graph.interpolate(diff_potential)
-        return KMeans(k).fit_predict(diff_potential)
+        return cluster.KMeans(k).fit_predict(diff_potential)
     else:
-        raise NotFittedError("This PHATE instance is not fitted yet. Call "
-                             "'fit' with appropriate arguments before "
-                             "using this method.")
+        raise exceptions.NotFittedError(
+            "This PHATE instance is not fitted yet. Call "
+            "'fit' with appropriate arguments before "
+            "using this method.")
