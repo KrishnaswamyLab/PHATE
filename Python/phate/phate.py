@@ -567,6 +567,9 @@ class PHATE(BaseEstimator):
             # anndata not installed
             pass
 
+        tasklogger.log_info("Running PHATE on {} cells and {} genes.".format(
+            X.shape[0], X.shape[1]))
+
         if not callable(self.knn_dist) and self.knn_dist.startswith('precomputed'):
             if self.knn_dist == 'precomputed':
                 # automatic detection
