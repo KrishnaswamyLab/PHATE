@@ -3,16 +3,9 @@
 
 # Plotting convenience functions
 from __future__ import print_function, division
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib as mpl
-from matplotlib import animation, rc
-from mpl_toolkits.mplot3d import Axes3D  # NOQA: F401
-import pandas as pd
-import numbers
-from scipy import sparse
 from .phate import PHATE
-from .utils import in_ipynb
+import warnings
+import scprep
 
 try:
     import anndata
@@ -56,91 +49,9 @@ def _get_plot_data(data, ndim=None):
     return out
 
 
-def _to_numpy(data):
-    if isinstance(data, (pd.SparseSeries, pd.SparseDataFrame)):
-        data = data.to_dense().values
-    elif isinstance(data, (pd.Series, pd.DataFrame)):
-        data = data.values
-    elif sparse.issparse(data):
-        data = data.toarray()
-    else:
-        data = np.array(data)
-    data = data.flatten()
-    return data
-
-
-def is_color_array(c):
-    return np.all([mpl.colors.is_color_like(val) for val in c])
-
-
-def _auto_params(data, c, discrete, cmap, legend):
-    """Automatically select nice parameters for a scatter plot
-    """
-    for i in range(len(data)):
-        data[i] = _to_numpy(data[i])
-    for d in data[1:]:
-        if d.shape[0] != data[0].shape[0]:
-            raise ValueError("Expected all axis of data to have the same length"
-                             ". Got {}".format([d.shape[0] for d in data]))
-    if c is not None and not mpl.colors.is_color_like(c) and not is_color_array(c):
-        c = _to_numpy(c)
-        if not len(c) == data[0].shape[0]:
-            raise ValueError("Expected c of length {} or 1. Got {}".format(
-                data[0].shape[0], len(c)))
-        if discrete is None:
-            # guess
-            if isinstance(cmap, dict) or \
-                    not np.all([isinstance(x, numbers.Number) for x in c]):
-                discrete = True
-            else:
-                discrete = len(np.unique(c)) <= 20
-        if discrete:
-            c, labels = pd.factorize(c)
-            if cmap is None and len(np.unique(c)) <= 10:
-                cmap = mpl.colors.ListedColormap(
-                    mpl.cm.tab10.colors[:len(np.unique(c))])
-            elif cmap is None:
-                cmap = 'tab20'
-        else:
-            if not np.all([isinstance(x, numbers.Number) for x in c]):
-                raise ValueError(
-                    "Cannot treat non-numeric data as continuous.")
-            labels = None
-            if cmap is None:
-                cmap = 'inferno'
-    else:
-        labels = None
-        legend = False
-    if isinstance(cmap, dict):
-        if c is None or mpl.colors.is_color_like(c):
-            raise ValueError("Expected list-like `c` with dictionary cmap. "
-                             "Got {}".format(type(c)))
-        elif not discrete:
-            raise ValueError("Cannot use dictionary cmap with "
-                             "continuous data.")
-        elif np.any([l not in cmap for l in labels]):
-            missing = set(labels).difference(cmap.keys())
-            raise ValueError(
-                "Dictionary cmap requires a color "
-                "for every unique entry in `c`. "
-                "Missing colors for [{}]".format(
-                    ", ".join([str(l) for l in missing])))
-        else:
-            cmap = mpl.colors.ListedColormap(
-                [mpl.colors.to_rgba(cmap[l]) for l in labels])
-    if len(data) == 3:
-        subplot_kw = {'projection': '3d'}
-    elif len(data) == 2:
-        subplot_kw = {}
-    else:
-        raise ValueError("Expected either 2 or 3 dimensional data. "
-                         "Got {}".format(len(data)))
-    return c, labels, discrete, cmap, subplot_kw, legend
-
-
 def scatter(x, y, z=None,
-            c=None, cmap=None, s=1, discrete=None,
-            ax=None, legend=True, figsize=None,
+            c=None, cmap=None, s=None, discrete=None,
+            ax=None, legend=None, figsize=None,
             xticks=False,
             yticks=False,
             zticks=False,
@@ -282,125 +193,28 @@ def scatter(x, y, z=None,
     >>> X[c=='a'] += 10
     >>> phate.plot.scatter2d(X, c=c, cmap={'a' : [1,0,0,1], 'b' : 'xkcd:sky blue'})
     """
-    data = [x, y] if z is None else [x, y, z]
-    c, labels, discrete, cmap, subplot_kw, legend = _auto_params(
-        data, c, discrete,
-        cmap, legend)
-
-    plot_idx = np.random.permutation(data[0].shape[0])
-    if ax is None:
-        fig, ax = plt.subplots(figsize=figsize, subplot_kw=subplot_kw)
-        show = True
-    else:
-        try:
-            fig = ax.get_figure()
-        except AttributeError as e:
-            if not isinstance(ax, mpl.axes.Axes):
-                raise TypeError("Expected ax as a matplotlib.axes.Axes. "
-                                "Got {}".format(type(ax)))
-            else:
-                raise e
-        show = False
-    if legend and not discrete:
-        im = ax.imshow(np.linspace(np.min(data[1]),
-                                   np.max(data[1]), 10).reshape(-1, 1),
-                       vmin=np.min(c), vmax=np.max(c), cmap=cmap,
-                       aspect='auto', origin='lower')
-        im.remove()
-        ax.relim()
-        ax.autoscale()
-    try:
-        if c is not None and not mpl.colors.is_color_like(c):
-            c = c[plot_idx]
-        sc = ax.scatter(*[d[plot_idx] for d in data],
-                        c=c,
-                        cmap=cmap, s=s, **plot_kwargs)
-    except TypeError as e:
-        if not hasattr(ax, "get_zlim"):
-            raise TypeError("Expected ax with projection='3d'. "
-                            "Got 2D axis instead.")
-        else:
-            raise e
-
-    if label_prefix is not None:
-        if xlabel is None:
-            xlabel = label_prefix + "1"
-        if ylabel is None:
-            ylabel = label_prefix + "2"
-        if zlabel is None:
-            zlabel = label_prefix + "3"
-
-    if not xticks:
-        ax.set_xticks([])
-    elif xticks is True:
-        pass
-    else:
-        ax.set_xticks(xticks)
-    if not xticklabels:
-        ax.set_xticklabels([])
-    elif xticklabels is True:
-        pass
-    else:
-        ax.set_xticklabels(xticklabels)
-    if xlabel is not None:
-        ax.set_xlabel(xlabel)
-
-    if not yticks:
-        ax.set_yticks([])
-    elif yticks is True:
-        pass
-    else:
-        ax.set_yticks(yticks)
-    if not yticklabels:
-        ax.set_yticklabels([])
-    elif yticklabels is True:
-        pass
-    else:
-        ax.set_yticklabels(yticklabels)
-    if ylabel is not None:
-        ax.set_ylabel(ylabel)
-
-    if title is not None:
-        ax.set_title(title)
-
-    if len(data) == 3:
-        if not zticks:
-            ax.set_zticks([])
-        elif zticks is True:
-            pass
-        else:
-            ax.set_zticks(zticks)
-        if not zticklabels:
-            ax.set_zticklabels([])
-        elif zticklabels is True:
-            pass
-        else:
-            ax.set_zticklabels(zticklabels)
-        if zlabel is not None:
-            ax.set_zlabel(zlabel)
-
-    if legend:
-        if discrete:
-            def handle(c):
-                return plt.Line2D([], [], color=c, ls="", marker="o")
-            ax.legend(
-                handles=[handle(sc.cmap(sc.norm(i)))
-                         for i in range(len(labels))],
-                labels=list(labels),
-                ncol=max(1, len(labels) // 10),
-                title=legend_title,
-                loc=legend_loc)
-        else:
-            fig.colorbar(im, label=legend_title, ax=ax)
-
-    if show or filename is not None:
-        plt.tight_layout()
-    if filename is not None:
-        fig.savefig(filename, dpi=dpi)
-    if show:
-        if not in_ipynb():
-            fig.show()
-    return ax
+    warnings.warn("`phate.plot.scatter` is deprecated. "
+                  "Use `scprep.plot.scatter` instead.",
+                  DeprecationWarning)
+    return scprep.plot.scatter(x=x, y=y, z=z,
+                               c=c, cmap=cmap, s=s, discrete=discrete,
+                               ax=ax, legend=legend, figsize=figsize,
+                               xticks=xticks,
+                               yticks=yticks,
+                               zticks=zticks,
+                               xticklabels=xticklabels,
+                               yticklabels=yticklabels,
+                               zticklabels=zticklabels,
+                               label_prefix=label_prefix,
+                               xlabel=xlabel,
+                               ylabel=ylabel,
+                               zlabel=zlabel,
+                               title=title,
+                               legend_title=legend_title,
+                               legend_loc=legend_loc,
+                               filename=filename,
+                               dpi=dpi,
+                               **plot_kwargs)
 
 
 def scatter2d(data, **kwargs):
@@ -524,8 +338,11 @@ def scatter2d(data, **kwargs):
     >>> X[c=='a'] += 10
     >>> phate.plot.scatter2d(X, c=c, cmap={'a' : [1,0,0,1], 'b' : 'xkcd:sky blue'})
     """
+    warnings.warn("`phate.plot.scatter2d` is deprecated. "
+                  "Use `scprep.plot.scatter2d` instead.",
+                  DeprecationWarning)
     data = _get_plot_data(data, ndim=2)
-    return scatter(x=data[:, 0], y=data[:, 1], **kwargs)
+    return scprep.plot.scatter2d(data, **kwargs)
 
 
 def scatter3d(data, **kwargs):
@@ -650,9 +467,11 @@ def scatter3d(data, **kwargs):
     >>> X[c=='a'] += 10
     >>> phate.plot.scatter2d(X, c=c, cmap={'a' : [1,0,0,1], 'b' : 'xkcd:sky blue'})
     """
+    warnings.warn("`phate.plot.scatter3d` is deprecated. "
+                  "Use `scprep.plot.scatter3d` instead.",
+                  DeprecationWarning)
     data = _get_plot_data(data, ndim=3)
-    return scatter(x=data[:, 0], y=data[:, 1], z=data[:, 2],
-                   **kwargs)
+    return scprep.plot.scatter3d(data, **kwargs)
 
 
 def rotate_scatter3d(data,
@@ -715,56 +534,16 @@ def rotate_scatter3d(data,
     (2000, 2)
     >>> phate.plot.rotate_scatter3d(tree_phate, c=tree_clusters)
     """
-    if in_ipynb():
-        # credit to
-        # http://tiao.io/posts/notebooks/save-matplotlib-animations-as-gifs/
-        rc('animation', html=ipython_html)
-
-    if filename is not None:
-        if filename.endswith(".gif"):
-            writer = 'imagemagick'
-        elif filename.endswith(".mp4"):
-            writer = "ffmpeg"
-        else:
-            raise ValueError(
-                "filename must end in .gif or .mp4. Got {}".format(filename))
-
-    if ax is None:
-        fig, ax = plt.subplots(figsize=figsize,
-                               subplot_kw={'projection': '3d'})
-        show = True
-    else:
-        fig = ax.get_figure()
-        show = False
-
-    degrees_per_frame = rotation_speed / fps
-    frames = int(round(360 / degrees_per_frame))
-    # fix rounding errors
-    degrees_per_frame = 360 / frames
-    interval = 1000 * degrees_per_frame / rotation_speed
-
-    scatter3d(data, ax=ax, **kwargs)
-
-    def init():
-        ax.view_init(azim=0, elev=elev)
-        return ax
-
-    def animate(i):
-        ax.view_init(azim=i * degrees_per_frame, elev=elev)
-        return ax
-
-    ani = animation.FuncAnimation(
-        fig, animate, init_func=init,
-        frames=range(frames), interval=interval, blit=False)
-
-    if filename is not None:
-        ani.save(filename, dpi=dpi, writer=writer)
-
-    if in_ipynb():
-        # credit to https://stackoverflow.com/a/45573903/3996580
-        plt.close()
-    elif show:
-        plt.tight_layout()
-        fig.show()
-
-    return ani
+    warnings.warn("`phate.plot.rotate_scatter3d` is deprecated. "
+                  "Use `scprep.plot.rotate_scatter3d` instead.",
+                  DeprecationWarning)
+    return scprep.plot.rotate_scatter3d(data,
+                                        filename=filename,
+                                        elev=elev,
+                                        rotation_speed=rotation_speed,
+                                        fps=fps,
+                                        ax=ax,
+                                        figsize=figsize,
+                                        dpi=dpi,
+                                        ipython_html=ipython_html,
+                                        **kwargs)
