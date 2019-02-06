@@ -39,10 +39,10 @@ class PHATE(BaseEstimator):
     n_components : int, optional, default: 2
         number of dimensions in which the data will be embedded
 
-    k : int, optional, default: 5
+    knn : int, optional, default: 5
         number of nearest neighbors on which to build kernel
 
-    a : int, optional, default: 40
+    decay : int, optional, default: 40
         sets decay rate of kernel tails.
         If None, alpha decaying kernel is not used
 
@@ -107,10 +107,14 @@ class PHATE(BaseEstimator):
         transformation.
 
     alpha_decay : deprecated.
-        Use `a=None` to disable alpha decay
+        Use `decay=None` to disable alpha decay
 
     njobs : deprecated.
         Use n_jobs to match `sklearn` standards
+
+    k : Deprecated for `knn`
+
+    a : Deprecated for `decay`
 
     Attributes
     ----------
@@ -134,7 +138,7 @@ class PHATE(BaseEstimator):
     ...                                               branch_length=100)
     >>> tree_data.shape
     (2000, 100)
-    >>> phate_operator = phate.PHATE(k=5, a=20, t=150)
+    >>> phate_operator = phate.PHATE(knn=5, decay=20, t=150)
     >>> tree_phate = phate_operator.fit_transform(tree_data)
     >>> tree_phate.shape
     (2000, 2)
@@ -148,15 +152,20 @@ class PHATE(BaseEstimator):
         `BioRxiv <http://biorxiv.org/content/early/2017/03/24/120378>`_.
     """
 
-    def __init__(self, n_components=2, k=5, a=40,
+    def __init__(self, n_components=2, knn=5, decay=40,
                  n_landmark=2000, t='auto', gamma=1,
                  n_pca=100, knn_dist='euclidean', mds_dist='euclidean',
                  mds='metric', n_jobs=1, random_state=None, verbose=1,
                  potential_method=None, alpha_decay=None, njobs=None,
+                 k=None, a=None,
                  **kwargs):
+        if k is not None:
+            knn = k
+        if a is not None:
+            decay = a
         self.n_components = n_components
-        self.a = a
-        self.k = k
+        self.decay = decay
+        self.knn = knn
         self.t = t
         self.n_landmark = n_landmark
         self.mds = mds
@@ -175,7 +184,7 @@ class PHATE(BaseEstimator):
             warnings.warn("alpha_decay is deprecated. Use `a=None`"
                           " to disable alpha decay in future.", FutureWarning)
             if not alpha_decay:
-                self.a = None
+                self.decay = None
 
         if njobs is not None:
             warnings.warn(
@@ -242,12 +251,12 @@ class PHATE(BaseEstimator):
         ValueError : unacceptable choice of parameters
         """
         utils.check_positive(n_components=self.n_components,
-                             k=self.k)
+                             k=self.knn)
         utils.check_int(n_components=self.n_components,
-                        k=self.k,
+                        k=self.knn,
                         n_jobs=self.n_jobs)
         utils.check_between(0, 1, gamma=self.gamma)
-        utils.check_if_not(None, utils.check_positive, a=self.a)
+        utils.check_if_not(None, utils.check_positive, a=self.decay)
         utils.check_if_not(None, utils.check_positive, utils.check_int,
                            n_landmark=self.n_landmark,
                            n_pca=self.n_pca)
@@ -305,10 +314,10 @@ class PHATE(BaseEstimator):
         n_components : int, optional, default: 2
             number of dimensions in which the data will be embedded
 
-        k : int, optional, default: 5
+        knn : int, optional, default: 5
             number of nearest neighbors on which to build kernel
 
-        a : int, optional, default: 40
+        decay : int, optional, default: 40
             sets decay rate of kernel tails.
             If None, alpha decaying kernel is not used
 
@@ -367,6 +376,10 @@ class PHATE(BaseEstimator):
 
         verbose : `int` or `boolean`, optional (default: 1)
             If `True` or `> 0`, print status messages
+
+        k : Deprecated for `knn`
+
+        a : Deprecated for `decay`
 
         Examples
         --------
@@ -442,14 +455,22 @@ class PHATE(BaseEstimator):
             del params['gamma']
 
         # kernel parameters
-        if 'k' in params and params['k'] != self.k:
-            self.k = params['k']
+        if 'k' in params and params['k'] != self.knn:
+            self.knn = params['k']
             reset_kernel = True
             del params['k']
-        if 'a' in params and params['a'] != self.a:
-            self.a = params['a']
+        if 'a' in params and params['a'] != self.decay:
+            self.decay = params['a']
             reset_kernel = True
             del params['a']
+        if 'knn' in params and params['knn'] != self.knn:
+            self.knn = params['knn']
+            reset_kernel = True
+            del params['knn']
+        if 'decay' in params and params['decay'] != self.decay:
+            self.decay = params['decay']
+            reset_kernel = True
+            del params['decay']
         if 'n_pca' in params:
             if params['n_pca'] >= self.X.shape[1]:
                 params['n_pca'] = None
@@ -613,7 +634,7 @@ class PHATE(BaseEstimator):
             else:
                 try:
                     self.graph.set_params(
-                        decay=self.a, knn=self.k + 1, distance=self.knn_dist,
+                        decay=self.decay, knn=self.knn, distance=self.knn_dist,
                         precomputed=precomputed,
                         n_jobs=self.n_jobs, verbose=self.verbose, n_pca=n_pca,
                         thresh=1e-4, n_landmark=n_landmark,
@@ -636,8 +657,8 @@ class PHATE(BaseEstimator):
                 n_landmark=n_landmark,
                 distance=self.knn_dist,
                 precomputed=precomputed,
-                knn=self.k + 1,
-                decay=self.a,
+                knn=self.knn,
+                decay=self.decay,
                 thresh=1e-4,
                 n_jobs=self.n_jobs,
                 verbose=self.verbose,
