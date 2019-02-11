@@ -588,9 +588,6 @@ class PHATE(BaseEstimator):
             # anndata not installed
             pass
 
-        tasklogger.log_info("Running PHATE on {} cells and {} genes.".format(
-            X.shape[0], X.shape[1]))
-
         if not callable(self.knn_dist) and self.knn_dist.startswith('precomputed'):
             if self.knn_dist == 'precomputed':
                 # automatic detection
@@ -609,10 +606,12 @@ class PHATE(BaseEstimator):
                     "'precomputed_distance', "
                     "'precomputed_affinity', or 'precomputed' "
                     "(automatically detects distance or affinity)?")
-            tasklogger.log_info(
-                "Using precomputed {} matrix...".format(precomputed))
+            tasklogger.log_info("Running PHATE on precomputed {} matrix with {} cells.".format(
+                precomputed, X.shape[0]))
             n_pca = None
         else:
+            tasklogger.log_info("Running PHATE on {} cells and {} genes.".format(
+                X.shape[0], X.shape[1]))
             precomputed = None
             if self.n_pca is None or X.shape[1] <= self.n_pca:
                 n_pca = None
