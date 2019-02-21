@@ -180,8 +180,9 @@ class PHATE(BaseEstimator):
         self.embedding = None
         self.X = None
 
-        if alpha_decay is not None:
-            warnings.warn("alpha_decay is deprecated. Use `a=None`"
+        if (alpha_decay is True and decay is None) or \
+                (alpha_decay is False and decay is not None):
+            warnings.warn("alpha_decay is deprecated. Use `decay=None`"
                           " to disable alpha decay in future.", FutureWarning)
             if not alpha_decay:
                 self.decay = None
@@ -472,7 +473,7 @@ class PHATE(BaseEstimator):
             reset_kernel = True
             del params['decay']
         if 'n_pca' in params:
-            if params['n_pca'] >= self.X.shape[1]:
+            if params['n_pca'] >= np.min(self.X.shape):
                 params['n_pca'] = None
             if params['n_pca'] != self.n_pca:
                 self.n_pca = params['n_pca']
@@ -613,7 +614,7 @@ class PHATE(BaseEstimator):
             tasklogger.log_info("Running PHATE on {} cells and {} genes.".format(
                 X.shape[0], X.shape[1]))
             precomputed = None
-            if self.n_pca is None or X.shape[1] <= self.n_pca:
+            if self.n_pca is None or self.n_pca >= np.min(self.X.shape):
                 n_pca = None
             else:
                 n_pca = self.n_pca
