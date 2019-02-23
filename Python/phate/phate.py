@@ -24,6 +24,12 @@ except ImportError:
     # anndata not installed
     pass
 
+try:
+    import pygsp
+except ImportError:
+    # anndata not installed
+    pass
+
 
 class PHATE(BaseEstimator):
     """PHATE operator which performs dimensionality reduction.
@@ -565,31 +571,45 @@ class PHATE(BaseEstimator):
                       FutureWarning)
         self.set_params(**kwargs)
 
-    def fit(self, X):
-        """Computes the diffusion operator
+    def _parse_input(self, X):
+        # passing graphs to PHATE
+        try:
+            if isinstance(X, pygsp.graphs.Graph):
+                X = X.W
+                precomputed = "adjacency"
+                update_graph = False
+                n_pca = None
+                return X, n_pca, precomputed, update_graph
+        except NameError:
+            # pygsp not installed
+            pass
+        if isinstance(X, graphtools.graphs.LandmarkGraph):
+            self.graph = X
+            X = X.data
+            n_pca = self.graph.n_pca
+            update_graph = False
+            if isinstance(self.graph, graphtools.graphs.TraditionalGraph):
+                precomputed = self.graph.precomputed
+            else:
+                precomputed = None
+            return X, n_pca, precomputed, update_graph
+        elif isinstance(X, graphtools.base.BaseGraph):
+            X = X.kernel
+            precomputed = "affinity"
+            n_pca = None
+            update_graph = False
+            return X, n_pca, precomputed, update_graph
 
-        Parameters
-        ----------
-        X : array, shape=[n_samples, n_features]
-            input data with `n_samples` samples and `n_dimensions`
-            dimensions. Accepted data types: `numpy.ndarray`,
-            `scipy.sparse.spmatrix`, `pd.DataFrame`, `anndata.AnnData`. If
-            `knn_dist` is 'precomputed', `data` should be a n_samples x
-            n_samples distance or affinity matrix
-
-        Returns
-        -------
-        phate_operator : PHATE
-        The estimator object
-        """
+        # checks on regular data
+        update_graph = True
         try:
             if isinstance(X, anndata.AnnData):
                 X = X.X
         except NameError:
             # anndata not installed
             pass
-
-        if not callable(self.knn_dist) and self.knn_dist.startswith('precomputed'):
+        if not callable(self.knn_dist) and \
+                self.knn_dist.startswith('precomputed'):
             if self.knn_dist == 'precomputed':
                 # automatic detection
                 if isinstance(X, sparse.coo_matrix):
@@ -607,45 +627,74 @@ class PHATE(BaseEstimator):
                     "'precomputed_distance', "
                     "'precomputed_affinity', or 'precomputed' "
                     "(automatically detects distance or affinity)?")
-            tasklogger.log_info("Running PHATE on precomputed {} matrix with {} cells.".format(
-                precomputed, X.shape[0]))
             n_pca = None
         else:
-            tasklogger.log_info("Running PHATE on {} cells and {} genes.".format(
-                X.shape[0], X.shape[1]))
             precomputed = None
             if self.n_pca is None or self.n_pca >= np.min(X.shape):
                 n_pca = None
             else:
                 n_pca = self.n_pca
+        return X, n_pca, precomputed, update_graph
+
+    def _update_graph(self, X, precomputed, n_pca, n_landmark):
+        if self.X is not None and not utils.matrix_is_equivalent(
+                X, self.X):
+            """
+            If the same data is used, we can reuse existing kernel and
+            diffusion matrices. Otherwise we have to recompute.
+            """
+            self._reset_graph()
+        else:
+            try:
+                self.graph.set_params(
+                    decay=self.decay, knn=self.knn, distance=self.knn_dist,
+                    precomputed=precomputed,
+                    n_jobs=self.n_jobs, verbose=self.verbose, n_pca=n_pca,
+                    n_landmark=n_landmark,
+                    random_state=self.random_state)
+                tasklogger.log_info(
+                    "Using precomputed graph and diffusion operator...")
+            except ValueError as e:
+                # something changed that should have invalidated the graph
+                tasklogger.log_debug("Reset graph due to {}".format(
+                    str(e)))
+                self._reset_graph()
+
+    def fit(self, X):
+        """Computes the diffusion operator
+
+        Parameters
+        ----------
+        X : array, shape=[n_samples, n_features]
+            input data with `n_samples` samples and `n_dimensions`
+            dimensions. Accepted data types: `numpy.ndarray`,
+            `scipy.sparse.spmatrix`, `pd.DataFrame`, `anndata.AnnData`. If
+            `knn_dist` is 'precomputed', `data` should be a n_samples x
+            n_samples distance or affinity matrix
+
+        Returns
+        -------
+        phate_operator : PHATE
+        The estimator object
+        """
+        X, n_pca, precomputed, update_graph = self._parse_input(X)
+
+        if precomputed is None:
+            tasklogger.log_info(
+                "Running PHATE on {} cells and {} genes.".format(
+                    X.shape[0], X.shape[1]))
+        else:
+            tasklogger.log_info(
+                "Running PHATE on precomputed {} matrix with {} cells.".format(
+                    precomputed, X.shape[0]))
+
         if self.n_landmark is None or X.shape[0] <= self.n_landmark:
             n_landmark = None
         else:
             n_landmark = self.n_landmark
 
-        if self.graph is not None:
-            if self.X is not None and not utils.matrix_is_equivalent(
-                    X, self.X):
-                """
-                If the same data is used, we can reuse existing kernel and
-                diffusion matrices. Otherwise we have to recompute.
-                """
-                self._reset_graph()
-            else:
-                try:
-                    self.graph.set_params(
-                        decay=self.decay, knn=self.knn, distance=self.knn_dist,
-                        precomputed=precomputed,
-                        n_jobs=self.n_jobs, verbose=self.verbose, n_pca=n_pca,
-                        thresh=1e-4, n_landmark=n_landmark,
-                        random_state=self.random_state)
-                    tasklogger.log_info(
-                        "Using precomputed graph and diffusion operator...")
-                except ValueError as e:
-                    # something changed that should have invalidated the graph
-                    tasklogger.log_debug("Reset graph due to {}".format(
-                        str(e)))
-                    self._reset_graph()
+        if self.graph is not None and update_graph:
+            self._update_graph(X, precomputed, n_pca, n_landmark)
 
         self.X = X
 
