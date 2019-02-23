@@ -473,7 +473,7 @@ class PHATE(BaseEstimator):
             reset_kernel = True
             del params['decay']
         if 'n_pca' in params:
-            if params['n_pca'] >= np.min(self.X.shape):
+            if self.X is not None and params['n_pca'] >= np.min(self.X.shape):
                 params['n_pca'] = None
             if params['n_pca'] != self.n_pca:
                 self.n_pca = params['n_pca']
@@ -614,7 +614,7 @@ class PHATE(BaseEstimator):
             tasklogger.log_info("Running PHATE on {} cells and {} genes.".format(
                 X.shape[0], X.shape[1]))
             precomputed = None
-            if self.n_pca is None or self.n_pca >= np.min(self.X.shape):
+            if self.n_pca is None or self.n_pca >= np.min(X.shape):
                 n_pca = None
             else:
                 n_pca = self.n_pca
