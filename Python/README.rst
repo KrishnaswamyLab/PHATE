@@ -28,7 +28,7 @@ PHATE (Potential of Heat-diffusion for Affinity-based Trajectory Embedding) is a
 
 To see how PHATE can be applied to datasets such as facial images and single-cell data from human embryonic stem cells, check out our `preprint on BioRxiv`_.
 
-`Kevin R. Moon, David van Dijk, Zheng Wang, et al. **Visualizing Transitions and Structure for Biological Data Exploration**. 2018. *BioRxiv*.`__
+`Kevin R. Moon, David van Dijk, Zheng Wang, et al. Visualizing Transitions and Structure for Biological Data Exploration. 2018. BioRxiv.`__
 
 .. _`preprint on BioRxiv`: https://www.biorxiv.org/content/early/2017/03/24/120378
 

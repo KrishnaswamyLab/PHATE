@@ -195,7 +195,7 @@ def scatter(x, y, z=None,
     """
     warnings.warn("`phate.plot.scatter` is deprecated. "
                   "Use `scprep.plot.scatter` instead.",
-                  DeprecationWarning)
+                  FutureWarning)
     return scprep.plot.scatter(x=x, y=y, z=z,
                                c=c, cmap=cmap, s=s, discrete=discrete,
                                ax=ax, legend=legend, figsize=figsize,
@@ -340,7 +340,7 @@ def scatter2d(data, **kwargs):
     """
     warnings.warn("`phate.plot.scatter2d` is deprecated. "
                   "Use `scprep.plot.scatter2d` instead.",
-                  DeprecationWarning)
+                  FutureWarning)
     data = _get_plot_data(data, ndim=2)
     return scprep.plot.scatter2d(data, **kwargs)
 
@@ -469,7 +469,7 @@ def scatter3d(data, **kwargs):
     """
     warnings.warn("`phate.plot.scatter3d` is deprecated. "
                   "Use `scprep.plot.scatter3d` instead.",
-                  DeprecationWarning)
+                  FutureWarning)
     data = _get_plot_data(data, ndim=3)
     return scprep.plot.scatter3d(data, **kwargs)
 
@@ -536,7 +536,7 @@ def rotate_scatter3d(data,
     """
     warnings.warn("`phate.plot.rotate_scatter3d` is deprecated. "
                   "Use `scprep.plot.rotate_scatter3d` instead.",
-                  DeprecationWarning)
+                  FutureWarning)
     return scprep.plot.rotate_scatter3d(data,
                                         filename=filename,
                                         elev=elev,

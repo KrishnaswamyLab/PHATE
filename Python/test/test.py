@@ -5,24 +5,34 @@
 # Generating random fractal tree via DLA
 from __future__ import print_function, division, absolute_import
 import matplotlib
-matplotlib.use("Agg")
+matplotlib.use("Agg")  # noqa
 import scprep
 import nose2
 import phate
+import graphtools
+import pygsp
+import anndata
 import numpy as np
 from scipy.spatial.distance import pdist, squareform
 from sklearn.utils.testing import assert_warns_message
 
 
 def test_simple():
-    tree_data, tree_clusters = phate.tree.gen_dla()
+    tree_data, tree_clusters = phate.tree.gen_dla(n_branch=3)
     phate_operator = phate.PHATE(k=15, t=100)
     tree_phate = phate_operator.fit_transform(tree_data)
     assert tree_phate.shape == (tree_data.shape[0], 2)
-    clusters = phate.cluster.kmeans(phate_operator, k=20)
+    clusters = phate.cluster.kmeans(phate_operator, k=3)
     assert np.issubdtype(clusters.dtype, int)
     assert len(clusters.shape) == 1
     assert len(clusters) == tree_data.shape[0]
+    phate_operator.fit(phate_operator.graph)
+    G = graphtools.Graph(phate_operator.graph.kernel,
+                         precomputed='affinity', use_pygsp=True)
+    phate_operator.fit(G)
+    G = pygsp.graphs.Graph(G.W)
+    phate_operator.fit(G)
+    phate_operator.fit(anndata.AnnData(tree_data))
 
 
 def test_vne():
@@ -106,25 +116,25 @@ def test_bmmsc():
 def test_plot():
     tree_data, tree_clusters = phate.tree.gen_dla()
     # scatter
-    assert_warns_message(DeprecationWarning,
+    assert_warns_message(FutureWarning,
                          "`phate.plot.scatter` is deprecated. "
                          "Use `scprep.plot.scatter` instead.",
                          phate.plot.scatter, tree_data[:, 0], tree_data[:, 1],
                          c=tree_clusters, discrete=True)
     # scatter2d
-    assert_warns_message(DeprecationWarning,
+    assert_warns_message(FutureWarning,
                          "`phate.plot.scatter2d` is deprecated. "
                          "Use `scprep.plot.scatter2d` instead.",
                          phate.plot.scatter2d, tree_data,
                          c=tree_clusters, discrete=True)
     # scatter3d
-    assert_warns_message(DeprecationWarning,
+    assert_warns_message(FutureWarning,
                          "`phate.plot.scatter3d` is deprecated. "
                          "Use `scprep.plot.scatter3d` instead.",
                          phate.plot.scatter3d, tree_data,
                          c=tree_clusters, discrete=False)
     # rotate_scatter3d
-    assert_warns_message(DeprecationWarning,
+    assert_warns_message(FutureWarning,
                          "`phate.plot.rotate_scatter3d` is deprecated. "
                          "Use `scprep.plot.rotate_scatter3d` instead.",
                          phate.plot.rotate_scatter3d, tree_data,

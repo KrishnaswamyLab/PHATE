@@ -10,12 +10,13 @@ install_requires = [
     'future',
     'tasklogger>=0.4.0',
     'graphtools>=1.0.0',
-    'scprep>=0.10.0'
+    'scprep>=0.11.1'
 ]
 
 test_requires = [
     'nose2',
-    'scprep>=0.5.0']
+    'scprep>=0.5.0',
+    'anndata']
 
 doc_requires = [
     'sphinx',

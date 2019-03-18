@@ -14,11 +14,14 @@ before_install:
 
 install:
   - cd Python; python setup.py install
+  - cd ..
 
 script:
-  - pip install -U .[test,doc]
+  - cd Python; pip install -U .[test]
   - python setup.py test
-  - cd doc; make html; cd ..
+  - pip install -U .[doc]
+  - cd doc; make html
+  - cd ..
 
 deploy:
   provider: pypi
