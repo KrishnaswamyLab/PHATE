@@ -771,7 +771,7 @@ class PHATE(BaseEstimator):
                                  "using this method.")
         elif X is not None and not utils.matrix_is_equivalent(X, self.X):
             # fit to external data
-            warnings.warn("Pre-fit PHATE cannot be used to transform a "
+            warnings.warn("Pre-fit PHATE should not be used to transform a "
                           "new data matrix. Please fit PHATE to the new"
                           " data by running 'fit' with the new data.",
                           RuntimeWarning)
@@ -780,6 +780,8 @@ class PHATE(BaseEstimator):
                 raise ValueError("Cannot transform additional data using a "
                                  "precomputed distance matrix.")
             else:
+                if self.embedding is None:
+                    self.transform()
                 transitions = self.graph.extend_to_data(X)
                 return self.graph.interpolate(self.embedding,
                                               transitions)
