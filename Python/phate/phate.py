@@ -189,7 +189,7 @@ class PHATE(BaseEstimator):
         self._diff_potential = None
         self.embedding = None
         self.X = None
-        self.selected_t = None
+        self.optimal_t = None
 
         if (alpha_decay is True and decay is None) or \
                 (alpha_decay is False and decay is not None):
