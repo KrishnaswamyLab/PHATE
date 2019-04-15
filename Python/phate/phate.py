@@ -136,6 +136,10 @@ class PHATE(BaseEstimator):
     graph : graphtools.base.BaseGraph
         The graph built on the input data
 
+    optimal_t : int
+        The automatically selected t, when t = 'auto'.
+        When t is given, optimal_t is None.
+
     Examples
     --------
     >>> import phate
@@ -185,6 +189,7 @@ class PHATE(BaseEstimator):
         self._diff_potential = None
         self.embedding = None
         self.X = None
+        self.selected_t = None
 
         if (alpha_decay is True and decay is None) or \
                 (alpha_decay is False and decay is not None):
@@ -859,7 +864,7 @@ class PHATE(BaseEstimator):
             t = self.t
         if self._diff_potential is None:
             if t == 'auto':
-                t = self._optimal_t(t_max=t_max, plot=plot_optimal_t, ax=ax)
+                t = self._find_optimal_t(t_max=t_max, plot=plot_optimal_t, ax=ax)
             else:
                 t = self.t
             tasklogger.log_start("diffusion potential")
@@ -876,7 +881,7 @@ class PHATE(BaseEstimator):
                 self._diff_potential = ((diff_op_t)**c) / c
             tasklogger.log_complete("diffusion potential")
         elif plot_optimal_t:
-            self._optimal_t(t_max=t_max, plot=plot_optimal_t, ax=ax)
+            self._find_optimal_t(t_max=t_max, plot=plot_optimal_t, ax=ax)
 
         return self._diff_potential
 
@@ -903,7 +908,7 @@ class PHATE(BaseEstimator):
         t = np.arange(t_max)
         return t, vne.compute_von_neumann_entropy(self.diff_op, t_max=t_max)
 
-    def _optimal_t(self, t_max=100, plot=False, ax=None):
+    def _find_optimal_t(self, t_max=100, plot=False, ax=None):
         """Find the optimal value of t
 
         Selects the optimal value of t based on the knee point of the
@@ -945,5 +950,7 @@ class PHATE(BaseEstimator):
             ax.set_title("Optimal t = {}".format(t_opt))
             if show:
                 plt.show()
+
+        self.optimal_t = t_opt
 
         return t_opt
