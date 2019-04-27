@@ -31,8 +31,6 @@ phate_op_eigvals = phate_op_eigvals[idx]
 phate_op_eigvecs = phate_op_eigvecs[:,idx]
 phate_op_eigvals = np.power(phate_op_eigvals, phate_op.optimal_t)
 phate_op_eigvecs = phate_op_eigvecs.dot(np.diag(phate_op_eigvals))
-plt.plot(phate_op_eigvals[1:20])
-plt.show()
 
 # Number of eigenvectors (~ dimensions) to consider.
 phate_op_eigvals_diff = phate_op_eigvals - np.roll(phate_op_eigvals, 1)
@@ -168,10 +166,7 @@ for end_point_index in np.arange(most_distinct_points.size):
 #####################
 # REMOVE DUPLICATES #
 #####################
-# MDP = most distinct points.
-# We want to find MDPs that are in some other MDP's neighborhood.
-# We only keep the MDP corresponding to the highest eigenvalue in a small
-# neighborhood.
+# We want to remove branch points that are too close together.
 
 branch_points = np.array(branch_points)
 branch_point_nbrs = nn_indices[branch_points,:n_nbrs]
