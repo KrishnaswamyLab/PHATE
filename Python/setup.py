@@ -5,7 +5,7 @@ from setuptools import setup
 install_requires = [
     'numpy>=1.14.0',
     'scipy>=1.1.0',
-    'matplotlib>=2.0.1',
+    'matplotlib>=3.0,<3.1',
     'scikit-learn>=0.20.0',
     'future',
     'tasklogger>=0.4.0',
@@ -15,7 +15,6 @@ install_requires = [
 
 test_requires = [
     'nose2',
-    'scprep>=0.5.0',
     'anndata']
 
 doc_requires = [
