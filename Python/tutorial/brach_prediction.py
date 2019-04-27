@@ -31,14 +31,17 @@ phate_op_eigvals = phate_op_eigvals[idx]
 phate_op_eigvecs = phate_op_eigvecs[:,idx]
 phate_op_eigvals = np.power(phate_op_eigvals, phate_op.optimal_t)
 phate_op_eigvecs = phate_op_eigvecs.dot(np.diag(phate_op_eigvals))
-# plt.plot(phate_op_eigvals[1:20])
-# plt.show()
+plt.plot(phate_op_eigvals[1:20])
+plt.show()
 
 # Number of eigenvectors (~ dimensions) to consider.
 phate_op_eigvals_diff = phate_op_eigvals - np.roll(phate_op_eigvals, 1)
 n_eigvecs = 1
-while (phate_op_eigvals_diff[n_eigvecs + 1] > phate_op_eigvals_diff[n_eigvecs]):
-    n_eigvecs += 1
+
+# Increase the number of eigenvectors until 
+while (phate_op_eigvals_diff[n_eigvecs + 1]
+  > 2 * phate_op_eigvals_diff[n_eigvecs]):
+  n_eigvecs += 1
 
 # Find the extremas (min and max) of the considered eigenvectors.
 # Keep them in the order of the eigenvalues by weaving min and max values.
@@ -58,16 +61,16 @@ most_distinct_points = []
 
 # Always skip the first trivial eigenvector
 for i in np.arange(n_eigvecs):
-    cur_eigvec = np.copy(phate_op_eigvecs[:,i + 1])
-    # Sometimes the eigvectors are skewed towards one side (much more possitive values than negative values and vice versa). This part ensures only the extrema on the more significant side is taken.
-    lower_half_abs = np.percentile(np.abs(cur_eigvec), 50)
-    cur_eigvec[np.abs(cur_eigvec) < lower_half_abs] = 0
-    max_eig = np.argmax(cur_eigvec)
-    min_eig = np.argmin(cur_eigvec)
-    if cur_eigvec[max_eig] > 0 and max_eig not in most_distinct_points:
-        most_distinct_points.append(max_eig)
-    if cur_eigvec[min_eig] < 0 and min_eig not in most_distinct_points:
-        most_distinct_points.append(min_eig)
+  cur_eigvec = np.copy(phate_op_eigvecs[:,i + 1])
+  # Sometimes the eigvectors are skewed towards one side (much more possitive values than negative values and vice versa). This part ensures only the extrema on the more significant side is taken.
+  lower_half_abs = np.percentile(np.abs(cur_eigvec), 50)
+  cur_eigvec[np.abs(cur_eigvec) < lower_half_abs] = 0
+  max_eig = np.argmax(cur_eigvec)
+  min_eig = np.argmin(cur_eigvec)
+  if cur_eigvec[max_eig] > 0 and max_eig not in most_distinct_points:
+    most_distinct_points.append(max_eig)
+  if cur_eigvec[min_eig] < 0 and min_eig not in most_distinct_points:
+    most_distinct_points.append(min_eig)
 
 most_distinct_points = np.array(most_distinct_points)
 
@@ -89,10 +92,10 @@ diff_map = phate_op_eigvecs[:,:dm_dims]
 
 # Rank all neighbors in diffusion map coordinates.
 nbrs = NearestNeighbors(
-	# n_neighbors=dm_dims,
-	n_neighbors=diff_map.shape[0],
-	algorithm='ball_tree'
-	).fit(diff_map)
+  # n_neighbors=dm_dims,
+  n_neighbors=diff_map.shape[0],
+  algorithm='ball_tree'
+  ).fit(diff_map)
 nn_distances, nn_indices = nbrs.kneighbors(diff_map)
 nn_distances = nn_distances[:,1:]
 nn_indices = nn_indices[:,1:]
@@ -116,75 +119,93 @@ nbrs_dim_est_ranks[temp] = np.arange(len(nbrs_dim_est))
 low_dim_est_mask = nbrs_dim_est_ranks[most_distinct_points] < data.shape[0] // 2
 most_distinct_points = most_distinct_points[low_dim_est_mask]
 
-#################
-# DELTA DIM EST #
-#################
-
-diff_op_1 = phate_op.diff_op
-diff_op_t = np.linalg.matrix_power(phate_op.diff_op, phate_op.optimal_t)
-delta_dim_est = np.abs(diff_op_1.dot(dim_est) - diff_op_t.dot(dim_est))
-scprep.plot.scatter2d(data_ph, c=delta_dim_est, s=size)
-
 ##################################
 # DIFFUSING DIRAC FOR END POINTS #
 ##################################
 
-# pairwise_dist = sp.spatial.distance.pdist(all_dm_coords)
-# pairwise_dist = sp.spatial.distance.squareform(pairwise_dist)
-# end_points = [p in most_distinct_points if ranks[p] > 0.9]
-one_end_point = most_distinct_points[0]
-diff_op_t = np.linalg.matrix_power(phate_op.diff_op, phate_op.optimal_t)
-# diff_op_t = np.linalg.matrix_power(phate_op.diff_op, 3)
-# diff_op_t = np.linalg.matrix_power(phate_op.diff_op, phate_op.optimal_t)
-branch_point_dim_est_avg_cache = -float('inf')
-# branch_point_diameter_cache = float('inf')
-# branch_point_diameter_min = float('inf')
-for it in range(20):
-    print(it)
-    branch_from_end_point = diff_op_t[:,one_end_point]
+branch_points = []
+classes = np.zeros(data.shape[0], dtype="int32")
+classes_value = np.repeat(-float('inf'), data.shape[0])
+for end_point_index in np.arange(most_distinct_points.size):
+  cur_end_point = most_distinct_points[end_point_index]
+  diff_op_t = np.linalg.matrix_power(phate_op.diff_op, phate_op.optimal_t)
+  branch_point_dim_est_avg_cache = -float('inf')
+  for it in range(20):
+    branch_from_end_point = diff_op_t[:,cur_end_point]
     branch_max = np.max(branch_from_end_point)
     branch_min = np.min(branch_from_end_point)
     branch_threshold = branch_min + (branch_max - branch_min) * 0.2
-    deviation_from_branch_threshold = branch_from_end_point - branch_threshold
+    deviation_from_branch_threshold = \
+      branch_from_end_point - branch_threshold
     deviation_from_branch_threshold[deviation_from_branch_threshold < 0] = \
-        float('inf')
-    one_branch_point = deviation_from_branch_threshold.argmin()
+      float('inf')
+    cur_branch_point = deviation_from_branch_threshold.argmin()
     potential_branch_points = \
-        np.argpartition(deviation_from_branch_threshold, 20)[:20]
-    # color = np.zeros(data.shape[0])
-    # color[potential_branch_points] = 1
-    # scprep.plot.scatter2d(data_ph, c=color)
+      np.argpartition(deviation_from_branch_threshold, 20)[:20]
     branch_point_dim_est_avg = \
-        np.average(nbrs_dim_est[potential_branch_points])
-    print(branch_point_dim_est_avg)
-    # branch_point_dim_est_range = \
-    #     np.max(nbrs_dim_est[potential_branch_points]) - \
-    #     np.min(nbrs_dim_est[potential_branch_points])
-    # print(branch_point_dim_est_range)
-    # branch_point_diameter = np.max(pairwise_dist[
-    #     potential_branch_points[:, None],
-    #     potential_branch_points])
-    # print(nbrs_dim_est_ranks[one_end_point] - np.average(nbrs_dim_est_ranks[potential_branch_points]))
+      np.average(nbrs_dim_est[potential_branch_points])
     if (branch_point_dim_est_avg < branch_point_dim_est_avg_cache):
-        break
-    branch_point_dim_est_range_cache = branch_point_dim_est_range
+      break
+    branch_point_dim_est_avg_cache = branch_point_dim_est_avg
     diff_op_t = diff_op_t.dot(phate_op.diff_op)
+  branch_points.append(cur_branch_point)
+  on_branch_mask = diff_op_t[:,cur_end_point] > branch_threshold
+  color = diff_op_t[:,cur_end_point]
+  on_branch_mask[color < classes_value] = 0
+  color[np.logical_not(on_branch_mask)] = -np.max(color)
+  classes_value[on_branch_mask] = color[on_branch_mask]
+  classes[on_branch_mask] = end_point_index + 1
+  # ax = scprep.plot.scatter2d(data_ph, c=color)
+  # plot_numbers = np.repeat("", data_ph.shape[0])
+  # plot_numbers[cur_end_point] = 'e'
+  # plot_numbers[cur_branch_point] = 'b'
+  # bbox_props = dict(boxstyle="circle,pad=0.3", fc="w", ec="r", lw=2)
+  # sys.stdout = open('trash', 'w')
+  # for i, txt in enumerate(plot_numbers):
+  #   ax.annotate(txt, (data_ph[i][0], data_ph[i][1]), size=15, bbox=bbox_props)
+  # sys.stdout = sys.__stdout__
 
-off_branch_mask = np.repeat(True, data.shape[0])
-indices_on_branch = np.where(diff_op_t[:,one_end_point] > branch_threshold)
-off_branch_mask[indices_on_branch] = False
-color = diff_op_t[:,one_end_point]
-color[off_branch_mask] = -np.max(color)
+#####################
+# REMOVE DUPLICATES #
+#####################
+# MDP = most distinct points.
+# We want to find MDPs that are in some other MDP's neighborhood.
+# We only keep the MDP corresponding to the highest eigenvalue in a small
+# neighborhood.
 
-ax = scprep.plot.scatter2d(data_ph, c=color)
+branch_points = np.array(branch_points)
+branch_point_nbrs = nn_indices[branch_points,:n_nbrs]
+branch_point_pairs_mask = np.isin(branch_point_nbrs, branch_points)
+center_branch_point = branch_points[np.where(branch_point_pairs_mask)[0]]
+neighbor_branch_point = branch_point_nbrs[branch_point_pairs_mask]
+branch_point_pairs = list(zip(center_branch_point, neighbor_branch_point))
+
+# For each pair of branch_points, keep only the one with higher eigenvalue.
+# (mdb_pairs, by construction, is sorted by decreasing eigenvalue corresponding 
+# to the first point of each pair.)
+points_to_exclude = []
+for pair in branch_point_pairs:
+  if pair[0] not in points_to_exclude:
+    points_to_exclude.append(pair[1])
+
+branch_points = np.delete(branch_points,
+  np.argwhere(np.isin(branch_points, points_to_exclude)))
+
+####################
+# PLOTTING RESULTS #
+####################
+
+# Plot by class with end points and branch points
+ax = scprep.plot.scatter2d(data_ph, c=classes)
 plot_numbers = np.repeat("", data_ph.shape[0])
-plot_numbers[one_end_point] = 'e'
-plot_numbers[one_branch_point] = 'b'
+plot_numbers[most_distinct_points] = \
+  np.arange(most_distinct_points.shape[0]) + 1
+plot_numbers[branch_points] = "*"
 bbox_props = dict(boxstyle="circle,pad=0.3", fc="w", ec="r", lw=2)
 
 sys.stdout = open('trash', 'w')
 for i, txt in enumerate(plot_numbers):
-    ax.annotate(txt, (data_ph[i][0], data_ph[i][1]), size=15, bbox=bbox_props)
+  ax.annotate(txt, (data_ph[i][0], data_ph[i][1]), size=15, bbox=bbox_props)
 
 sys.stdout = sys.__stdout__
 
@@ -210,7 +231,7 @@ bbox_props = dict(boxstyle="circle,pad=0.3", fc="w", ec="r", lw=2)
 
 sys.stdout = open('trash', 'w')
 for i, txt in enumerate(plot_numbers):
-    ax.annotate(txt, (data_ph[i][0], data_ph[i][1]), size=15, bbox=bbox_props)
+  ax.annotate(txt, (data_ph[i][0], data_ph[i][1]), size=15, bbox=bbox_props)
 
 sys.stdout = sys.__stdout__
 
@@ -220,12 +241,12 @@ size[most_distinct_points] = 50
 ax = scprep.plot.scatter2d(data_ph, c=sim['group'], s=size)
 plot_numbers = np.repeat("", data_ph.shape[0])
 plot_numbers[most_distinct_points] = \
-	np.arange(most_distinct_points.shape[0]) + 1
+  np.arange(most_distinct_points.shape[0]) + 1
 bbox_props = dict(boxstyle="circle,pad=0.3", fc="w", ec="r", lw=2)
 
 sys.stdout = open('trash', 'w')
 for i, txt in enumerate(plot_numbers):
-    ax.annotate(txt, (data_ph[i][0], data_ph[i][1]), size=15, bbox=bbox_props)
+  ax.annotate(txt, (data_ph[i][0], data_ph[i][1]), size=15, bbox=bbox_props)
 
 sys.stdout = sys.__stdout__
 
@@ -243,19 +264,19 @@ scprep.plot.scatter2d(data_ph, c=nbrs_dim_est_ranks, s=size)
 ##############
 
 def _power_iteration(A, num_simulations):
-    # Ideally choose a random vector
-    # To decrease the chance that our vector
-    # Is orthogonal to the eigenvector
-    b_k = np.random.rand(A.shape[1])
-    b_k = b_k[:, np.newaxis]
-    for _ in range(num_simulations):
-        # calculate the matrix-by-vector product Ab
-        b_k1 = np.dot(A, b_k)
-        # calculate the norm
-        b_k1_norm = np.linalg.norm(b_k1)
-        # re normalize the vector
-        b_k = b_k1 / b_k1_norm
-    return b_k
+  # Ideally choose a random vector
+  # To decrease the chance that our vector
+  # Is orthogonal to the eigenvector
+  b_k = np.random.rand(A.shape[1])
+  b_k = b_k[:, np.newaxis]
+  for _ in range(num_simulations):
+    # calculate the matrix-by-vector product Ab
+    b_k1 = np.dot(A, b_k)
+    # calculate the norm
+    b_k1_norm = np.linalg.norm(b_k1)
+    # re normalize the vector
+    b_k = b_k1 / b_k1_norm
+  return b_k
 
 kernel = phate_op.graph.kernel
 centrality = _power_iteration(kernel.todense(), 100)
@@ -266,45 +287,6 @@ most_central_nn_indices = (-centrality).flatten().argsort()[0,:5].tolist()[0]
 size = np.ones(data.shape[0])
 size[most_central_nn_indices] = 50
 scprep.plot.scatter2d(data_ph, c=np.log(centrality), s=size)
-
-###########################
-# OLD INTRINSIC DIMENSION #
-###########################
-
-# n_neighbors=2000
-# nbrs = NearestNeighbors(n_neighbors=n_neighbors, algorithm='ball_tree').fit(phate_op.embedding)
-# nn_distances, nn_indices = nbrs.kneighbors(phate_op.embedding)
-# nn_distances = nn_distances[:,1:]
-# nn_indices = nn_indices[:,1:]
-# row_max = np.max(nn_distances, axis=1)
-# row_max = row_max.reshape(len(row_max), 1)
-# dim_est = np.sum(np.log(row_max / nn_distances), axis=1)
-
-
-#####################
-# REMOVE DUPLICATES #
-#####################
-# MDP = most distinct points.
-# We want to find MDPs that are in some other MDP's neighborhood.
-# We only keep the MDP corresponding to the highest eigenvalue in a small
-# neighborhood.
-
-mdp_nbrs = nn_indices[list(most_distinct_points),:n_nbrs]
-mdp_pairs_mask = np.isin(mdp_nbrs, most_distinct_points)
-center_mdp = most_distinct_points[np.where(mdp_pairs_mask)[0]]
-neighbor_mdp = mdp_nbrs[mdp_pairs_mask]
-mdp_pairs = list(zip(center_mdp, neighbor_mdp))
-
-# For each pair of MDPs, keep only the one with higher eigenvalue.
-# (mdb_pairs, by construction, is sorted by decreasing eigenvalue corresponding 
-# to the first point of each pair.)
-points_to_exclude = []
-for pair in mdp_pairs:
-    if pair[0] not in points_to_exclude:
-        points_to_exclude.append(pair[1])
-
-most_distinct_points = np.delete(most_distinct_points,
-    np.argwhere(np.isin(most_distinct_points, points_to_exclude)))
 
 ###################
 # ASSIGN BRANCHES #
@@ -330,11 +312,20 @@ branch_classes = [str(sorted(branch_class)) for branch_class in branch_classes]
 ax = scprep.plot.scatter2d(data_ph, c=branch_classes)
 plot_numbers = np.repeat("", data_ph.shape[0])
 plot_numbers[most_distinct_points] = \
-    np.arange(most_distinct_points.shape[0]) + 1
+  np.arange(most_distinct_points.shape[0]) + 1
 bbox_props = dict(boxstyle="circle,pad=0.3", fc="w", ec="r", lw=2)
 
 sys.stdout = open('trash', 'w')
 for i, txt in enumerate(plot_numbers):
-    ax.annotate(txt, (data_ph[i][0], data_ph[i][1]), size=15, bbox=bbox_props)
+  ax.annotate(txt, (data_ph[i][0], data_ph[i][1]), size=15, bbox=bbox_props)
 
 sys.stdout = sys.__stdout__
+
+#################
+# DELTA DIM EST #
+#################
+
+diff_op_1 = phate_op.diff_op
+diff_op_t = np.linalg.matrix_power(phate_op.diff_op, phate_op.optimal_t)
+delta_dim_est = np.abs(diff_op_1.dot(dim_est) - diff_op_t.dot(dim_est))
+scprep.plot.scatter2d(data_ph, c=delta_dim_est, s=size)
