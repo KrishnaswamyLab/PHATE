@@ -596,6 +596,7 @@ class PHATE(BaseEstimator):
         # passing graphs to PHATE
         try:
             if isinstance(X, pygsp.graphs.Graph):
+                self.graph = None
                 X = X.W
                 precomputed = "adjacency"
                 update_graph = False
@@ -615,6 +616,7 @@ class PHATE(BaseEstimator):
                 precomputed = None
             return X, n_pca, precomputed, update_graph
         elif isinstance(X, graphtools.base.BaseGraph):
+            self.graph = None
             X = X.kernel
             precomputed = "affinity"
             n_pca = None
