@@ -283,7 +283,7 @@ class PHATE(BaseEstimator):
         utils.check_int(n_components=self.n_components,
                         k=self.knn,
                         n_jobs=self.n_jobs)
-        utils.check_between(0, 1, gamma=self.gamma)
+        utils.check_between(-1, 1, gamma=self.gamma)
         utils.check_if_not(None, utils.check_positive, a=self.decay)
         utils.check_if_not(None, utils.check_positive, utils.check_int,
                            n_landmark=self.n_landmark,
@@ -864,7 +864,8 @@ class PHATE(BaseEstimator):
             t = self.t
         if self._diff_potential is None:
             if t == 'auto':
-                t = self._find_optimal_t(t_max=t_max, plot=plot_optimal_t, ax=ax)
+                t = self._find_optimal_t(
+                    t_max=t_max, plot=plot_optimal_t, ax=ax)
             else:
                 t = self.t
             tasklogger.log_start("diffusion potential")
