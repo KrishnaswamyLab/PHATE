@@ -136,6 +136,10 @@ class PHATE(BaseEstimator):
     graph : graphtools.base.BaseGraph
         The graph built on the input data
 
+    optimal_t : int
+        The automatically selected t, when t = 'auto'.
+        When t is given, optimal_t is None.
+
     Examples
     --------
     >>> import phate
@@ -182,9 +186,10 @@ class PHATE(BaseEstimator):
         self.kwargs = kwargs
 
         self.graph = None
-        self.diff_potential = None
+        self._diff_potential = None
         self.embedding = None
         self.X = None
+        self.optimal_t = None
 
         if (alpha_decay is True and decay is None) or \
                 (alpha_decay is False and decay is not None):
@@ -246,6 +251,22 @@ class PHATE(BaseEstimator):
                                  "'fit' with appropriate arguments before "
                                  "using this method.")
 
+    @property
+    def diff_potential(self):
+        """Interpolates the PHATE potential to one entry per cell
+
+        This is equivalent to calculating infinite-dimensional PHATE,
+        or running PHATE without the MDS step.
+
+        Returns
+        -------
+        diff_potential : ndarray, shape=[n_samples, min(n_landmark, n_samples)]
+        """
+        diff_potential = self._calculate_potential()
+        if isinstance(self.graph, graphtools.graphs.LandmarkGraph):
+            diff_potential = self.graph.interpolate(diff_potential)
+        return diff_potential
+
     def _check_params(self):
         """Check PHATE parameters
 
@@ -262,7 +283,7 @@ class PHATE(BaseEstimator):
         utils.check_int(n_components=self.n_components,
                         k=self.knn,
                         n_jobs=self.n_jobs)
-        utils.check_between(0, 1, gamma=self.gamma)
+        utils.check_between(-1, 1, gamma=self.gamma)
         utils.check_if_not(None, utils.check_positive, a=self.decay)
         utils.check_if_not(None, utils.check_positive, utils.check_int,
                            n_landmark=self.n_landmark,
@@ -303,7 +324,7 @@ class PHATE(BaseEstimator):
         self._reset_potential()
 
     def _reset_potential(self):
-        self.diff_potential = None
+        self._diff_potential = None
         self._reset_embedding()
 
     def _reset_embedding(self):
@@ -573,17 +594,8 @@ class PHATE(BaseEstimator):
 
     def _parse_input(self, X):
         # passing graphs to PHATE
-        try:
-            if isinstance(X, pygsp.graphs.Graph):
-                X = X.W
-                precomputed = "adjacency"
-                update_graph = False
-                n_pca = None
-                return X, n_pca, precomputed, update_graph
-        except NameError:
-            # pygsp not installed
-            pass
-        if isinstance(X, graphtools.graphs.LandmarkGraph):
+        if isinstance(X, graphtools.graphs.LandmarkGraph) or \
+                (isinstance(X, graphtools.base.BaseGraph) and self.n_landmark is None):
             self.graph = X
             X = X.data
             n_pca = self.graph.n_pca
@@ -594,11 +606,24 @@ class PHATE(BaseEstimator):
                 precomputed = None
             return X, n_pca, precomputed, update_graph
         elif isinstance(X, graphtools.base.BaseGraph):
+            self.graph = None
             X = X.kernel
             precomputed = "affinity"
             n_pca = None
             update_graph = False
             return X, n_pca, precomputed, update_graph
+        else:
+            try:
+                if isinstance(X, pygsp.graphs.Graph):
+                    self.graph = None
+                    X = X.W
+                    precomputed = "adjacency"
+                    update_graph = False
+                    n_pca = None
+                    return X, n_pca, precomputed, update_graph
+            except NameError:
+                # pygsp not installed
+                pass
 
         # checks on regular data
         update_graph = True
@@ -755,7 +780,7 @@ class PHATE(BaseEstimator):
                                  "using this method.")
         elif X is not None and not utils.matrix_is_equivalent(X, self.X):
             # fit to external data
-            warnings.warn("Pre-fit PHATE cannot be used to transform a "
+            warnings.warn("Pre-fit PHATE should not be used to transform a "
                           "new data matrix. Please fit PHATE to the new"
                           " data by running 'fit' with the new data.",
                           RuntimeWarning)
@@ -764,11 +789,13 @@ class PHATE(BaseEstimator):
                 raise ValueError("Cannot transform additional data using a "
                                  "precomputed distance matrix.")
             else:
+                if self.embedding is None:
+                    self.transform()
                 transitions = self.graph.extend_to_data(X)
                 return self.graph.interpolate(self.embedding,
                                               transitions)
         else:
-            diff_potential = self.calculate_potential(
+            diff_potential = self._calculate_potential(
                 t_max=t_max, plot_optimal_t=plot_optimal_t, ax=ax)
             if self.embedding is None:
                 tasklogger.log_start("{} MDS".format(self.mds))
@@ -810,8 +837,8 @@ class PHATE(BaseEstimator):
         tasklogger.log_complete('PHATE')
         return embedding
 
-    def calculate_potential(self, t=None,
-                            t_max=100, plot_optimal_t=False, ax=None):
+    def _calculate_potential(self, t=None,
+                             t_max=100, plot_optimal_t=False, ax=None):
         """Calculates the diffusion potential
 
         Parameters
@@ -839,9 +866,10 @@ class PHATE(BaseEstimator):
         """
         if t is None:
             t = self.t
-        if self.diff_potential is None:
+        if self._diff_potential is None:
             if t == 'auto':
-                t = self.optimal_t(t_max=t_max, plot=plot_optimal_t, ax=ax)
+                t = self._find_optimal_t(
+                    t_max=t_max, plot=plot_optimal_t, ax=ax)
             else:
                 t = self.t
             tasklogger.log_start("diffusion potential")
@@ -850,19 +878,19 @@ class PHATE(BaseEstimator):
             if self.gamma == 1:
                 # handling small values
                 diff_op_t = diff_op_t + 1e-7
-                self.diff_potential = -1 * np.log(diff_op_t)
+                self._diff_potential = -1 * np.log(diff_op_t)
             elif self.gamma == -1:
-                self.diff_potential = diff_op_t
+                self._diff_potential = diff_op_t
             else:
                 c = (1 - self.gamma) / 2
-                self.diff_potential = ((diff_op_t)**c) / c
+                self._diff_potential = ((diff_op_t)**c) / c
             tasklogger.log_complete("diffusion potential")
         elif plot_optimal_t:
-            self.optimal_t(t_max=t_max, plot=plot_optimal_t, ax=ax)
+            self._find_optimal_t(t_max=t_max, plot=plot_optimal_t, ax=ax)
 
-        return self.diff_potential
+        return self._diff_potential
 
-    def von_neumann_entropy(self, t_max=100):
+    def _von_neumann_entropy(self, t_max=100):
         """Calculate Von Neumann Entropy
 
         Determines the Von Neumann entropy of the diffusion affinities
@@ -885,7 +913,7 @@ class PHATE(BaseEstimator):
         t = np.arange(t_max)
         return t, vne.compute_von_neumann_entropy(self.diff_op, t_max=t_max)
 
-    def optimal_t(self, t_max=100, plot=False, ax=None):
+    def _find_optimal_t(self, t_max=100, plot=False, ax=None):
         """Find the optimal value of t
 
         Selects the optimal value of t based on the knee point of the
@@ -909,7 +937,7 @@ class PHATE(BaseEstimator):
             The optimal value of t
         """
         tasklogger.log_start("optimal t")
-        t, h = self.von_neumann_entropy(t_max=t_max)
+        t, h = self._von_neumann_entropy(t_max=t_max)
         t_opt = vne.find_knee_point(y=h, x=t)
         tasklogger.log_info("Automatically selected t = {}".format(t_opt))
         tasklogger.log_complete("optimal t")
@@ -927,5 +955,7 @@ class PHATE(BaseEstimator):
             ax.set_title("Optimal t = {}".format(t_opt))
             if show:
                 plt.show()
+
+        self.optimal_t = t_opt
 
         return t_opt
