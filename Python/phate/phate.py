@@ -594,18 +594,8 @@ class PHATE(BaseEstimator):
 
     def _parse_input(self, X):
         # passing graphs to PHATE
-        try:
-            if isinstance(X, pygsp.graphs.Graph):
-                self.graph = None
-                X = X.W
-                precomputed = "adjacency"
-                update_graph = False
-                n_pca = None
-                return X, n_pca, precomputed, update_graph
-        except NameError:
-            # pygsp not installed
-            pass
-        if isinstance(X, graphtools.graphs.LandmarkGraph):
+        if isinstance(X, graphtools.graphs.LandmarkGraph) or \
+                (isinstance(X, graphtools.base.BaseGraph) and self.n_landmark is None):
             self.graph = X
             X = X.data
             n_pca = self.graph.n_pca
@@ -622,6 +612,18 @@ class PHATE(BaseEstimator):
             n_pca = None
             update_graph = False
             return X, n_pca, precomputed, update_graph
+        else:
+            try:
+                if isinstance(X, pygsp.graphs.Graph):
+                    self.graph = None
+                    X = X.W
+                    precomputed = "adjacency"
+                    update_graph = False
+                    n_pca = None
+                    return X, n_pca, precomputed, update_graph
+            except NameError:
+                # pygsp not installed
+                pass
 
         # checks on regular data
         update_graph = True
