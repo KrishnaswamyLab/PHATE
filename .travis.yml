@@ -13,7 +13,7 @@ before_install:
   - pip install --upgrade setuptools
 
 install:
-  - cd Python; python setup.py install
+  - cd Python; pip install -U .
   - cd ..
 
 script:
