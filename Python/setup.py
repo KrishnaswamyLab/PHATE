@@ -3,7 +3,7 @@ import sys
 from setuptools import setup
 
 install_requires = [
-    'numpy>=1.14.0,<1.17.0',
+    'numpy>=1.14.0',
     'scipy>=1.1.0',
     'scikit-learn>=0.20.0',
     'future',
