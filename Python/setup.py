@@ -8,7 +8,7 @@ install_requires = [
     'scikit-learn>=0.20.0',
     'future',
     'tasklogger>=1.0',
-    'graphtools>=1.0.0',
+    'graphtools>=1.3.1',
     'scprep>=0.11.1'
 ]
 
