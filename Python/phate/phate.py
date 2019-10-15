@@ -30,6 +30,8 @@ except ImportError:
     # anndata not installed
     pass
 
+_logger = tasklogger.get_tasklogger("graphtools")
+
 
 class PHATE(BaseEstimator):
     """PHATE operator which performs dimensionality reduction.
@@ -232,7 +234,7 @@ class PHATE(BaseEstimator):
             verbose = 0
         self.verbose = verbose
         self._check_params()
-        tasklogger.set_level(verbose)
+        _logger.set_level(verbose)
 
     @property
     def diff_op(self):
@@ -530,7 +532,7 @@ class PHATE(BaseEstimator):
             del params['random_state']
         if 'verbose' in params:
             self.verbose = params['verbose']
-            tasklogger.set_level(self.verbose)
+            _logger.set_level(self.verbose)
             self._set_graph_params(verbose=params['verbose'])
             del params['verbose']
 
@@ -677,11 +679,11 @@ class PHATE(BaseEstimator):
                     n_jobs=self.n_jobs, verbose=self.verbose, n_pca=n_pca,
                     n_landmark=n_landmark,
                     random_state=self.random_state)
-                tasklogger.log_info(
+                _logger.info(
                     "Using precomputed graph and diffusion operator...")
             except ValueError as e:
                 # something changed that should have invalidated the graph
-                tasklogger.log_debug("Reset graph due to {}".format(
+                _logger.debug("Reset graph due to {}".format(
                     str(e)))
                 self._reset_graph()
 
@@ -705,11 +707,11 @@ class PHATE(BaseEstimator):
         X, n_pca, precomputed, update_graph = self._parse_input(X)
 
         if precomputed is None:
-            tasklogger.log_info(
+            _logger.info(
                 "Running PHATE on {} cells and {} genes.".format(
                     X.shape[0], X.shape[1]))
         else:
-            tasklogger.log_info(
+            _logger.info(
                 "Running PHATE on precomputed {} matrix with {} cells.".format(
                     precomputed, X.shape[0]))
 
@@ -724,21 +726,20 @@ class PHATE(BaseEstimator):
         self.X = X
 
         if self.graph is None:
-            tasklogger.log_start("graph and diffusion operator")
-            self.graph = graphtools.Graph(
-                X,
-                n_pca=n_pca,
-                n_landmark=n_landmark,
-                distance=self.knn_dist,
-                precomputed=precomputed,
-                knn=self.knn,
-                decay=self.decay,
-                thresh=1e-4,
-                n_jobs=self.n_jobs,
-                verbose=self.verbose,
-                random_state=self.random_state,
-                **(self.kwargs))
-            tasklogger.log_complete("graph and diffusion operator")
+            with _logger.task("graph and diffusion operator"):
+                self.graph = graphtools.Graph(
+                    X,
+                    n_pca=n_pca,
+                    n_landmark=n_landmark,
+                    distance=self.knn_dist,
+                    precomputed=precomputed,
+                    knn=self.knn,
+                    decay=self.decay,
+                    thresh=1e-4,
+                    n_jobs=self.n_jobs,
+                    verbose=self.verbose,
+                    random_state=self.random_state,
+                    **(self.kwargs))
 
         # landmark op doesn't build unless forced
         self.diff_op
@@ -798,14 +799,13 @@ class PHATE(BaseEstimator):
             diff_potential = self._calculate_potential(
                 t_max=t_max, plot_optimal_t=plot_optimal_t, ax=ax)
             if self.embedding is None:
-                tasklogger.log_start("{} MDS".format(self.mds))
-                self.embedding = mds.embed_MDS(
-                    diff_potential, ndim=self.n_components, how=self.mds,
-                    distance_metric=self.mds_dist, n_jobs=self.n_jobs,
-                    seed=self.random_state, verbose=max(self.verbose - 1, 0))
-                tasklogger.log_complete("{} MDS".format(self.mds))
+                with _logger.task("{} MDS".format(self.mds)):
+                    self.embedding = mds.embed_MDS(
+                        diff_potential, ndim=self.n_components, how=self.mds,
+                        distance_metric=self.mds_dist, n_jobs=self.n_jobs,
+                        seed=self.random_state, verbose=max(self.verbose - 1, 0))
             if isinstance(self.graph, graphtools.graphs.LandmarkGraph):
-                tasklogger.log_debug("Extending to original data...")
+                _logger.debug("Extending to original data...")
                 return self.graph.interpolate(self.embedding)
             else:
                 return self.embedding
@@ -831,10 +831,9 @@ class PHATE(BaseEstimator):
         embedding : array, shape=[n_samples, n_dimensions]
             The cells embedded in a lower dimensional space using PHATE
         """
-        tasklogger.log_start('PHATE')
-        self.fit(X)
-        embedding = self.transform(**kwargs)
-        tasklogger.log_complete('PHATE')
+        with _logger.task('PHATE'):
+            self.fit(X)
+            embedding = self.transform(**kwargs)
         return embedding
 
     def _calculate_potential(self, t=None,
@@ -872,19 +871,18 @@ class PHATE(BaseEstimator):
                     t_max=t_max, plot=plot_optimal_t, ax=ax)
             else:
                 t = self.t
-            tasklogger.log_start("diffusion potential")
-            # diffused diffusion operator
-            diff_op_t = np.linalg.matrix_power(self.diff_op, t)
-            if self.gamma == 1:
-                # handling small values
-                diff_op_t = diff_op_t + 1e-7
-                self._diff_potential = -1 * np.log(diff_op_t)
-            elif self.gamma == -1:
-                self._diff_potential = diff_op_t
-            else:
-                c = (1 - self.gamma) / 2
-                self._diff_potential = ((diff_op_t)**c) / c
-            tasklogger.log_complete("diffusion potential")
+            with _logger.task('diffusion potential'):
+                # diffused diffusion operator
+                diff_op_t = np.linalg.matrix_power(self.diff_op, t)
+                if self.gamma == 1:
+                    # handling small values
+                    diff_op_t = diff_op_t + 1e-7
+                    self._diff_potential = -1 * np.log(diff_op_t)
+                elif self.gamma == -1:
+                    self._diff_potential = diff_op_t
+                else:
+                    c = (1 - self.gamma) / 2
+                    self._diff_potential = ((diff_op_t)**c) / c
         elif plot_optimal_t:
             self._find_optimal_t(t_max=t_max, plot=plot_optimal_t, ax=ax)
 
@@ -936,11 +934,10 @@ class PHATE(BaseEstimator):
         t_opt : int
             The optimal value of t
         """
-        tasklogger.log_start("optimal t")
-        t, h = self._von_neumann_entropy(t_max=t_max)
-        t_opt = vne.find_knee_point(y=h, x=t)
-        tasklogger.log_info("Automatically selected t = {}".format(t_opt))
-        tasklogger.log_complete("optimal t")
+        with _logger.task('optimal t'):
+            t, h = self._von_neumann_entropy(t_max=t_max)
+            t_opt = vne.find_knee_point(y=h, x=t)
+            _logger.task("Automatically selected t = {}".format(t_opt))
 
         if plot:
             if ax is None:
