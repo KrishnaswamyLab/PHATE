@@ -5,6 +5,9 @@ PHATE - Potential of Heat-diffusion for Affinity-based Trajectory Embedding
 .. image:: https://img.shields.io/pypi/v/phate.svg
     :target: https://pypi.org/project/phate/
     :alt: Latest PyPi version
+.. image:: https://anaconda.org/bioconda/phate/badges/version.svg
+    :target: https://anaconda.org/bioconda/phate/
+    :alt: Latest Conda version
 .. image:: https://img.shields.io/cran/v/phateR.svg
     :target: https://cran.r-project.org/package=phateR
     :alt: Latest CRAN version

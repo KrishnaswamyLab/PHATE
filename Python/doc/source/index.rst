@@ -8,6 +8,10 @@ PHATE - Potential of Heat-diffusion for Affinity-based Trajectory Embedding
 
 .. raw:: html
 
+    <a href="https://anaconda.org/bioconda/phate/"><img src="https://anaconda.org/bioconda/phate/badges/version.svg" alt="Latest Conda version"></a>
+
+.. raw:: html
+
     <a href="https://cran.r-project.org/package=phateR"><img src="https://img.shields.io/cran/v/phateR.svg" alt="Latest CRAN version"></a>
 
 .. raw:: html
