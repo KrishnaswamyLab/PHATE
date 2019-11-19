@@ -2,7 +2,7 @@ PHATE - Visualizing Transitions and Structure for Biological Data Exploration
 ---------------------------------------------------------------------------
 
 [![Latest PyPI version](https://img.shields.io/pypi/v/phate.svg)](https://pypi.org/project/phate/)
-[![Latest Conda version](https://anaconda.org/bioconda/scprep/badges/version.svg)](https://anaconda.org/bioconda/scprep/)
+[![Latest Conda version](https://anaconda.org/bioconda/phate/badges/version.svg)](https://anaconda.org/bioconda/phate/)
 [![Latest CRAN version](https://img.shields.io/cran/v/phateR.svg)](https://cran.r-project.org/package=phateR)
 [![Travis CI Build](https://api.travis-ci.com/KrishnaswamyLab/phate.svg?branch=master)](https://travis-ci.com/KrishnaswamyLab/PHATE)
 [![Read the Docs](https://img.shields.io/readthedocs/phate.svg)](https://phate.readthedocs.io/)
