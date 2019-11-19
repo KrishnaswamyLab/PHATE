@@ -27,9 +27,9 @@ version = open(version_py).read().strip().split(
 if sys.version_info[:2] < (3, 5):
     raise RuntimeError("Python version >=3.5 required.")
 elif sys.version_info[:2] < (3, 6):
-    test_requires += ['matplotlib>=3.0,<3.1']
+    install_requires += ['matplotlib>=3.0,<3.1']
 else:
-    test_requires += ['matplotlib>=3.0']
+    install_requires += ['matplotlib>=3.0']
 
 readme = open('README.rst').read()
 

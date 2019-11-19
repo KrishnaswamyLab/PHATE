@@ -5,3 +5,5 @@ future
 tasklogger>=1.0
 graphtools>=1.3.1
 scprep>=1.0
+matplotlib>=3.0
+
