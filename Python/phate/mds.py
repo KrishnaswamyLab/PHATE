@@ -17,7 +17,7 @@ def cmdscale_fast(D, ndim):
 
     Parameters
     ----------
-    D : array-like, input data [n_samples, n_dimensions]
+    D : array-like, pairwise distances [n_samples, n_samples]
 
     ndim : int, number of dimensions in which to embed `D`
 
