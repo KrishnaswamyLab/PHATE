@@ -16,6 +16,11 @@ import numpy as np
 from scipy.spatial.distance import pdist, squareform
 from sklearn.utils.testing import assert_warns_message
 
+import os
+data_dir = os.path.join("..", "data")
+if not os.path.isdir(data_dir):
+    data_dir = os.path.join("..", data_dir)
+
 
 def test_simple():
     tree_data, tree_clusters = phate.tree.gen_dla(n_branch=3)
@@ -94,9 +99,9 @@ def test_tree():
 
 
 def test_bmmsc():
-    clusters = scprep.io.load_csv("../data/MAP.csv",
+    clusters = scprep.io.load_csv(os.path.join(data_dir, "MAP.csv"),
                                   gene_names=['clusters'])
-    bmmsc = scprep.io.load_csv("../data/BMMC_myeloid.csv.gz")
+    bmmsc = scprep.io.load_csv(os.path.join(data_dir, "BMMC_myeloid.csv.gz"))
 
     C = clusters['clusters']  # using cluster labels from original publication
 

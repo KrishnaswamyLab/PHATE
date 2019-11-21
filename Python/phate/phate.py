@@ -7,7 +7,8 @@ Potential of Heat-diffusion for Affinity-based Trajectory Embedding (PHATE)
 from __future__ import print_function, division, absolute_import
 
 import numpy as np
-import graphtools
+import graphtools.estimator
+import graphtools.utils
 from sklearn.base import BaseEstimator
 from sklearn.exceptions import NotFittedError
 from scipy import sparse
@@ -33,7 +34,7 @@ except ImportError:
 _logger = tasklogger.get_tasklogger("graphtools")
 
 
-class PHATE(BaseEstimator):
+class PHATE(graphtools.estimator.GraphEstimator):
     """PHATE operator which performs dimensionality reduction.
 
     Potential of Heat-diffusion for Affinity-based Trajectory Embedding
@@ -176,21 +177,13 @@ class PHATE(BaseEstimator):
         if a is not None:
             decay = a
         self.n_components = n_components
-        self.decay = decay
-        self.knn = knn
         self.t = t
-        self.n_landmark = n_landmark
         self.mds = mds
-        self.n_pca = n_pca
-        self.knn_dist = knn_dist
         self.mds_dist = mds_dist
-        self.random_state = random_state
         self.kwargs = kwargs
 
-        self.graph = None
         self._diff_potential = None
         self.embedding = None
-        self.X = None
         self.optimal_t = None
 
         if (alpha_decay is True and decay is None) or \
@@ -198,14 +191,14 @@ class PHATE(BaseEstimator):
             warnings.warn("alpha_decay is deprecated. Use `decay=None`"
                           " to disable alpha decay in future.", FutureWarning)
             if not alpha_decay:
-                self.decay = None
+                decay = None
 
         if njobs is not None:
             warnings.warn(
                 "njobs is deprecated. Please use n_jobs in future.",
                 FutureWarning)
             n_jobs = njobs
-        self.n_jobs = n_jobs
+        n_jobs = n_jobs
 
         if potential_method is not None:
             if potential_method == 'log':
@@ -227,14 +220,19 @@ class PHATE(BaseEstimator):
                           RuntimeWarning)
             gamma = 0.99
         self.gamma = gamma
-
-        if verbose is True:
-            verbose = 1
-        elif verbose is False:
-            verbose = 0
-        self.verbose = verbose
+        
         self._check_params()
-        _logger.set_level(verbose)
+        super().__init__(
+                n_pca = n_pca,
+                n_landmark = n_landmark,
+                random_state = random_state,
+                knn = knn,
+                decay = decay,
+                distance = knn_dist,
+                n_jobs = n_jobs,
+                verbose = verbose,
+                 **kwargs
+                )
 
     @property
     def diff_op(self):
@@ -280,49 +278,23 @@ class PHATE(BaseEstimator):
         ------
         ValueError : unacceptable choice of parameters
         """
-        utils.check_positive(n_components=self.n_components,
-                             k=self.knn)
-        utils.check_int(n_components=self.n_components,
-                        k=self.knn,
-                        n_jobs=self.n_jobs)
-        utils.check_between(-1, 1, gamma=self.gamma)
-        utils.check_if_not(None, utils.check_positive, a=self.decay)
-        utils.check_if_not(None, utils.check_positive, utils.check_int,
-                           n_landmark=self.n_landmark,
-                           n_pca=self.n_pca)
-        utils.check_if_not('auto', utils.check_positive, utils.check_int,
+        graphtools.utils.check_positive(n_components=self.n_components)
+        graphtools.utils.check_int(n_components=self.n_components)
+        graphtools.utils.check_between(-1, 1, gamma=self.gamma)
+        graphtools.utils.check_if_not('auto', graphtools.utils.check_positive, graphtools.utils.check_int,
                            t=self.t)
-        if not callable(self.knn_dist):
-            utils.check_in(['euclidean', 'precomputed', 'cosine',
-                            'correlation', 'cityblock', 'l1', 'l2',
-                            'manhattan', 'braycurtis', 'canberra',
-                            'chebyshev', 'dice', 'hamming', 'jaccard',
-                            'kulsinski', 'mahalanobis', 'matching',
-                            'minkowski', 'rogerstanimoto', 'russellrao',
-                            'seuclidean', 'sokalmichener', 'sokalsneath',
-                            'sqeuclidean', 'yule',
-                            'precomputed_affinity', 'precomputed_distance'],
-                           knn_dist=self.knn_dist)
         if not callable(self.mds_dist):
-            utils.check_in(['euclidean', 'cosine', 'correlation', 'braycurtis',
+            graphtools.utils.check_in(['euclidean', 'cosine', 'correlation', 'braycurtis',
                             'canberra', 'chebyshev', 'cityblock', 'dice',
                             'hamming', 'jaccard', 'kulsinski', 'mahalanobis',
                             'matching', 'minkowski', 'rogerstanimoto',
                             'russellrao', 'seuclidean', 'sokalmichener',
                             'sokalsneath', 'sqeuclidean', 'yule'],
                            mds_dist=self.mds_dist)
-        utils.check_in(['classic', 'metric', 'nonmetric'],
+        graphtools.utils.check_in(['classic', 'metric', 'nonmetric'],
                        mds=self.mds)
 
-    def _set_graph_params(self, **params):
-        try:
-            self.graph.set_params(**params)
-        except AttributeError:
-            # graph not defined
-            pass
-
     def _reset_graph(self):
-        self.graph = None
         self._reset_potential()
 
     def _reset_potential(self):
@@ -485,56 +457,12 @@ class PHATE(BaseEstimator):
             del params['gamma']
 
         # kernel parameters
-        if 'k' in params and params['k'] != self.knn:
-            self.knn = params['k']
-            reset_kernel = True
-            del params['k']
-        if 'a' in params and params['a'] != self.decay:
-            self.decay = params['a']
-            reset_kernel = True
-            del params['a']
-        if 'knn' in params and params['knn'] != self.knn:
-            self.knn = params['knn']
-            reset_kernel = True
-            del params['knn']
-        if 'decay' in params and params['decay'] != self.decay:
-            self.decay = params['decay']
-            reset_kernel = True
-            del params['decay']
-        if 'n_pca' in params:
-            if self.X is not None and params['n_pca'] >= np.min(self.X.shape):
-                params['n_pca'] = None
-            if params['n_pca'] != self.n_pca:
-                self.n_pca = params['n_pca']
-                reset_kernel = True
-                del params['n_pca']
-        if 'knn_dist' in params and params['knn_dist'] != self.knn_dist:
-            self.knn_dist = params['knn_dist']
-            reset_kernel = True
-            del params['knn_dist']
-        if 'n_landmark' in params and params['n_landmark'] != self.n_landmark:
-            if self.n_landmark is None or params['n_landmark'] is None:
-                # need a different type of graph, reset entirely
-                self._reset_graph()
-            else:
-                self._set_graph_params(n_landmark=params['n_landmark'])
-            self.n_landmark = params['n_landmark']
-            del params['n_landmark']
-
-        # parameters that don't change the embedding
-        if 'n_jobs' in params:
-            self.n_jobs = params['n_jobs']
-            self._set_graph_params(n_jobs=params['n_jobs'])
-            del params['n_jobs']
-        if 'random_state' in params:
-            self.random_state = params['random_state']
-            self._set_graph_params(random_state=params['random_state'])
-            del params['random_state']
-        if 'verbose' in params:
-            self.verbose = params['verbose']
-            _logger.set_level(self.verbose)
-            self._set_graph_params(verbose=params['verbose'])
-            del params['verbose']
+        if 'k' in params:
+            params['knn'] = params['k']
+        if 'a' in params:
+            params['decay'] = params['a']
+        if 'knn_dist' in params:
+            params['distance'] = params['knn_dist']
 
         if reset_kernel:
             # can't reset the graph kernel without making a new graph
@@ -544,9 +472,9 @@ class PHATE(BaseEstimator):
         if reset_embedding:
             self._reset_embedding()
 
-        self._set_graph_params(**params)
-
         self._check_params()
+        
+        super().set_params(**params)
         return self
 
     def reset_mds(self, **kwargs):
@@ -594,99 +522,6 @@ class PHATE(BaseEstimator):
                       FutureWarning)
         self.set_params(**kwargs)
 
-    def _parse_input(self, X):
-        # passing graphs to PHATE
-        if isinstance(X, graphtools.graphs.LandmarkGraph) or \
-                (isinstance(X, graphtools.base.BaseGraph) and self.n_landmark is None):
-            self.graph = X
-            X = X.data
-            n_pca = self.graph.n_pca
-            update_graph = False
-            if isinstance(self.graph, graphtools.graphs.TraditionalGraph):
-                precomputed = self.graph.precomputed
-            else:
-                precomputed = None
-            return X, n_pca, precomputed, update_graph
-        elif isinstance(X, graphtools.base.BaseGraph):
-            self.graph = None
-            X = X.kernel
-            precomputed = "affinity"
-            n_pca = None
-            update_graph = False
-            return X, n_pca, precomputed, update_graph
-        else:
-            try:
-                if isinstance(X, pygsp.graphs.Graph):
-                    self.graph = None
-                    X = X.W
-                    precomputed = "adjacency"
-                    update_graph = False
-                    n_pca = None
-                    return X, n_pca, precomputed, update_graph
-            except NameError:
-                # pygsp not installed
-                pass
-
-        # checks on regular data
-        update_graph = True
-        try:
-            if isinstance(X, anndata.AnnData):
-                X = X.X
-        except NameError:
-            # anndata not installed
-            pass
-        if not callable(self.knn_dist) and \
-                self.knn_dist.startswith('precomputed'):
-            if self.knn_dist == 'precomputed':
-                # automatic detection
-                if isinstance(X, sparse.coo_matrix):
-                    X = X.tocsr()
-                if X[0, 0] == 0:
-                    precomputed = "distance"
-                else:
-                    precomputed = "affinity"
-            elif self.knn_dist in ['precomputed_affinity',
-                                   'precomputed_distance']:
-                precomputed = self.knn_dist.split("_")[1]
-            else:
-                raise ValueError(
-                    "knn_dist {} not recognized. Did you mean "
-                    "'precomputed_distance', "
-                    "'precomputed_affinity', or 'precomputed' "
-                    "(automatically detects distance or affinity)?")
-            n_pca = None
-        else:
-            precomputed = None
-            if self.n_pca is None or self.n_pca >= np.min(X.shape):
-                n_pca = None
-            else:
-                n_pca = self.n_pca
-        return X, n_pca, precomputed, update_graph
-
-    def _update_graph(self, X, precomputed, n_pca, n_landmark):
-        if self.X is not None and not utils.matrix_is_equivalent(
-                X, self.X):
-            """
-            If the same data is used, we can reuse existing kernel and
-            diffusion matrices. Otherwise we have to recompute.
-            """
-            self._reset_graph()
-        else:
-            try:
-                self.graph.set_params(
-                    decay=self.decay, knn=self.knn, distance=self.knn_dist,
-                    precomputed=precomputed,
-                    n_jobs=self.n_jobs, verbose=self.verbose, n_pca=n_pca,
-                    n_landmark=n_landmark,
-                    random_state=self.random_state)
-                _logger.info(
-                    "Using precomputed graph and diffusion operator...")
-            except ValueError as e:
-                # something changed that should have invalidated the graph
-                _logger.debug("Reset graph due to {}".format(
-                    str(e)))
-                self._reset_graph()
-
     def fit(self, X):
         """Computes the diffusion operator
 
@@ -704,43 +539,7 @@ class PHATE(BaseEstimator):
         phate_operator : PHATE
         The estimator object
         """
-        X, n_pca, precomputed, update_graph = self._parse_input(X)
-
-        if precomputed is None:
-            _logger.info(
-                "Running PHATE on {} cells and {} genes.".format(
-                    X.shape[0], X.shape[1]))
-        else:
-            _logger.info(
-                "Running PHATE on precomputed {} matrix with {} cells.".format(
-                    precomputed, X.shape[0]))
-
-        if self.n_landmark is None or X.shape[0] <= self.n_landmark:
-            n_landmark = None
-        else:
-            n_landmark = self.n_landmark
-
-        if self.graph is not None and update_graph:
-            self._update_graph(X, precomputed, n_pca, n_landmark)
-
-        self.X = X
-
-        if self.graph is None:
-            with _logger.task("graph and diffusion operator"):
-                self.graph = graphtools.Graph(
-                    X,
-                    n_pca=n_pca,
-                    n_landmark=n_landmark,
-                    distance=self.knn_dist,
-                    precomputed=precomputed,
-                    knn=self.knn,
-                    decay=self.decay,
-                    thresh=1e-4,
-                    n_jobs=self.n_jobs,
-                    verbose=self.verbose,
-                    random_state=self.random_state,
-                    **(self.kwargs))
-
+        super().fit(X)
         # landmark op doesn't build unless forced
         self.diff_op
         return self
