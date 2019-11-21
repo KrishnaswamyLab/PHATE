@@ -165,13 +165,28 @@ class PHATE(graphtools.estimator.GraphEstimator):
         `BioRxiv <http://biorxiv.org/content/early/2017/03/24/120378>`_.
     """
 
-    def __init__(self, n_components=2, knn=5, decay=40,
-                 n_landmark=2000, t='auto', gamma=1,
-                 n_pca=100, knn_dist='euclidean', mds_dist='euclidean',
-                 mds='metric', n_jobs=1, random_state=None, verbose=1,
-                 potential_method=None, alpha_decay=None, njobs=None,
-                 k=None, a=None,
-                 **kwargs):
+    def __init__(
+        self,
+        n_components=2,
+        knn=5,
+        decay=40,
+        n_landmark=2000,
+        t="auto",
+        gamma=1,
+        n_pca=100,
+        knn_dist="euclidean",
+        mds_dist="euclidean",
+        mds="metric",
+        n_jobs=1,
+        random_state=None,
+        verbose=1,
+        potential_method=None,
+        alpha_decay=None,
+        njobs=None,
+        k=None,
+        a=None,
+        **kwargs
+    ):
         if k is not None:
             knn = k
         if a is not None:
@@ -186,53 +201,60 @@ class PHATE(graphtools.estimator.GraphEstimator):
         self.embedding = None
         self.optimal_t = None
 
-        if (alpha_decay is True and decay is None) or \
-                (alpha_decay is False and decay is not None):
-            warnings.warn("alpha_decay is deprecated. Use `decay=None`"
-                          " to disable alpha decay in future.", FutureWarning)
+        if (alpha_decay is True and decay is None) or (
+            alpha_decay is False and decay is not None
+        ):
+            warnings.warn(
+                "alpha_decay is deprecated. Use `decay=None`"
+                " to disable alpha decay in future.",
+                FutureWarning,
+            )
             if not alpha_decay:
                 decay = None
 
         if njobs is not None:
             warnings.warn(
-                "njobs is deprecated. Please use n_jobs in future.",
-                FutureWarning)
+                "njobs is deprecated. Please use n_jobs in future.", FutureWarning
+            )
             n_jobs = njobs
         n_jobs = n_jobs
 
         if potential_method is not None:
-            if potential_method == 'log':
+            if potential_method == "log":
                 gamma = 1
-            elif potential_method == 'sqrt':
+            elif potential_method == "sqrt":
                 gamma = 0
             else:
-                raise ValueError("potential_method {} not recognized. Please "
-                                 "use gamma between -1 and 1".format(
-                                     potential_method))
+                raise ValueError(
+                    "potential_method {} not recognized. Please "
+                    "use gamma between -1 and 1".format(potential_method)
+                )
             warnings.warn(
                 "potential_method is deprecated. "
                 "Setting gamma to {} to achieve"
                 " {} transformation.".format(gamma, potential_method),
-                FutureWarning)
+                FutureWarning,
+            )
         elif gamma > 0.99 and gamma < 1:
-            warnings.warn("0.99 < gamma < 1 is numerically unstable. "
-                          "Setting gamma to 0.99",
-                          RuntimeWarning)
+            warnings.warn(
+                "0.99 < gamma < 1 is numerically unstable. " "Setting gamma to 0.99",
+                RuntimeWarning,
+            )
             gamma = 0.99
         self.gamma = gamma
-        
+
         self._check_params()
         super().__init__(
-                n_pca = n_pca,
-                n_landmark = n_landmark,
-                random_state = random_state,
-                knn = knn,
-                decay = decay,
-                distance = knn_dist,
-                n_jobs = n_jobs,
-                verbose = verbose,
-                 **kwargs
-                )
+            n_pca=n_pca,
+            n_landmark=n_landmark,
+            random_state=random_state,
+            knn=knn,
+            decay=decay,
+            distance=knn_dist,
+            n_jobs=n_jobs,
+            verbose=verbose,
+            **kwargs
+        )
 
     @property
     def diff_op(self):
@@ -247,9 +269,11 @@ class PHATE(graphtools.estimator.GraphEstimator):
                 diff_op = diff_op.toarray()
             return diff_op
         else:
-            raise NotFittedError("This PHATE instance is not fitted yet. Call "
-                                 "'fit' with appropriate arguments before "
-                                 "using this method.")
+            raise NotFittedError(
+                "This PHATE instance is not fitted yet. Call "
+                "'fit' with appropriate arguments before "
+                "using this method."
+            )
 
     @property
     def diff_potential(self):
@@ -281,18 +305,40 @@ class PHATE(graphtools.estimator.GraphEstimator):
         graphtools.utils.check_positive(n_components=self.n_components)
         graphtools.utils.check_int(n_components=self.n_components)
         graphtools.utils.check_between(-1, 1, gamma=self.gamma)
-        graphtools.utils.check_if_not('auto', graphtools.utils.check_positive, graphtools.utils.check_int,
-                           t=self.t)
+        graphtools.utils.check_if_not(
+            "auto",
+            graphtools.utils.check_positive,
+            graphtools.utils.check_int,
+            t=self.t,
+        )
         if not callable(self.mds_dist):
-            graphtools.utils.check_in(['euclidean', 'cosine', 'correlation', 'braycurtis',
-                            'canberra', 'chebyshev', 'cityblock', 'dice',
-                            'hamming', 'jaccard', 'kulsinski', 'mahalanobis',
-                            'matching', 'minkowski', 'rogerstanimoto',
-                            'russellrao', 'seuclidean', 'sokalmichener',
-                            'sokalsneath', 'sqeuclidean', 'yule'],
-                           mds_dist=self.mds_dist)
-        graphtools.utils.check_in(['classic', 'metric', 'nonmetric'],
-                       mds=self.mds)
+            graphtools.utils.check_in(
+                [
+                    "euclidean",
+                    "cosine",
+                    "correlation",
+                    "braycurtis",
+                    "canberra",
+                    "chebyshev",
+                    "cityblock",
+                    "dice",
+                    "hamming",
+                    "jaccard",
+                    "kulsinski",
+                    "mahalanobis",
+                    "matching",
+                    "minkowski",
+                    "rogerstanimoto",
+                    "russellrao",
+                    "seuclidean",
+                    "sokalmichener",
+                    "sokalsneath",
+                    "sqeuclidean",
+                    "yule",
+                ],
+                mds_dist=self.mds_dist,
+            )
+        graphtools.utils.check_in(["classic", "metric", "nonmetric"], mds=self.mds)
 
     def _reset_graph(self):
         self._reset_potential()
@@ -415,54 +461,54 @@ class PHATE(graphtools.estimator.GraphEstimator):
         reset_embedding = False
 
         # mds parameters
-        if 'n_components' in params and \
-                params['n_components'] != self.n_components:
-            self.n_components = params['n_components']
+        if "n_components" in params and params["n_components"] != self.n_components:
+            self.n_components = params["n_components"]
             reset_embedding = True
-            del params['n_components']
-        if 'mds' in params and params['mds'] != self.mds:
-            self.mds = params['mds']
+            del params["n_components"]
+        if "mds" in params and params["mds"] != self.mds:
+            self.mds = params["mds"]
             reset_embedding = True
-            del params['mds']
-        if 'mds_dist' in params and params['mds_dist'] != self.mds_dist:
-            self.mds_dist = params['mds_dist']
+            del params["mds"]
+        if "mds_dist" in params and params["mds_dist"] != self.mds_dist:
+            self.mds_dist = params["mds_dist"]
             reset_embedding = True
-            del params['mds_dist']
+            del params["mds_dist"]
 
         # diff potential parameters
-        if 't' in params and params['t'] != self.t:
-            self.t = params['t']
+        if "t" in params and params["t"] != self.t:
+            self.t = params["t"]
             reset_potential = True
-            del params['t']
-        if 'potential_method' in params:
-            if params['potential_method'] == 'log':
-                params['gamma'] = 1
-            elif params['potential_method'] == 'sqrt':
-                params['gamma'] = 0
+            del params["t"]
+        if "potential_method" in params:
+            if params["potential_method"] == "log":
+                params["gamma"] = 1
+            elif params["potential_method"] == "sqrt":
+                params["gamma"] = 0
             else:
-                raise ValueError("potential_method {} not recognized. Please "
-                                 "use gamma between -1 and 1".format(
-                                     params['potential_method']))
+                raise ValueError(
+                    "potential_method {} not recognized. Please "
+                    "use gamma between -1 and 1".format(params["potential_method"])
+                )
             warnings.warn(
                 "potential_method is deprecated. Setting gamma to {} to "
                 "achieve {} transformation.".format(
-                    params['gamma'],
-                    params['potential_method']),
-                FutureWarning)
-            del params['potential_method']
-        if 'gamma' in params and \
-                params['gamma'] != self.gamma:
-            self.gamma = params['gamma']
+                    params["gamma"], params["potential_method"]
+                ),
+                FutureWarning,
+            )
+            del params["potential_method"]
+        if "gamma" in params and params["gamma"] != self.gamma:
+            self.gamma = params["gamma"]
             reset_potential = True
-            del params['gamma']
+            del params["gamma"]
 
         # kernel parameters
-        if 'k' in params:
-            params['knn'] = params['k']
-        if 'a' in params:
-            params['decay'] = params['a']
-        if 'knn_dist' in params:
-            params['distance'] = params['knn_dist']
+        if "k" in params:
+            params["knn"] = params["k"]
+        if "a" in params:
+            params["decay"] = params["a"]
+        if "knn_dist" in params:
+            params["distance"] = params["knn_dist"]
 
         if reset_kernel:
             # can't reset the graph kernel without making a new graph
@@ -473,7 +519,7 @@ class PHATE(graphtools.estimator.GraphEstimator):
             self._reset_embedding()
 
         self._check_params()
-        
+
         super().set_params(**params)
         return self
 
@@ -497,9 +543,10 @@ class PHATE(graphtools.estimator.GraphEstimator):
             Any metric from scipy.spatial.distance can be used
             If given, sets the distance metric for MDS
         """
-        warnings.warn("PHATE.reset_mds is deprecated. "
-                      "Please use PHATE.set_params in future.",
-                      FutureWarning)
+        warnings.warn(
+            "PHATE.reset_mds is deprecated. " "Please use PHATE.set_params in future.",
+            FutureWarning,
+        )
         self.set_params(**kwargs)
 
     def reset_potential(self, **kwargs):
@@ -517,9 +564,11 @@ class PHATE(graphtools.estimator.GraphEstimator):
             If given, sets which transformation of the diffusional
             operator is used to compute the diffusion potential
         """
-        warnings.warn("PHATE.reset_potential is deprecated. "
-                      "Please use PHATE.set_params in future.",
-                      FutureWarning)
+        warnings.warn(
+            "PHATE.reset_potential is deprecated. "
+            "Please use PHATE.set_params in future.",
+            FutureWarning,
+        )
         self.set_params(**kwargs)
 
     def fit(self, X):
@@ -575,34 +624,47 @@ class PHATE(graphtools.estimator.GraphEstimator):
         The cells embedded in a lower dimensional space using PHATE
         """
         if self.graph is None:
-            raise NotFittedError("This PHATE instance is not fitted yet. Call "
-                                 "'fit' with appropriate arguments before "
-                                 "using this method.")
+            raise NotFittedError(
+                "This PHATE instance is not fitted yet. Call "
+                "'fit' with appropriate arguments before "
+                "using this method."
+            )
         elif X is not None and not utils.matrix_is_equivalent(X, self.X):
             # fit to external data
-            warnings.warn("Pre-fit PHATE should not be used to transform a "
-                          "new data matrix. Please fit PHATE to the new"
-                          " data by running 'fit' with the new data.",
-                          RuntimeWarning)
-            if isinstance(self.graph, graphtools.graphs.TraditionalGraph) and \
-                    self.graph.precomputed is not None:
-                raise ValueError("Cannot transform additional data using a "
-                                 "precomputed distance matrix.")
+            warnings.warn(
+                "Pre-fit PHATE should not be used to transform a "
+                "new data matrix. Please fit PHATE to the new"
+                " data by running 'fit' with the new data.",
+                RuntimeWarning,
+            )
+            if (
+                isinstance(self.graph, graphtools.graphs.TraditionalGraph)
+                and self.graph.precomputed is not None
+            ):
+                raise ValueError(
+                    "Cannot transform additional data using a "
+                    "precomputed distance matrix."
+                )
             else:
                 if self.embedding is None:
                     self.transform()
                 transitions = self.graph.extend_to_data(X)
-                return self.graph.interpolate(self.embedding,
-                                              transitions)
+                return self.graph.interpolate(self.embedding, transitions)
         else:
             diff_potential = self._calculate_potential(
-                t_max=t_max, plot_optimal_t=plot_optimal_t, ax=ax)
+                t_max=t_max, plot_optimal_t=plot_optimal_t, ax=ax
+            )
             if self.embedding is None:
                 with _logger.task("{} MDS".format(self.mds)):
                     self.embedding = mds.embed_MDS(
-                        diff_potential, ndim=self.n_components, how=self.mds,
-                        distance_metric=self.mds_dist, n_jobs=self.n_jobs,
-                        seed=self.random_state, verbose=max(self.verbose - 1, 0))
+                        diff_potential,
+                        ndim=self.n_components,
+                        how=self.mds,
+                        distance_metric=self.mds_dist,
+                        n_jobs=self.n_jobs,
+                        seed=self.random_state,
+                        verbose=max(self.verbose - 1, 0),
+                    )
             if isinstance(self.graph, graphtools.graphs.LandmarkGraph):
                 _logger.debug("Extending to original data...")
                 return self.graph.interpolate(self.embedding)
@@ -630,13 +692,12 @@ class PHATE(graphtools.estimator.GraphEstimator):
         embedding : array, shape=[n_samples, n_dimensions]
             The cells embedded in a lower dimensional space using PHATE
         """
-        with _logger.task('PHATE'):
+        with _logger.task("PHATE"):
             self.fit(X)
             embedding = self.transform(**kwargs)
         return embedding
 
-    def _calculate_potential(self, t=None,
-                             t_max=100, plot_optimal_t=False, ax=None):
+    def _calculate_potential(self, t=None, t_max=100, plot_optimal_t=False, ax=None):
         """Calculates the diffusion potential
 
         Parameters
@@ -665,12 +726,11 @@ class PHATE(graphtools.estimator.GraphEstimator):
         if t is None:
             t = self.t
         if self._diff_potential is None:
-            if t == 'auto':
-                t = self._find_optimal_t(
-                    t_max=t_max, plot=plot_optimal_t, ax=ax)
+            if t == "auto":
+                t = self._find_optimal_t(t_max=t_max, plot=plot_optimal_t, ax=ax)
             else:
                 t = self.t
-            with _logger.task('diffusion potential'):
+            with _logger.task("diffusion potential"):
                 # diffused diffusion operator
                 diff_op_t = np.linalg.matrix_power(self.diff_op, t)
                 if self.gamma == 1:
@@ -681,7 +741,7 @@ class PHATE(graphtools.estimator.GraphEstimator):
                     self._diff_potential = diff_op_t
                 else:
                     c = (1 - self.gamma) / 2
-                    self._diff_potential = ((diff_op_t)**c) / c
+                    self._diff_potential = ((diff_op_t) ** c) / c
         elif plot_optimal_t:
             self._find_optimal_t(t_max=t_max, plot=plot_optimal_t, ax=ax)
 
@@ -733,7 +793,7 @@ class PHATE(graphtools.estimator.GraphEstimator):
         t_opt : int
             The optimal value of t
         """
-        with _logger.task('optimal t'):
+        with _logger.task("optimal t"):
             t, h = self._von_neumann_entropy(t_max=t_max)
             t_opt = vne.find_knee_point(y=h, x=t)
             _logger.task("Automatically selected t = {}".format(t_opt))
@@ -745,7 +805,7 @@ class PHATE(graphtools.estimator.GraphEstimator):
             else:
                 show = False
             ax.plot(t, h)
-            ax.scatter(t_opt, h[t == t_opt], marker='*', c='k', s=50)
+            ax.scatter(t_opt, h[t == t_opt], marker="*", c="k", s=50)
             ax.set_xlabel("t")
             ax.set_ylabel("Von Neumann Entropy")
             ax.set_title("Optimal t = {}".format(t_opt))

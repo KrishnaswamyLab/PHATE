@@ -30,11 +30,12 @@ def _get_plot_data(data, ndim=None):
         try:
             if isinstance(data, anndata.AnnData):
                 try:
-                    out = data.obsm['X_phate']
+                    out = data.obsm["X_phate"]
                 except KeyError:
                     raise RuntimeError(
                         "data.obsm['X_phate'] not found. "
-                        "Please run `sc.tl.phate(adata)` before plotting.")
+                        "Please run `sc.tl.phate(adata)` before plotting."
+                    )
         except NameError:
             # anndata not installed
             pass
@@ -45,29 +46,40 @@ def _get_plot_data(data, ndim=None):
         else:
             raise ValueError(
                 "Expected at least {}-dimensional data, got {}".format(
-                    ndim, out[0].shape[0]))
+                    ndim, out[0].shape[0]
+                )
+            )
     return out
 
 
-def scatter(x, y, z=None,
-            c=None, cmap=None, s=None, discrete=None,
-            ax=None, legend=None, figsize=None,
-            xticks=False,
-            yticks=False,
-            zticks=False,
-            xticklabels=True,
-            yticklabels=True,
-            zticklabels=True,
-            label_prefix="PHATE",
-            xlabel=None,
-            ylabel=None,
-            zlabel=None,
-            title=None,
-            legend_title="",
-            legend_loc='best',
-            filename=None,
-            dpi=None,
-            **plot_kwargs):
+def scatter(
+    x,
+    y,
+    z=None,
+    c=None,
+    cmap=None,
+    s=None,
+    discrete=None,
+    ax=None,
+    legend=None,
+    figsize=None,
+    xticks=False,
+    yticks=False,
+    zticks=False,
+    xticklabels=True,
+    yticklabels=True,
+    zticklabels=True,
+    label_prefix="PHATE",
+    xlabel=None,
+    ylabel=None,
+    zlabel=None,
+    title=None,
+    legend_title="",
+    legend_loc="best",
+    filename=None,
+    dpi=None,
+    **plot_kwargs
+):
     """Create a scatter plot
 
     Builds upon `matplotlib.pyplot.scatter` with nice defaults
@@ -193,28 +205,38 @@ def scatter(x, y, z=None,
     >>> X[c=='a'] += 10
     >>> phate.plot.scatter2d(X, c=c, cmap={'a' : [1,0,0,1], 'b' : 'xkcd:sky blue'})
     """
-    warnings.warn("`phate.plot.scatter` is deprecated. "
-                  "Use `scprep.plot.scatter` instead.",
-                  FutureWarning)
-    return scprep.plot.scatter(x=x, y=y, z=z,
-                               c=c, cmap=cmap, s=s, discrete=discrete,
-                               ax=ax, legend=legend, figsize=figsize,
-                               xticks=xticks,
-                               yticks=yticks,
-                               zticks=zticks,
-                               xticklabels=xticklabels,
-                               yticklabels=yticklabels,
-                               zticklabels=zticklabels,
-                               label_prefix=label_prefix,
-                               xlabel=xlabel,
-                               ylabel=ylabel,
-                               zlabel=zlabel,
-                               title=title,
-                               legend_title=legend_title,
-                               legend_loc=legend_loc,
-                               filename=filename,
-                               dpi=dpi,
-                               **plot_kwargs)
+    warnings.warn(
+        "`phate.plot.scatter` is deprecated. " "Use `scprep.plot.scatter` instead.",
+        FutureWarning,
+    )
+    return scprep.plot.scatter(
+        x=x,
+        y=y,
+        z=z,
+        c=c,
+        cmap=cmap,
+        s=s,
+        discrete=discrete,
+        ax=ax,
+        legend=legend,
+        figsize=figsize,
+        xticks=xticks,
+        yticks=yticks,
+        zticks=zticks,
+        xticklabels=xticklabels,
+        yticklabels=yticklabels,
+        zticklabels=zticklabels,
+        label_prefix=label_prefix,
+        xlabel=xlabel,
+        ylabel=ylabel,
+        zlabel=zlabel,
+        title=title,
+        legend_title=legend_title,
+        legend_loc=legend_loc,
+        filename=filename,
+        dpi=dpi,
+        **plot_kwargs
+    )
 
 
 def scatter2d(data, **kwargs):
@@ -338,9 +360,10 @@ def scatter2d(data, **kwargs):
     >>> X[c=='a'] += 10
     >>> phate.plot.scatter2d(X, c=c, cmap={'a' : [1,0,0,1], 'b' : 'xkcd:sky blue'})
     """
-    warnings.warn("`phate.plot.scatter2d` is deprecated. "
-                  "Use `scprep.plot.scatter2d` instead.",
-                  FutureWarning)
+    warnings.warn(
+        "`phate.plot.scatter2d` is deprecated. " "Use `scprep.plot.scatter2d` instead.",
+        FutureWarning,
+    )
     data = _get_plot_data(data, ndim=2)
     return scprep.plot.scatter2d(data, **kwargs)
 
@@ -467,23 +490,26 @@ def scatter3d(data, **kwargs):
     >>> X[c=='a'] += 10
     >>> phate.plot.scatter2d(X, c=c, cmap={'a' : [1,0,0,1], 'b' : 'xkcd:sky blue'})
     """
-    warnings.warn("`phate.plot.scatter3d` is deprecated. "
-                  "Use `scprep.plot.scatter3d` instead.",
-                  FutureWarning)
+    warnings.warn(
+        "`phate.plot.scatter3d` is deprecated. " "Use `scprep.plot.scatter3d` instead.",
+        FutureWarning,
+    )
     data = _get_plot_data(data, ndim=3)
     return scprep.plot.scatter3d(data, **kwargs)
 
 
-def rotate_scatter3d(data,
-                     filename=None,
-                     elev=30,
-                     rotation_speed=30,
-                     fps=10,
-                     ax=None,
-                     figsize=None,
-                     dpi=None,
-                     ipython_html="jshtml",
-                     **kwargs):
+def rotate_scatter3d(
+    data,
+    filename=None,
+    elev=30,
+    rotation_speed=30,
+    fps=10,
+    ax=None,
+    figsize=None,
+    dpi=None,
+    ipython_html="jshtml",
+    **kwargs
+):
     """Create a rotating 3D scatter plot
 
     Builds upon `matplotlib.pyplot.scatter` with nice defaults
@@ -534,16 +560,20 @@ def rotate_scatter3d(data,
     (2000, 2)
     >>> phate.plot.rotate_scatter3d(tree_phate, c=tree_clusters)
     """
-    warnings.warn("`phate.plot.rotate_scatter3d` is deprecated. "
-                  "Use `scprep.plot.rotate_scatter3d` instead.",
-                  FutureWarning)
-    return scprep.plot.rotate_scatter3d(data,
-                                        filename=filename,
-                                        elev=elev,
-                                        rotation_speed=rotation_speed,
-                                        fps=fps,
-                                        ax=ax,
-                                        figsize=figsize,
-                                        dpi=dpi,
-                                        ipython_html=ipython_html,
-                                        **kwargs)
+    warnings.warn(
+        "`phate.plot.rotate_scatter3d` is deprecated. "
+        "Use `scprep.plot.rotate_scatter3d` instead.",
+        FutureWarning,
+    )
+    return scprep.plot.rotate_scatter3d(
+        data,
+        filename=filename,
+        elev=elev,
+        rotation_speed=rotation_speed,
+        fps=fps,
+        ax=ax,
+        figsize=figsize,
+        dpi=dpi,
+        ipython_html=ipython_html,
+        **kwargs
+    )

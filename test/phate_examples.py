@@ -10,13 +10,22 @@ python_version = "{}.{}".format(sys.version_info.major, sys.version_info.minor)
 
 def test_tree():
     # generate DLA tree
-    M, C = phate.tree.gen_dla(n_dim=100, n_branch=10, branch_length=300,
-                              rand_multiplier=2, seed=37, sigma=4)
+    M, C = phate.tree.gen_dla(
+        n_dim=100, n_branch=10, branch_length=300, rand_multiplier=2, seed=37, sigma=4
+    )
 
     # instantiate phate_operator
-    phate_operator = phate.PHATE(n_components=2, a=10, k=5, t=30, mds='classic',
-                                 knn_dist='euclidean', mds_dist='euclidean',
-                                 n_jobs=-2, n_landmark=None)
+    phate_operator = phate.PHATE(
+        n_components=2,
+        a=10,
+        k=5,
+        t=30,
+        mds="classic",
+        knn_dist="euclidean",
+        mds_dist="euclidean",
+        n_jobs=-2,
+        n_landmark=None,
+    )
 
     # run phate with classic MDS
     print("DLA tree, classic MDS")
@@ -34,8 +43,14 @@ def test_tree():
     Y_sqrt = phate_operator.fit_transform(M)
 
     phate_fast_operator = phate.PHATE(
-        n_components=2, a=10, t=90, k=5, mds='classic', mds_dist='euclidean',
-        n_landmark=1000)
+        n_components=2,
+        a=10,
+        t=90,
+        k=5,
+        mds="classic",
+        mds_dist="euclidean",
+        n_landmark=1000,
+    )
     # run phate with classic MDS
     print("DLA tree, fast classic MDS")
     Y_cmds_fast = phate_fast_operator.fit_transform(M)
@@ -99,33 +114,48 @@ def test_tree():
 
 def test_bmmsc():
     clusters = pd.read_csv("../data/MAP.csv", header=None)
-    clusters.columns = pd.Index(['wells', 'clusters'])
+    clusters.columns = pd.Index(["wells", "clusters"])
     bmmsc = pd.read_csv("../data/BMMC_myeloid.csv.gz", index_col=0)
 
-    C = clusters['clusters']  # using cluster labels from original publication
+    C = clusters["clusters"]  # using cluster labels from original publication
 
     # library_size_normalize performs L1 normalization on each cell
     bmmsc_norm = phate.preprocessing.library_size_normalize(bmmsc)
     bmmsc_norm = np.sqrt(bmmsc_norm)
     phate_operator = phate.PHATE(
-        n_components=2, t='auto', a=200, k=10, mds='metric', mds_dist='euclidean',
-        n_landmark=None)
+        n_components=2,
+        t="auto",
+        a=200,
+        k=10,
+        mds="metric",
+        mds_dist="euclidean",
+        n_landmark=None,
+    )
     phate_fast_operator = phate.PHATE(
-        n_components=2, t='auto', a=200, k=10, mds='metric', mds_dist='euclidean',
-        n_landmark=1000)
+        n_components=2,
+        t="auto",
+        a=200,
+        k=10,
+        mds="metric",
+        mds_dist="euclidean",
+        n_landmark=1000,
+    )
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, sharey='all')
+    fig, (ax1, ax2) = plt.subplots(1, 2, sharey="all")
     print("BMMSC, exact PHATE")
-    Y_mmds = phate_operator.fit_transform(bmmsc_norm, t_max=100,
-                                          plot_optimal_t=True, ax=ax1)
-    ax1.set_title("Optimal t selection on 2730 BMMSCs\n"
-                  "Exact PHATE, " + ax1.get_title())
+    Y_mmds = phate_operator.fit_transform(
+        bmmsc_norm, t_max=100, plot_optimal_t=True, ax=ax1
+    )
+    ax1.set_title(
+        "Optimal t selection on 2730 BMMSCs\n" "Exact PHATE, " + ax1.get_title()
+    )
     print("BMMSC, fast PHATE")
-    Y_mmds_fast = phate_fast_operator.fit_transform(bmmsc_norm, t_max=100,
-                                                    plot_optimal_t=True,
-                                                    ax=ax2)
-    ax2.set_title("Optimal t selection on 2730 BMMSCs\n"
-                  "Fast PHATE, " + ax2.get_title())
+    Y_mmds_fast = phate_fast_operator.fit_transform(
+        bmmsc_norm, t_max=100, plot_optimal_t=True, ax=ax2
+    )
+    ax2.set_title(
+        "Optimal t selection on 2730 BMMSCs\n" "Fast PHATE, " + ax2.get_title()
+    )
     plt.tight_layout()
     plt.savefig("python{}_bmmsc_optimal_t.png".format(python_version), dpi=100)
 
@@ -137,8 +167,7 @@ def test_bmmsc():
     ax1.set_ylabel("phate 2")
     ax1.set_title("PHATE embedding of 2730 BMMSCs\nExact PHATE")
 
-    ax2.scatter(Y_mmds_fast[:, 0], Y_mmds_fast[:, 1],
-                s=1, c=C, cmap="Paired")
+    ax2.scatter(Y_mmds_fast[:, 0], Y_mmds_fast[:, 1], s=1, c=C, cmap="Paired")
     ax2.set_xlabel("phate 1")
     ax2.set_ylabel("phate 2")
     ax2.set_title("PHATE embedding of 2730 BMMSCs\nFast PHATE")
@@ -147,6 +176,7 @@ def test_bmmsc():
     plt.tight_layout()
     plt.savefig("python{}_bmmsc.png".format(python_version), dpi=100)
     return 0
+
 
 if __name__ == "__main__":
     out = test_tree()

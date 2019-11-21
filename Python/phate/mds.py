@@ -8,6 +8,7 @@ from scipy.spatial.distance import pdist
 from scipy.spatial.distance import squareform
 
 import tasklogger
+
 _logger = tasklogger.get_tasklogger("graphtools")
 
 
@@ -25,18 +26,20 @@ def cmdscale_fast(D, ndim):
     -------
     Y : array-like, embedded data [n_sample, ndim]
     """
-    _logger.debug("Performing classic MDS on {} of shape {}...".format(
-        type(D).__name__, D.shape))
-    D = D**2
+    _logger.debug(
+        "Performing classic MDS on {} of shape {}...".format(type(D).__name__, D.shape)
+    )
+    D = D ** 2
     D = D - D.mean(axis=0)[None, :]
     D = D - D.mean(axis=1)[:, None]
-    pca = PCA(n_components=ndim, svd_solver='randomized')
+    pca = PCA(n_components=ndim, svd_solver="randomized")
     Y = pca.fit_transform(D)
     return Y
 
 
-def embed_MDS(X, ndim=2, how='metric', distance_metric='euclidean',
-              n_jobs=1, seed=None, verbose=0):
+def embed_MDS(
+    X, ndim=2, how="metric", distance_metric="euclidean", n_jobs=1, seed=None, verbose=0
+):
     """Performs classic, metric, and non-metric MDS
 
     Metric MDS is initialized using classic MDS,
@@ -77,32 +80,53 @@ def embed_MDS(X, ndim=2, how='metric', distance_metric='euclidean',
     Y : ndarray [n_samples, n_dim]
         low dimensional embedding of X using MDS
     """
-    
-    if how not in ['classic', 'metric', 'nonmetric']:
-        raise ValueError("Allowable 'how' values for MDS: 'classic', "
-                         "'metric', or 'nonmetric'. "
-                         "'{}' was passed.".format(how))
+
+    if how not in ["classic", "metric", "nonmetric"]:
+        raise ValueError(
+            "Allowable 'how' values for MDS: 'classic', "
+            "'metric', or 'nonmetric'. "
+            "'{}' was passed.".format(how)
+        )
 
     # MDS embeddings, each gives a different output.
     X_dist = squareform(pdist(X, distance_metric))
 
     # initialize all by CMDS
     Y = cmdscale_fast(X_dist, ndim)
-    if how in ['metric', 'nonmetric']:
-        _logger.debug("Performing metric MDS on "
-                             "{} of shape {}...".format(type(X_dist),
-                                                        X_dist.shape))
+    if how in ["metric", "nonmetric"]:
+        _logger.debug(
+            "Performing metric MDS on "
+            "{} of shape {}...".format(type(X_dist), X_dist.shape)
+        )
         # Metric MDS from sklearn
-        Y, _ = manifold.smacof(X_dist, n_components=ndim, metric=True, max_iter=3000,
-                               eps=1e-6, random_state=seed, n_jobs=n_jobs,
-                               n_init=1, init=Y, verbose=verbose)
-    if how == 'nonmetric':
+        Y, _ = manifold.smacof(
+            X_dist,
+            n_components=ndim,
+            metric=True,
+            max_iter=3000,
+            eps=1e-6,
+            random_state=seed,
+            n_jobs=n_jobs,
+            n_init=1,
+            init=Y,
+            verbose=verbose,
+        )
+    if how == "nonmetric":
         _logger.debug(
             "Performing non-metric MDS on "
-            "{} of shape {}...".format(type(X_dist),
-                                       X_dist.shape))
+            "{} of shape {}...".format(type(X_dist), X_dist.shape)
+        )
         # Nonmetric MDS from sklearn using metric MDS as an initialization
-        Y, _ = manifold.smacof(X_dist, n_components=ndim, metric=False, max_iter=3000,
-                               eps=1e-6, random_state=seed, n_jobs=n_jobs,
-                               n_init=1, init=Y, verbose=verbose)
+        Y, _ = manifold.smacof(
+            X_dist,
+            n_components=ndim,
+            metric=False,
+            max_iter=3000,
+            eps=1e-6,
+            random_state=seed,
+            n_jobs=n_jobs,
+            n_init=1,
+            init=Y,
+            verbose=verbose,
+        )
     return Y

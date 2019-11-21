@@ -26,14 +26,17 @@ def kmeans(phate_op, n_clusters=8, random_state=None, k=None):
     """
     if k is not None:
         warnings.warn(
-            "k is deprecated. Please use n_clusters in future.",
-            FutureWarning)
+            "k is deprecated. Please use n_clusters in future.", FutureWarning
+        )
         n_clusters = k
     if phate_op.graph is not None:
         diff_potential = phate_op.diff_potential
-        return cluster.KMeans(n_clusters, random_state=random_state).fit_predict(diff_potential)
+        return cluster.KMeans(n_clusters, random_state=random_state).fit_predict(
+            diff_potential
+        )
     else:
         raise exceptions.NotFittedError(
             "This PHATE instance is not fitted yet. Call "
             "'fit' with appropriate arguments before "
-            "using this method.")
+            "using this method."
+        )

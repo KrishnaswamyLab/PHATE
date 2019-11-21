@@ -7,8 +7,10 @@ import scprep
 
 
 def library_size_normalize(data, verbose=False):
-    warnings.warn("phate.preprocessing is deprecated. "
-                  "Please use scprep.normalize instead. "
-                  "Read more at http://scprep.readthedocs.io",
-                  FutureWarning)
+    warnings.warn(
+        "phate.preprocessing is deprecated. "
+        "Please use scprep.normalize instead. "
+        "Read more at http://scprep.readthedocs.io",
+        FutureWarning,
+    )
     return scprep.normalize.library_size_normalize(data)
