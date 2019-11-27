@@ -10,6 +10,7 @@ install_requires = [
     "tasklogger>=1.0",
     "graphtools>=1.3.1",
     "scprep>=0.11.1",
+    "Deprecated",
 ]
 
 test_requires = ["nose2", "anndata"]
