@@ -209,7 +209,8 @@ def embed_MDS(
         Y = sgd(X_dist, n_components=ndim, random_state=seed, init=Y)
     except NotImplementedError:
         # sgd2 currently only supports n_components==2
-        Y = smacof(X_dist, n_components=ndim, random_state=seed, init=Y, metric=True)
+        pass
+    Y = smacof(X_dist, n_components=ndim, random_state=seed, init=Y, metric=True)
     if how == "metric":
         return Y
     # nonmetric is slowest
