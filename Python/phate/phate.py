@@ -164,13 +164,28 @@ class PHATE(BaseEstimator):
         `BioRxiv <http://biorxiv.org/content/early/2017/03/24/120378>`_.
     """
 
-    def __init__(self, n_components=2, knn=5, decay=40,
-                 n_landmark=2000, t='auto', gamma=1,
-                 n_pca=100, knn_dist='euclidean', mds_dist='euclidean',
-                 mds='metric', n_jobs=1, random_state=None, verbose=1,
-                 potential_method=None, alpha_decay=None, njobs=None,
-                 k=None, a=None,
-                 **kwargs):
+    def __init__(
+        self,
+        n_components=2,
+        knn=5,
+        decay=40,
+        n_landmark=2000,
+        t="auto",
+        gamma=1,
+        n_pca=100,
+        knn_dist="euclidean",
+        mds_dist="euclidean",
+        mds="metric",
+        n_jobs=1,
+        random_state=None,
+        verbose=1,
+        potential_method=None,
+        alpha_decay=None,
+        njobs=None,
+        k=None,
+        a=None,
+        **kwargs
+    ):
         if k is not None:
             knn = k
         if a is not None:
@@ -193,38 +208,45 @@ class PHATE(BaseEstimator):
         self.X = None
         self.optimal_t = None
 
-        if (alpha_decay is True and decay is None) or \
-                (alpha_decay is False and decay is not None):
-            warnings.warn("alpha_decay is deprecated. Use `decay=None`"
-                          " to disable alpha decay in future.", FutureWarning)
+        if (alpha_decay is True and decay is None) or (
+            alpha_decay is False and decay is not None
+        ):
+            warnings.warn(
+                "alpha_decay is deprecated. Use `decay=None`"
+                " to disable alpha decay in future.",
+                FutureWarning,
+            )
             if not alpha_decay:
                 self.decay = None
 
         if njobs is not None:
             warnings.warn(
-                "njobs is deprecated. Please use n_jobs in future.",
-                FutureWarning)
+                "njobs is deprecated. Please use n_jobs in future.", FutureWarning
+            )
             n_jobs = njobs
         self.n_jobs = n_jobs
 
         if potential_method is not None:
-            if potential_method == 'log':
+            if potential_method == "log":
                 gamma = 1
-            elif potential_method == 'sqrt':
+            elif potential_method == "sqrt":
                 gamma = 0
             else:
-                raise ValueError("potential_method {} not recognized. Please "
-                                 "use gamma between -1 and 1".format(
-                                     potential_method))
+                raise ValueError(
+                    "potential_method {} not recognized. Please "
+                    "use gamma between -1 and 1".format(potential_method)
+                )
             warnings.warn(
                 "potential_method is deprecated. "
                 "Setting gamma to {} to achieve"
                 " {} transformation.".format(gamma, potential_method),
-                FutureWarning)
+                FutureWarning,
+            )
         elif gamma > 0.99 and gamma < 1:
-            warnings.warn("0.99 < gamma < 1 is numerically unstable. "
-                          "Setting gamma to 0.99",
-                          RuntimeWarning)
+            warnings.warn(
+                "0.99 < gamma < 1 is numerically unstable. " "Setting gamma to 0.99",
+                RuntimeWarning,
+            )
             gamma = 0.99
         self.gamma = gamma
 
@@ -249,9 +271,11 @@ class PHATE(BaseEstimator):
                 diff_op = diff_op.toarray()
             return diff_op
         else:
-            raise NotFittedError("This PHATE instance is not fitted yet. Call "
-                                 "'fit' with appropriate arguments before "
-                                 "using this method.")
+            raise NotFittedError(
+                "This PHATE instance is not fitted yet. Call "
+                "'fit' with appropriate arguments before "
+                "using this method."
+            )
 
     @property
     def diff_potential(self):
@@ -280,39 +304,79 @@ class PHATE(BaseEstimator):
         ------
         ValueError : unacceptable choice of parameters
         """
-        utils.check_positive(n_components=self.n_components,
-                             k=self.knn)
-        utils.check_int(n_components=self.n_components,
-                        k=self.knn,
-                        n_jobs=self.n_jobs)
+        utils.check_positive(n_components=self.n_components, k=self.knn)
+        utils.check_int(n_components=self.n_components, k=self.knn, n_jobs=self.n_jobs)
         utils.check_between(-1, 1, gamma=self.gamma)
         utils.check_if_not(None, utils.check_positive, a=self.decay)
-        utils.check_if_not(None, utils.check_positive, utils.check_int,
-                           n_landmark=self.n_landmark,
-                           n_pca=self.n_pca)
-        utils.check_if_not('auto', utils.check_positive, utils.check_int,
-                           t=self.t)
+        utils.check_if_not(
+            None,
+            utils.check_positive,
+            utils.check_int,
+            n_landmark=self.n_landmark,
+            n_pca=self.n_pca,
+        )
+        utils.check_if_not("auto", utils.check_positive, utils.check_int, t=self.t)
         if not callable(self.knn_dist):
-            utils.check_in(['euclidean', 'precomputed', 'cosine',
-                            'correlation', 'cityblock', 'l1', 'l2',
-                            'manhattan', 'braycurtis', 'canberra',
-                            'chebyshev', 'dice', 'hamming', 'jaccard',
-                            'kulsinski', 'mahalanobis', 'matching',
-                            'minkowski', 'rogerstanimoto', 'russellrao',
-                            'seuclidean', 'sokalmichener', 'sokalsneath',
-                            'sqeuclidean', 'yule',
-                            'precomputed_affinity', 'precomputed_distance'],
-                           knn_dist=self.knn_dist)
+            utils.check_in(
+                [
+                    "euclidean",
+                    "precomputed",
+                    "cosine",
+                    "correlation",
+                    "cityblock",
+                    "l1",
+                    "l2",
+                    "manhattan",
+                    "braycurtis",
+                    "canberra",
+                    "chebyshev",
+                    "dice",
+                    "hamming",
+                    "jaccard",
+                    "kulsinski",
+                    "mahalanobis",
+                    "matching",
+                    "minkowski",
+                    "rogerstanimoto",
+                    "russellrao",
+                    "seuclidean",
+                    "sokalmichener",
+                    "sokalsneath",
+                    "sqeuclidean",
+                    "yule",
+                    "precomputed_affinity",
+                    "precomputed_distance",
+                ],
+                knn_dist=self.knn_dist,
+            )
         if not callable(self.mds_dist):
-            utils.check_in(['euclidean', 'cosine', 'correlation', 'braycurtis',
-                            'canberra', 'chebyshev', 'cityblock', 'dice',
-                            'hamming', 'jaccard', 'kulsinski', 'mahalanobis',
-                            'matching', 'minkowski', 'rogerstanimoto',
-                            'russellrao', 'seuclidean', 'sokalmichener',
-                            'sokalsneath', 'sqeuclidean', 'yule'],
-                           mds_dist=self.mds_dist)
-        utils.check_in(['classic', 'metric', 'nonmetric'],
-                       mds=self.mds)
+            utils.check_in(
+                [
+                    "euclidean",
+                    "cosine",
+                    "correlation",
+                    "braycurtis",
+                    "canberra",
+                    "chebyshev",
+                    "cityblock",
+                    "dice",
+                    "hamming",
+                    "jaccard",
+                    "kulsinski",
+                    "mahalanobis",
+                    "matching",
+                    "minkowski",
+                    "rogerstanimoto",
+                    "russellrao",
+                    "seuclidean",
+                    "sokalmichener",
+                    "sokalsneath",
+                    "sqeuclidean",
+                    "yule",
+                ],
+                mds_dist=self.mds_dist,
+            )
+        utils.check_in(["classic", "metric", "nonmetric"], mds=self.mds)
 
     def _set_graph_params(self, **params):
         try:
@@ -443,98 +507,98 @@ class PHATE(BaseEstimator):
         reset_embedding = False
 
         # mds parameters
-        if 'n_components' in params and \
-                params['n_components'] != self.n_components:
-            self.n_components = params['n_components']
+        if "n_components" in params and params["n_components"] != self.n_components:
+            self.n_components = params["n_components"]
             reset_embedding = True
-            del params['n_components']
-        if 'mds' in params and params['mds'] != self.mds:
-            self.mds = params['mds']
+            del params["n_components"]
+        if "mds" in params and params["mds"] != self.mds:
+            self.mds = params["mds"]
             reset_embedding = True
-            del params['mds']
-        if 'mds_dist' in params and params['mds_dist'] != self.mds_dist:
-            self.mds_dist = params['mds_dist']
+            del params["mds"]
+        if "mds_dist" in params and params["mds_dist"] != self.mds_dist:
+            self.mds_dist = params["mds_dist"]
             reset_embedding = True
-            del params['mds_dist']
+            del params["mds_dist"]
 
         # diff potential parameters
-        if 't' in params and params['t'] != self.t:
-            self.t = params['t']
+        if "t" in params and params["t"] != self.t:
+            self.t = params["t"]
             reset_potential = True
-            del params['t']
-        if 'potential_method' in params:
-            if params['potential_method'] == 'log':
-                params['gamma'] = 1
-            elif params['potential_method'] == 'sqrt':
-                params['gamma'] = 0
+            del params["t"]
+        if "potential_method" in params:
+            if params["potential_method"] == "log":
+                params["gamma"] = 1
+            elif params["potential_method"] == "sqrt":
+                params["gamma"] = 0
             else:
-                raise ValueError("potential_method {} not recognized. Please "
-                                 "use gamma between -1 and 1".format(
-                                     params['potential_method']))
+                raise ValueError(
+                    "potential_method {} not recognized. Please "
+                    "use gamma between -1 and 1".format(params["potential_method"])
+                )
             warnings.warn(
                 "potential_method is deprecated. Setting gamma to {} to "
                 "achieve {} transformation.".format(
-                    params['gamma'],
-                    params['potential_method']),
-                FutureWarning)
-            del params['potential_method']
-        if 'gamma' in params and \
-                params['gamma'] != self.gamma:
-            self.gamma = params['gamma']
+                    params["gamma"], params["potential_method"]
+                ),
+                FutureWarning,
+            )
+            del params["potential_method"]
+        if "gamma" in params and params["gamma"] != self.gamma:
+            self.gamma = params["gamma"]
             reset_potential = True
-            del params['gamma']
+            del params["gamma"]
 
         # kernel parameters
-        if 'k' in params and params['k'] != self.knn:
-            self.knn = params['k']
+        if "k" in params and params["k"] != self.knn:
+            self.knn = params["k"]
             reset_kernel = True
-            del params['k']
-        if 'a' in params and params['a'] != self.decay:
-            self.decay = params['a']
+            del params["k"]
+        if "a" in params and params["a"] != self.decay:
+            self.decay = params["a"]
             reset_kernel = True
-            del params['a']
-        if 'knn' in params and params['knn'] != self.knn:
-            self.knn = params['knn']
+            del params["a"]
+        if "knn" in params and params["knn"] != self.knn:
+            self.knn = params["knn"]
             reset_kernel = True
-            del params['knn']
-        if 'decay' in params and params['decay'] != self.decay:
-            self.decay = params['decay']
+            del params["knn"]
+        if "decay" in params and params["decay"] != self.decay:
+            self.decay = params["decay"]
             reset_kernel = True
-            del params['decay']
-        if 'n_pca' in params:
-            if self.X is not None and params['n_pca'] >= np.min(self.X.shape):
-                params['n_pca'] = None
-            if params['n_pca'] != self.n_pca:
-                self.n_pca = params['n_pca']
+            del params["decay"]
+        if "n_pca" in params:
+            if self.X is not None and params["n_pca"] >= np.min(self.X.shape):
+                params["n_pca"] = None
+            if params["n_pca"] != self.n_pca:
+                self.n_pca = params["n_pca"]
                 reset_kernel = True
-                del params['n_pca']
-        if 'knn_dist' in params and params['knn_dist'] != self.knn_dist:
-            self.knn_dist = params['knn_dist']
+                del params["n_pca"]
+        if "knn_dist" in params and params["knn_dist"] != self.knn_dist:
+            self.knn_dist = params["knn_dist"]
             reset_kernel = True
-            del params['knn_dist']
-        if 'n_landmark' in params and params['n_landmark'] != self.n_landmark:
-            if self.n_landmark is None or params['n_landmark'] is None:
+            del params["knn_dist"]
+        if "n_landmark" in params and params["n_landmark"] != self.n_landmark:
+            if self.n_landmark is None or params["n_landmark"] is None:
                 # need a different type of graph, reset entirely
                 self._reset_graph()
             else:
-                self._set_graph_params(n_landmark=params['n_landmark'])
-            self.n_landmark = params['n_landmark']
-            del params['n_landmark']
+                self._set_graph_params(n_landmark=params["n_landmark"])
+            self.n_landmark = params["n_landmark"]
+            del params["n_landmark"]
 
         # parameters that don't change the embedding
-        if 'n_jobs' in params:
-            self.n_jobs = params['n_jobs']
-            self._set_graph_params(n_jobs=params['n_jobs'])
-            del params['n_jobs']
-        if 'random_state' in params:
-            self.random_state = params['random_state']
-            self._set_graph_params(random_state=params['random_state'])
-            del params['random_state']
-        if 'verbose' in params:
-            self.verbose = params['verbose']
+        if "n_jobs" in params:
+            self.n_jobs = params["n_jobs"]
+            self._set_graph_params(n_jobs=params["n_jobs"])
+            del params["n_jobs"]
+        if "random_state" in params:
+            self.random_state = params["random_state"]
+            self._set_graph_params(random_state=params["random_state"])
+            del params["random_state"]
+        if "verbose" in params:
+            self.verbose = params["verbose"]
             _logger.set_level(self.verbose)
-            self._set_graph_params(verbose=params['verbose'])
-            del params['verbose']
+            self._set_graph_params(verbose=params["verbose"])
+            del params["verbose"]
 
         if reset_kernel:
             # can't reset the graph kernel without making a new graph
@@ -569,9 +633,10 @@ class PHATE(BaseEstimator):
             Any metric from scipy.spatial.distance can be used
             If given, sets the distance metric for MDS
         """
-        warnings.warn("PHATE.reset_mds is deprecated. "
-                      "Please use PHATE.set_params in future.",
-                      FutureWarning)
+        warnings.warn(
+            "PHATE.reset_mds is deprecated. " "Please use PHATE.set_params in future.",
+            FutureWarning,
+        )
         self.set_params(**kwargs)
 
     def reset_potential(self, **kwargs):
@@ -589,15 +654,18 @@ class PHATE(BaseEstimator):
             If given, sets which transformation of the diffusional
             operator is used to compute the diffusion potential
         """
-        warnings.warn("PHATE.reset_potential is deprecated. "
-                      "Please use PHATE.set_params in future.",
-                      FutureWarning)
+        warnings.warn(
+            "PHATE.reset_potential is deprecated. "
+            "Please use PHATE.set_params in future.",
+            FutureWarning,
+        )
         self.set_params(**kwargs)
 
     def _parse_input(self, X):
         # passing graphs to PHATE
-        if isinstance(X, graphtools.graphs.LandmarkGraph) or \
-                (isinstance(X, graphtools.base.BaseGraph) and self.n_landmark is None):
+        if isinstance(X, graphtools.graphs.LandmarkGraph) or (
+            isinstance(X, graphtools.base.BaseGraph) and self.n_landmark is None
+        ):
             self.graph = X
             X = X.data
             n_pca = self.graph.n_pca
@@ -635,9 +703,8 @@ class PHATE(BaseEstimator):
         except NameError:
             # anndata not installed
             pass
-        if not callable(self.knn_dist) and \
-                self.knn_dist.startswith('precomputed'):
-            if self.knn_dist == 'precomputed':
+        if not callable(self.knn_dist) and self.knn_dist.startswith("precomputed"):
+            if self.knn_dist == "precomputed":
                 # automatic detection
                 if isinstance(X, sparse.coo_matrix):
                     X = X.tocsr()
@@ -645,15 +712,15 @@ class PHATE(BaseEstimator):
                     precomputed = "distance"
                 else:
                     precomputed = "affinity"
-            elif self.knn_dist in ['precomputed_affinity',
-                                   'precomputed_distance']:
+            elif self.knn_dist in ["precomputed_affinity", "precomputed_distance"]:
                 precomputed = self.knn_dist.split("_")[1]
             else:
                 raise ValueError(
                     "knn_dist {} not recognized. Did you mean "
                     "'precomputed_distance', "
                     "'precomputed_affinity', or 'precomputed' "
-                    "(automatically detects distance or affinity)?")
+                    "(automatically detects distance or affinity)?"
+                )
             n_pca = None
         else:
             precomputed = None
@@ -664,8 +731,7 @@ class PHATE(BaseEstimator):
         return X, n_pca, precomputed, update_graph
 
     def _update_graph(self, X, precomputed, n_pca, n_landmark):
-        if self.X is not None and not utils.matrix_is_equivalent(
-                X, self.X):
+        if self.X is not None and not utils.matrix_is_equivalent(X, self.X):
             """
             If the same data is used, we can reuse existing kernel and
             diffusion matrices. Otherwise we have to recompute.
@@ -674,17 +740,20 @@ class PHATE(BaseEstimator):
         else:
             try:
                 self.graph.set_params(
-                    decay=self.decay, knn=self.knn, distance=self.knn_dist,
+                    decay=self.decay,
+                    knn=self.knn,
+                    distance=self.knn_dist,
                     precomputed=precomputed,
-                    n_jobs=self.n_jobs, verbose=self.verbose, n_pca=n_pca,
+                    n_jobs=self.n_jobs,
+                    verbose=self.verbose,
+                    n_pca=n_pca,
                     n_landmark=n_landmark,
-                    random_state=self.random_state)
-                _logger.info(
-                    "Using precomputed graph and diffusion operator...")
+                    random_state=self.random_state,
+                )
+                _logger.info("Using precomputed graph and diffusion operator...")
             except ValueError as e:
                 # something changed that should have invalidated the graph
-                _logger.debug("Reset graph due to {}".format(
-                    str(e)))
+                _logger.debug("Reset graph due to {}".format(str(e)))
                 self._reset_graph()
 
     def fit(self, X):
@@ -708,12 +777,14 @@ class PHATE(BaseEstimator):
 
         if precomputed is None:
             _logger.info(
-                "Running PHATE on {} cells and {} genes.".format(
-                    X.shape[0], X.shape[1]))
+                "Running PHATE on {} cells and {} genes.".format(X.shape[0], X.shape[1])
+            )
         else:
             _logger.info(
                 "Running PHATE on precomputed {} matrix with {} cells.".format(
-                    precomputed, X.shape[0]))
+                    precomputed, X.shape[0]
+                )
+            )
 
         if self.n_landmark is None or X.shape[0] <= self.n_landmark:
             n_landmark = None
@@ -739,7 +810,8 @@ class PHATE(BaseEstimator):
                     n_jobs=self.n_jobs,
                     verbose=self.verbose,
                     random_state=self.random_state,
-                    **(self.kwargs))
+                    **(self.kwargs)
+                )
 
         # landmark op doesn't build unless forced
         self.diff_op
@@ -776,34 +848,47 @@ class PHATE(BaseEstimator):
         The cells embedded in a lower dimensional space using PHATE
         """
         if self.graph is None:
-            raise NotFittedError("This PHATE instance is not fitted yet. Call "
-                                 "'fit' with appropriate arguments before "
-                                 "using this method.")
+            raise NotFittedError(
+                "This PHATE instance is not fitted yet. Call "
+                "'fit' with appropriate arguments before "
+                "using this method."
+            )
         elif X is not None and not utils.matrix_is_equivalent(X, self.X):
             # fit to external data
-            warnings.warn("Pre-fit PHATE should not be used to transform a "
-                          "new data matrix. Please fit PHATE to the new"
-                          " data by running 'fit' with the new data.",
-                          RuntimeWarning)
-            if isinstance(self.graph, graphtools.graphs.TraditionalGraph) and \
-                    self.graph.precomputed is not None:
-                raise ValueError("Cannot transform additional data using a "
-                                 "precomputed distance matrix.")
+            warnings.warn(
+                "Pre-fit PHATE should not be used to transform a "
+                "new data matrix. Please fit PHATE to the new"
+                " data by running 'fit' with the new data.",
+                RuntimeWarning,
+            )
+            if (
+                isinstance(self.graph, graphtools.graphs.TraditionalGraph)
+                and self.graph.precomputed is not None
+            ):
+                raise ValueError(
+                    "Cannot transform additional data using a "
+                    "precomputed distance matrix."
+                )
             else:
                 if self.embedding is None:
                     self.transform()
                 transitions = self.graph.extend_to_data(X)
-                return self.graph.interpolate(self.embedding,
-                                              transitions)
+                return self.graph.interpolate(self.embedding, transitions)
         else:
             diff_potential = self._calculate_potential(
-                t_max=t_max, plot_optimal_t=plot_optimal_t, ax=ax)
+                t_max=t_max, plot_optimal_t=plot_optimal_t, ax=ax
+            )
             if self.embedding is None:
                 with _logger.task("{} MDS".format(self.mds)):
                     self.embedding = mds.embed_MDS(
-                        diff_potential, ndim=self.n_components, how=self.mds,
-                        distance_metric=self.mds_dist, n_jobs=self.n_jobs,
-                        seed=self.random_state, verbose=max(self.verbose - 1, 0))
+                        diff_potential,
+                        ndim=self.n_components,
+                        how=self.mds,
+                        distance_metric=self.mds_dist,
+                        n_jobs=self.n_jobs,
+                        seed=self.random_state,
+                        verbose=max(self.verbose - 1, 0),
+                    )
             if isinstance(self.graph, graphtools.graphs.LandmarkGraph):
                 _logger.debug("Extending to original data...")
                 return self.graph.interpolate(self.embedding)
@@ -831,13 +916,12 @@ class PHATE(BaseEstimator):
         embedding : array, shape=[n_samples, n_dimensions]
             The cells embedded in a lower dimensional space using PHATE
         """
-        with _logger.task('PHATE'):
+        with _logger.task("PHATE"):
             self.fit(X)
             embedding = self.transform(**kwargs)
         return embedding
 
-    def _calculate_potential(self, t=None,
-                             t_max=100, plot_optimal_t=False, ax=None):
+    def _calculate_potential(self, t=None, t_max=100, plot_optimal_t=False, ax=None):
         """Calculates the diffusion potential
 
         Parameters
@@ -866,12 +950,11 @@ class PHATE(BaseEstimator):
         if t is None:
             t = self.t
         if self._diff_potential is None:
-            if t == 'auto':
-                t = self._find_optimal_t(
-                    t_max=t_max, plot=plot_optimal_t, ax=ax)
+            if t == "auto":
+                t = self._find_optimal_t(t_max=t_max, plot=plot_optimal_t, ax=ax)
             else:
                 t = self.t
-            with _logger.task('diffusion potential'):
+            with _logger.task("diffusion potential"):
                 # diffused diffusion operator
                 diff_op_t = np.linalg.matrix_power(self.diff_op, t)
                 if self.gamma == 1:
@@ -882,7 +965,7 @@ class PHATE(BaseEstimator):
                     self._diff_potential = diff_op_t
                 else:
                     c = (1 - self.gamma) / 2
-                    self._diff_potential = ((diff_op_t)**c) / c
+                    self._diff_potential = ((diff_op_t) ** c) / c
         elif plot_optimal_t:
             self._find_optimal_t(t_max=t_max, plot=plot_optimal_t, ax=ax)
 
@@ -934,7 +1017,7 @@ class PHATE(BaseEstimator):
         t_opt : int
             The optimal value of t
         """
-        with _logger.task('optimal t'):
+        with _logger.task("optimal t"):
             t, h = self._von_neumann_entropy(t_max=t_max)
             t_opt = vne.find_knee_point(y=h, x=t)
             _logger.task("Automatically selected t = {}".format(t_opt))
@@ -946,7 +1029,7 @@ class PHATE(BaseEstimator):
             else:
                 show = False
             ax.plot(t, h)
-            ax.scatter(t_opt, h[t == t_opt], marker='*', c='k', s=50)
+            ax.scatter(t_opt, h[t == t_opt], marker="*", c="k", s=50)
             ax.set_xlabel("t")
             ax.set_ylabel("Von Neumann Entropy")
             ax.set_title("Optimal t = {}".format(t_opt))
