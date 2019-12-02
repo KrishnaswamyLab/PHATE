@@ -4,12 +4,8 @@
 from __future__ import print_function, division
 import warnings
 import scprep
+from deprecated import deprecated
 
-
+@deprecated("1.5.0", reason="Use scprep.io.load_10X instead")
 def load_10X(data_dir, sparse=True, gene_labels="symbol"):
-    warnings.warn(
-        "phate.io is deprecated. Please use scprep.io instead. "
-        "Read more at http://scprep.readthedocs.io",
-        FutureWarning,
-    )
     return scprep.io.load_10X(data_dir, sparse=sparse, gene_labels=gene_labels)
