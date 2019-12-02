@@ -17,9 +17,9 @@ PHATE - Potential of Heat-diffusion for Affinity-based Trajectory Embedding
 .. image:: https://img.shields.io/readthedocs/phate.svg
     :target: https://phate.readthedocs.io/
     :alt: Read the Docs
-.. image:: https://zenodo.org/badge/DOI/10.1101/120378.svg
-    :target: https://doi.org/10.1101/120378
-    :alt: bioRxiv Preprint
+.. image:: https://zenodo.org/badge/DOI/10.1038/s41587-019-0336-3.svg
+    :target: https://doi.org/10.1038/s41587-019-0336-3
+    :alt: Nature Biotechnology Publication
 .. image:: https://img.shields.io/twitter/follow/KrishnaswamyLab.svg?style=social&label=Follow
     :target: https://twitter.com/KrishnaswamyLab
     :alt: Twitter
@@ -29,13 +29,13 @@ PHATE - Potential of Heat-diffusion for Affinity-based Trajectory Embedding
 
 PHATE (Potential of Heat-diffusion for Affinity-based Trajectory Embedding) is a tool for visualizing high dimensional data. PHATE uses a novel conceptual framework for learning and visualizing the manifold to preserve both local and global distances.
 
-To see how PHATE can be applied to datasets such as facial images and single-cell data from human embryonic stem cells, check out our `preprint on BioRxiv`_.
+To see how PHATE can be applied to datasets such as facial images and single-cell data from human embryonic stem cells, check out our `Nature Biotechnology publication`_.
 
-`Kevin R. Moon, David van Dijk, Zheng Wang, et al. Visualizing Transitions and Structure for Biological Data Exploration. 2018. BioRxiv.`__
+`Moon, van Dijk, Wang, Gigante et al. **Visualizing Transitions and Structure for Biological Data Exploration**. 2019. *Nature Biotechnology*.`__
 
-.. _`preprint on BioRxiv`: https://www.biorxiv.org/content/early/2017/03/24/120378
+.. _`Nature Biotechnology publication`: https://doi.org/10.1038/s41587-019-0336-3
 
-__ `preprint on BioRxiv`_
+__ `Nature Biotechnology publication`_
 
 PHATE has been implemented in Python >=3.5, R_ and MATLAB_.
 
