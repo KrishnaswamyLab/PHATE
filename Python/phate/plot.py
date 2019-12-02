@@ -53,7 +53,7 @@ def _get_plot_data(data, ndim=None):
     return out
 
 
-@deprecated("1.5.0", reason="Use scprep.plot.scatter instead")
+@deprecated(version="1.0.0", reason="Use scprep.plot.scatter instead")
 def scatter(
     x,
     y,
@@ -237,7 +237,7 @@ def scatter(
     )
 
 
-@deprecated("1.5.0", reason="Use scprep.plot.scatter2d instead")
+@deprecated(version="1.0.0", reason="Use scprep.plot.scatter2d instead")
 def scatter2d(data, **kwargs):
     """Create a 2D scatter plot
 
@@ -363,7 +363,7 @@ def scatter2d(data, **kwargs):
     return scprep.plot.scatter2d(data, **kwargs)
 
 
-@deprecated("1.5.0", reason="Use scprep.plot.scatter3d instead")
+@deprecated(version="1.0.0", reason="Use scprep.plot.scatter3d instead")
 def scatter3d(data, **kwargs):
     """Create a 3D scatter plot
 
@@ -490,7 +490,7 @@ def scatter3d(data, **kwargs):
     return scprep.plot.scatter3d(data, **kwargs)
 
 
-@deprecated("1.5.0", reason="Use scprep.plot.rotate_scatter3d instead")
+@deprecated(version="1.0.0", reason="Use scprep.plot.rotate_scatter3d instead")
 def rotate_scatter3d(
     data,
     filename=None,

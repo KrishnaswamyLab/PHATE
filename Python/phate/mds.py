@@ -15,7 +15,7 @@ _logger = tasklogger.get_tasklogger("graphtools")
 
 
 # Fast classical MDS using random svd
-@deprecated("1.5.0", reason="Use phate.mds.classic instead")
+@deprecated(version="1.0.0", reason="Use phate.mds.classic instead")
 def cmdscale_fast(D, ndim):
     return classic(D=D, n_components=ndim)
 
