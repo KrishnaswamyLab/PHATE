@@ -74,6 +74,11 @@ class PHATE(BaseEstimator):
         n_pca < 20 allows neighborhoods to be calculated in
         roughly log(n_samples) time.
 
+    optimizer : {'sgd', 'smacof'}, optional (default: 'sgd')
+        which optimizer to use for metric MDS. SGD is substantially faster,
+        but produces slightly less optimal results. Note that SMACOF was used
+        for all figures in the PHATE paper.
+
     knn_dist : string, optional, default: 'euclidean'
         recommended values: 'euclidean', 'cosine', 'precomputed'
         Any metric from `scipy.spatial.distance` can be used
@@ -173,6 +178,7 @@ class PHATE(BaseEstimator):
         t="auto",
         gamma=1,
         n_pca=100,
+        optimizer="sgd",
         knn_dist="euclidean",
         mds_dist="euclidean",
         mds="metric",
@@ -199,6 +205,7 @@ class PHATE(BaseEstimator):
         self.n_pca = n_pca
         self.knn_dist = knn_dist
         self.mds_dist = mds_dist
+        self.optimizer = optimizer
         self.random_state = random_state
         self.kwargs = kwargs
 
@@ -377,6 +384,7 @@ class PHATE(BaseEstimator):
                 mds_dist=self.mds_dist,
             )
         utils.check_in(["classic", "metric", "nonmetric"], mds=self.mds)
+        utils.check_in(["sgd", "smacof"], optimizer=self.optimizer)
 
     def _set_graph_params(self, **params):
         try:
@@ -434,6 +442,11 @@ class PHATE(BaseEstimator):
             neighborhoods. For extremely large datasets, using
             n_pca < 20 allows neighborhoods to be calculated in
             roughly log(n_samples) time.
+
+        optimizer : {'sgd', 'smacof'}, optional (default: 'sgd')
+            which optimizer to use for metric MDS. SGD is substantially faster,
+            but produces slightly less optimal results. Note that SMACOF was used
+            for all figures in the PHATE paper.
 
         knn_dist : string, optional, default: 'euclidean'
             recommended values: 'euclidean', 'cosine', 'precomputed'
@@ -515,6 +528,10 @@ class PHATE(BaseEstimator):
             self.mds = params["mds"]
             reset_embedding = True
             del params["mds"]
+        if "optimizer" in params and params["optimizer"] != self.optimizer:
+            self.optimizer = params["optimizer"]
+            reset_embedding = True
+            del params["optimizer"]
         if "mds_dist" in params and params["mds_dist"] != self.mds_dist:
             self.mds_dist = params["mds_dist"]
             reset_embedding = True
@@ -884,6 +901,7 @@ class PHATE(BaseEstimator):
                         diff_potential,
                         ndim=self.n_components,
                         how=self.mds,
+                        optimizer=self.optimizer,
                         distance_metric=self.mds_dist,
                         n_jobs=self.n_jobs,
                         seed=self.random_state,

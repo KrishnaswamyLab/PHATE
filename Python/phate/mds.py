@@ -147,7 +147,14 @@ def smacof(
 
 
 def embed_MDS(
-    X, ndim=2, how="metric", distance_metric="euclidean", n_jobs=1, seed=None, verbose=0
+    X,
+    ndim=2,
+    how="metric",
+    distance_metric="euclidean",
+    optimizer="sgd",
+    n_jobs=1,
+    seed=None,
+    verbose=0,
 ):
     """Performs classic, metric, and non-metric MDS
 
@@ -169,6 +176,11 @@ def embed_MDS(
     distance_metric : string, optional, default: 'euclidean'
         choose from ['cosine', 'euclidean']
         distance metric for MDS
+
+    optimizer : {'sgd', 'smacof'}, optional (default: 'sgd')
+        which optimizer to use for metric MDS. SGD is substantially faster,
+        but produces slightly less optimal results. Note that SMACOF was used
+        for all figures in the PHATE paper.
 
     n_jobs : integer, optional, default: 1
         The number of jobs to use for the computation.
@@ -194,6 +206,12 @@ def embed_MDS(
             "'metric', or 'nonmetric'. "
             "'{}' was passed.".format(how)
         )
+    if optimizer not in ["sgd", "smacof"]:
+        raise ValueError(
+            "Allowable 'optimizer' values for MDS: 'sgd' or "
+            "'smacof'. "
+            "'{}' was passed.".format(optimizer)
+        )
 
     # MDS embeddings, each gives a different output.
     X_dist = squareform(pdist(X, distance_metric))
@@ -204,14 +222,22 @@ def embed_MDS(
         return Y
 
     # metric is next fastest
-    try:
-        # use sgd2 if it is available
-        Y = sgd(X_dist, n_components=ndim, random_state=seed, init=Y)
-    except NotImplementedError:
-        # sgd2 currently only supports n_components==2
+    if optimizer == "sgd":
+        try:
+            # use sgd2 if it is available
+            Y = sgd(X_dist, n_components=ndim, random_state=seed, init=Y)
+        except NotImplementedError:
+            # sgd2 currently only supports n_components==2
+            Y = smacof(
+                X_dist, n_components=ndim, random_state=seed, init=Y, metric=True
+            )
+    elif optimizer == "smacof":
         Y = smacof(X_dist, n_components=ndim, random_state=seed, init=Y, metric=True)
+    else:
+        raise RuntimeError
     if how == "metric":
         return Y
+
     # nonmetric is slowest
     Y = smacof(X_dist, n_components=ndim, random_state=seed, init=Y, metric=False)
     return Y
