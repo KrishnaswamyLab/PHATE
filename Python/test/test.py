@@ -16,7 +16,8 @@ import pygsp
 import anndata
 import numpy as np
 from scipy.spatial.distance import pdist, squareform
-from sklearn.utils.testing import assert_warns_message
+from sklearn.utils.testing import assert_warns
+
 
 
 def test_simple():
@@ -145,9 +146,8 @@ def test_bmmsc():
 def test_plot():
     tree_data, tree_clusters = phate.tree.gen_dla()
     # scatter
-    assert_warns_message(
-        FutureWarning,
-        "`phate.plot.scatter` is deprecated. " "Use `scprep.plot.scatter` instead.",
+    assert_warns(
+        DeprecationWarning,
         phate.plot.scatter,
         tree_data[:, 0],
         tree_data[:, 1],
@@ -155,28 +155,24 @@ def test_plot():
         discrete=True,
     )
     # scatter2d
-    assert_warns_message(
-        FutureWarning,
-        "`phate.plot.scatter2d` is deprecated. " "Use `scprep.plot.scatter2d` instead.",
+    assert_warns(
+        DeprecationWarning,
         phate.plot.scatter2d,
         tree_data,
         c=tree_clusters,
         discrete=True,
     )
     # scatter3d
-    assert_warns_message(
-        FutureWarning,
-        "`phate.plot.scatter3d` is deprecated. " "Use `scprep.plot.scatter3d` instead.",
+    assert_warns(
+        DeprecationWarning,
         phate.plot.scatter3d,
         tree_data,
         c=tree_clusters,
         discrete=False,
     )
     # rotate_scatter3d
-    assert_warns_message(
-        FutureWarning,
-        "`phate.plot.rotate_scatter3d` is deprecated. "
-        "Use `scprep.plot.rotate_scatter3d` instead.",
+    assert_warns(
+        DeprecationWarning,
         phate.plot.rotate_scatter3d,
         tree_data,
         c=tree_clusters,
