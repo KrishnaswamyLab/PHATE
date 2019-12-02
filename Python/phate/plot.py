@@ -6,6 +6,7 @@ from __future__ import print_function, division
 from .phate import PHATE
 import warnings
 import scprep
+from deprecated import deprecated
 
 try:
     import anndata
@@ -52,6 +53,7 @@ def _get_plot_data(data, ndim=None):
     return out
 
 
+@deprecated("1.5.0", reason="Use scprep.plot.scatter instead")
 def scatter(
     x,
     y,
@@ -205,10 +207,6 @@ def scatter(
     >>> X[c=='a'] += 10
     >>> phate.plot.scatter2d(X, c=c, cmap={'a' : [1,0,0,1], 'b' : 'xkcd:sky blue'})
     """
-    warnings.warn(
-        "`phate.plot.scatter` is deprecated. " "Use `scprep.plot.scatter` instead.",
-        FutureWarning,
-    )
     return scprep.plot.scatter(
         x=x,
         y=y,
@@ -239,6 +237,7 @@ def scatter(
     )
 
 
+@deprecated("1.5.0", reason="Use scprep.plot.scatter2d instead")
 def scatter2d(data, **kwargs):
     """Create a 2D scatter plot
 
@@ -360,14 +359,11 @@ def scatter2d(data, **kwargs):
     >>> X[c=='a'] += 10
     >>> phate.plot.scatter2d(X, c=c, cmap={'a' : [1,0,0,1], 'b' : 'xkcd:sky blue'})
     """
-    warnings.warn(
-        "`phate.plot.scatter2d` is deprecated. " "Use `scprep.plot.scatter2d` instead.",
-        FutureWarning,
-    )
     data = _get_plot_data(data, ndim=2)
     return scprep.plot.scatter2d(data, **kwargs)
 
 
+@deprecated("1.5.0", reason="Use scprep.plot.scatter3d instead")
 def scatter3d(data, **kwargs):
     """Create a 3D scatter plot
 
@@ -490,14 +486,11 @@ def scatter3d(data, **kwargs):
     >>> X[c=='a'] += 10
     >>> phate.plot.scatter2d(X, c=c, cmap={'a' : [1,0,0,1], 'b' : 'xkcd:sky blue'})
     """
-    warnings.warn(
-        "`phate.plot.scatter3d` is deprecated. " "Use `scprep.plot.scatter3d` instead.",
-        FutureWarning,
-    )
     data = _get_plot_data(data, ndim=3)
     return scprep.plot.scatter3d(data, **kwargs)
 
 
+@deprecated("1.5.0", reason="Use scprep.plot.rotate_scatter3d instead")
 def rotate_scatter3d(
     data,
     filename=None,
@@ -560,11 +553,7 @@ def rotate_scatter3d(
     (2000, 2)
     >>> phate.plot.rotate_scatter3d(tree_phate, c=tree_clusters)
     """
-    warnings.warn(
-        "`phate.plot.rotate_scatter3d` is deprecated. "
-        "Use `scprep.plot.rotate_scatter3d` instead.",
-        FutureWarning,
-    )
+    data = _get_plot_data(data, ndim=3)
     return scprep.plot.rotate_scatter3d(
         data,
         filename=filename,
