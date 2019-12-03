@@ -2,10 +2,11 @@ PHATE - Visualizing Transitions and Structure for Biological Data Exploration
 ---------------------------------------------------------------------------
 
 [![Latest PyPI version](https://img.shields.io/pypi/v/phate.svg)](https://pypi.org/project/phate/)
+[![Latest Conda version](https://anaconda.org/bioconda/phate/badges/version.svg)](https://anaconda.org/bioconda/phate/)
 [![Latest CRAN version](https://img.shields.io/cran/v/phateR.svg)](https://cran.r-project.org/package=phateR)
 [![Travis CI Build](https://api.travis-ci.com/KrishnaswamyLab/phate.svg?branch=master)](https://travis-ci.com/KrishnaswamyLab/PHATE)
 [![Read the Docs](https://img.shields.io/readthedocs/phate.svg)](https://phate.readthedocs.io/)
-[![bioRxiv Preprint](https://zenodo.org/badge/DOI/10.1101/120378.svg)](https://www.biorxiv.org/content/early/2017/12/01/120378)
+[![Nature Biotechnology Publication](https://zenodo.org/badge/DOI/10.1038/s41587-019-0336-3.svg)](https://doi.org/10.1038/s41587-019-0336-3)
 [![Twitter](https://img.shields.io/twitter/follow/KrishnaswamyLab.svg?style=social&label=Follow)](https://twitter.com/KrishnaswamyLab)
 
 ### Quick Start
@@ -18,8 +19,9 @@ If you would like to get started using PHATE, check out the following tutorials.
 
 PHATE (Potential of Heat-diffusion for Affinity-based Trajectory Embedding) is a tool for visualizing high dimensional data. PHATE uses a novel conceptual framework for learning and visualizing the manifold to preserve both local and global distances.
 
-To see how PHATE can be applied to datasets such as facial images and single-cell data from human embryonic stem cells, check out our preprint on BioRxiv.
-[Kevin R. Moon, David van Dijk, Zheng Wang, et al. **Visualizing Transitions and Structure for Biological Data Exploration**. 2018. *BioRxiv*](https://doi.org/10.1101/120378)
+To see how PHATE can be applied to datasets such as facial images and single-cell data from human embryonic stem cells, check out our publication in Nature Biotechnology.
+
+[Moon, van Dijk, Wang, Gigante et al. **Visualizing Transitions and Structure for Biological Data Exploration**. 2019. *Nature Biotechnology*.](https://doi.org/10.1038/s41587-019-0336-3)
 
 PHATE has been implemented in [Python >=3.5](#python), [MATLAB](#matlab) and [R](#r).
 

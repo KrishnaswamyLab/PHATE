@@ -17,6 +17,7 @@ install:
   - cd ..
 
 script:
+  - python -c "import phate"
   - cd Python; pip install -U .[test]
   - python setup.py test
   - pip install -U .[doc]

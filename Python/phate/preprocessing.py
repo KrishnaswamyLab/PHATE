@@ -4,11 +4,8 @@
 from __future__ import print_function, division
 import warnings
 import scprep
+from deprecated import deprecated
 
-
+@deprecated(version="1.0.0", reason="Use scprep.normalize.library_size_normalize instead")
 def library_size_normalize(data, verbose=False):
-    warnings.warn("phate.preprocessing is deprecated. "
-                  "Please use scprep.normalize instead. "
-                  "Read more at http://scprep.readthedocs.io",
-                  FutureWarning)
     return scprep.normalize.library_size_normalize(data)

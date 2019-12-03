@@ -64,7 +64,7 @@ Installation from source
 
 The latest source version of PHATE can be accessed by running the following in a terminal::
 
-    git clone --recursive git://github.com/SmitaKrishnaswamy/PHATE.git
+    git clone --recursive git://github.com/KrishnaswamyLab/PHATE.git
     cd PHATE/phateR
     R CMD INSTALL
     cd ../Python

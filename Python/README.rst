@@ -5,6 +5,9 @@ PHATE - Potential of Heat-diffusion for Affinity-based Trajectory Embedding
 .. image:: https://img.shields.io/pypi/v/phate.svg
     :target: https://pypi.org/project/phate/
     :alt: Latest PyPi version
+.. image:: https://anaconda.org/bioconda/phate/badges/version.svg
+    :target: https://anaconda.org/bioconda/phate/
+    :alt: Latest Conda version
 .. image:: https://img.shields.io/cran/v/phateR.svg
     :target: https://cran.r-project.org/package=phateR
     :alt: Latest CRAN version
@@ -14,9 +17,9 @@ PHATE - Potential of Heat-diffusion for Affinity-based Trajectory Embedding
 .. image:: https://img.shields.io/readthedocs/phate.svg
     :target: https://phate.readthedocs.io/
     :alt: Read the Docs
-.. image:: https://zenodo.org/badge/DOI/10.1101/120378.svg
-    :target: https://doi.org/10.1101/120378
-    :alt: bioRxiv Preprint
+.. image:: https://zenodo.org/badge/DOI/10.1038/s41587-019-0336-3.svg
+    :target: https://doi.org/10.1038/s41587-019-0336-3
+    :alt: Nature Biotechnology Publication
 .. image:: https://img.shields.io/twitter/follow/KrishnaswamyLab.svg?style=social&label=Follow
     :target: https://twitter.com/KrishnaswamyLab
     :alt: Twitter
@@ -26,13 +29,13 @@ PHATE - Potential of Heat-diffusion for Affinity-based Trajectory Embedding
 
 PHATE (Potential of Heat-diffusion for Affinity-based Trajectory Embedding) is a tool for visualizing high dimensional data. PHATE uses a novel conceptual framework for learning and visualizing the manifold to preserve both local and global distances.
 
-To see how PHATE can be applied to datasets such as facial images and single-cell data from human embryonic stem cells, check out our `preprint on BioRxiv`_.
+To see how PHATE can be applied to datasets such as facial images and single-cell data from human embryonic stem cells, check out our `Nature Biotechnology publication`_.
 
-`Kevin R. Moon, David van Dijk, Zheng Wang, et al. Visualizing Transitions and Structure for Biological Data Exploration. 2018. BioRxiv.`__
+`Moon, van Dijk, Wang, Gigante et al. **Visualizing Transitions and Structure for Biological Data Exploration**. 2019. *Nature Biotechnology*.`__
 
-.. _`preprint on BioRxiv`: https://www.biorxiv.org/content/early/2017/03/24/120378
+.. _`Nature Biotechnology publication`: https://doi.org/10.1038/s41587-019-0336-3
 
-__ `preprint on BioRxiv`_
+__ `Nature Biotechnology publication`_
 
 PHATE has been implemented in Python >=3.5, R_ and MATLAB_.
 
@@ -82,12 +85,15 @@ check out our notebook below.
 
 If you want to try running our test script on a DLA fractal tree, run the following in a Python interpreter::
 
-        import phate
-        tree_data, tree_clusters = phate.tree.gen_dla()
-        phate_operator = phate.PHATE(k=15, t=100)
-        tree_phate = phate_operator.fit_transform(tree_data)
-        phate.plot.scatter2d(phate_operator, c=tree_clusters) # or phate.plot.scatter2d(tree_phate, c=tree_clusters)
-        phate.plot.rotate_scatter3d(phate_operator, c=tree_clusters)
+    import phate
+    import scprep
+    tree_data, tree_clusters = phate.tree.gen_dla()
+    phate_operator = phate.PHATE(k=15, t=100)
+    tree_phate = phate_operator.fit_transform(tree_data)
+    scprep.plot.scatter2d(tree_phate, c=tree_clusters)
+    phate_operator.set_params(n_components=3)
+    tree_phate = phate_operator.transform()
+    scprep.plot.rotate_scatter3d(tree_phate, c=tree_clusters)
 
 Jupyter Notebooks
 ~~~~~~~~~~~~~~~~~
