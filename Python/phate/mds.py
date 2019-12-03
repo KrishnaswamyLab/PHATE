@@ -5,6 +5,7 @@ from __future__ import print_function, division
 from sklearn import manifold
 from sklearn.decomposition import PCA
 from scipy.spatial.distance import pdist, squareform
+import scipy.spatial
 from deprecated import deprecated
 
 import tasklogger
@@ -217,27 +218,31 @@ def embed_MDS(
     X_dist = squareform(pdist(X, distance_metric))
 
     # initialize all by CMDS
-    Y = classic(X_dist, n_components=ndim, random_state=seed)
+    Y_classic = classic(X_dist, n_components=ndim, random_state=seed)
     if how == "classic":
-        return Y
+        return Y_classic
 
     # metric is next fastest
     if optimizer == "sgd":
         try:
             # use sgd2 if it is available
-            Y = sgd(X_dist, n_components=ndim, random_state=seed, init=Y)
+            Y = sgd(X_dist, n_components=ndim, random_state=seed, init=Y_classic)
         except NotImplementedError:
             # sgd2 currently only supports n_components==2
             Y = smacof(
-                X_dist, n_components=ndim, random_state=seed, init=Y, metric=True
+                X_dist, n_components=ndim, random_state=seed, init=Y_classic, metric=True
             )
     elif optimizer == "smacof":
-        Y = smacof(X_dist, n_components=ndim, random_state=seed, init=Y, metric=True)
+        Y = smacof(X_dist, n_components=ndim, random_state=seed, init=Y_classic, metric=True)
     else:
         raise RuntimeError
     if how == "metric":
+        # re-orient to classic
+        _, Y, _ = scipy.spatial.procrustes(Y_classic, Y)
         return Y
 
     # nonmetric is slowest
     Y = smacof(X_dist, n_components=ndim, random_state=seed, init=Y, metric=False)
+    # re-orient to classic
+    _, Y, _ = scipy.spatial.procrustes(Y_classic, Y)
     return Y
