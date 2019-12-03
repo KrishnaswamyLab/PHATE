@@ -74,8 +74,8 @@ class PHATE(BaseEstimator):
         n_pca < 20 allows neighborhoods to be calculated in
         roughly log(n_samples) time.
 
-    optimizer : {'sgd', 'smacof'}, optional (default: 'sgd')
-        which optimizer to use for metric MDS. SGD is substantially faster,
+    mds_solver : {'sgd', 'smacof'}, optional (default: 'sgd')
+        which solver to use for metric MDS. SGD is substantially faster,
         but produces slightly less optimal results. Note that SMACOF was used
         for all figures in the PHATE paper.
 
@@ -180,7 +180,7 @@ class PHATE(BaseEstimator):
         t="auto",
         gamma=1,
         n_pca=100,
-        optimizer="sgd",
+        mds_solver="sgd",
         knn_dist="euclidean",
         mds_dist="euclidean",
         mds="metric",
@@ -207,7 +207,7 @@ class PHATE(BaseEstimator):
         self.n_pca = n_pca
         self.knn_dist = knn_dist
         self.mds_dist = mds_dist
-        self.optimizer = optimizer
+        self.mds_solver = mds_solver
         self.random_state = random_state
         self.kwargs = kwargs
 
@@ -386,7 +386,7 @@ class PHATE(BaseEstimator):
                 mds_dist=self.mds_dist,
             )
         utils.check_in(["classic", "metric", "nonmetric"], mds=self.mds)
-        utils.check_in(["sgd", "smacof"], optimizer=self.optimizer)
+        utils.check_in(["sgd", "smacof"], mds_solver=self.mds_solver)
 
     def _set_graph_params(self, **params):
         try:
@@ -445,8 +445,8 @@ class PHATE(BaseEstimator):
             n_pca < 20 allows neighborhoods to be calculated in
             roughly log(n_samples) time.
 
-        optimizer : {'sgd', 'smacof'}, optional (default: 'sgd')
-            which optimizer to use for metric MDS. SGD is substantially faster,
+        mds_solver : {'sgd', 'smacof'}, optional (default: 'sgd')
+            which solver to use for metric MDS. SGD is substantially faster,
             but produces slightly less optimal results. Note that SMACOF was used
             for all figures in the PHATE paper.
 
@@ -530,10 +530,10 @@ class PHATE(BaseEstimator):
             self.mds = params["mds"]
             reset_embedding = True
             del params["mds"]
-        if "optimizer" in params and params["optimizer"] != self.optimizer:
-            self.optimizer = params["optimizer"]
+        if "mds_solver" in params and params["mds_solver"] != self.mds_solver:
+            self.mds_solver = params["mds_solver"]
             reset_embedding = True
-            del params["optimizer"]
+            del params["mds_solver"]
         if "mds_dist" in params and params["mds_dist"] != self.mds_dist:
             self.mds_dist = params["mds_dist"]
             reset_embedding = True
@@ -903,7 +903,7 @@ class PHATE(BaseEstimator):
                         diff_potential,
                         ndim=self.n_components,
                         how=self.mds,
-                        optimizer=self.optimizer,
+                        solver=self.mds_solver,
                         distance_metric=self.mds_dist,
                         n_jobs=self.n_jobs,
                         seed=self.random_state,

@@ -152,7 +152,7 @@ def embed_MDS(
     ndim=2,
     how="metric",
     distance_metric="euclidean",
-    optimizer="sgd",
+    solver="sgd",
     n_jobs=1,
     seed=None,
     verbose=0,
@@ -178,8 +178,8 @@ def embed_MDS(
         choose from ['cosine', 'euclidean']
         distance metric for MDS
 
-    optimizer : {'sgd', 'smacof'}, optional (default: 'sgd')
-        which optimizer to use for metric MDS. SGD is substantially faster,
+    solver : {'sgd', 'smacof'}, optional (default: 'sgd')
+        which solver to use for metric MDS. SGD is substantially faster,
         but produces slightly less optimal results. Note that SMACOF was used
         for all figures in the PHATE paper.
 
@@ -207,11 +207,11 @@ def embed_MDS(
             "'metric', or 'nonmetric'. "
             "'{}' was passed.".format(how)
         )
-    if optimizer not in ["sgd", "smacof"]:
+    if solver not in ["sgd", "smacof"]:
         raise ValueError(
-            "Allowable 'optimizer' values for MDS: 'sgd' or "
+            "Allowable 'solver' values for MDS: 'sgd' or "
             "'smacof'. "
-            "'{}' was passed.".format(optimizer)
+            "'{}' was passed.".format(solver)
         )
 
     # MDS embeddings, each gives a different output.
@@ -223,7 +223,7 @@ def embed_MDS(
         return Y_classic
 
     # metric is next fastest
-    if optimizer == "sgd":
+    if solver == "sgd":
         try:
             # use sgd2 if it is available
             Y = sgd(X_dist, n_components=ndim, random_state=seed, init=Y_classic)
@@ -232,7 +232,7 @@ def embed_MDS(
             Y = smacof(
                 X_dist, n_components=ndim, random_state=seed, init=Y_classic, metric=True
             )
-    elif optimizer == "smacof":
+    elif solver == "smacof":
         Y = smacof(X_dist, n_components=ndim, random_state=seed, init=Y_classic, metric=True)
     else:
         raise RuntimeError
