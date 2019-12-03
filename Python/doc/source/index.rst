@@ -24,7 +24,7 @@ PHATE - Potential of Heat-diffusion for Affinity-based Trajectory Embedding
 
 .. raw:: html
 
-    <a href="https://doi.org/10.1038/s41587-019-0336-3"><img src="https://zenodo.org/badge/DOI/10.1038/s41587-019-0336-3.svg" alt="Nature Biotechnology Publication"></a>
+    <a href="https://www.nature.com/articles/s41587-019-0336-3"><img src="https://zenodo.org/badge/DOI/10.1038/s41587-019-0336-3.svg" alt="Nature Biotechnology Publication"></a>
 
 .. raw:: html
 
