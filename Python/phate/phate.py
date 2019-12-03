@@ -129,6 +129,8 @@ class PHATE(BaseEstimator):
 
     a : Deprecated for `decay`
 
+    kwargs : additional arguments for `graphtools.Graph`
+
     Attributes
     ----------
 
