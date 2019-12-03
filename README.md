@@ -6,7 +6,7 @@ PHATE - Visualizing Transitions and Structure for Biological Data Exploration
 [![Latest CRAN version](https://img.shields.io/cran/v/phateR.svg)](https://cran.r-project.org/package=phateR)
 [![Travis CI Build](https://api.travis-ci.com/KrishnaswamyLab/phate.svg?branch=master)](https://travis-ci.com/KrishnaswamyLab/PHATE)
 [![Read the Docs](https://img.shields.io/readthedocs/phate.svg)](https://phate.readthedocs.io/)
-[![Nature Biotechnology Publication](https://zenodo.org/badge/DOI/10.1038/s41587-019-0336-3.svg)](https://doi.org/10.1038/s41587-019-0336-3)
+[![Nature Biotechnology Publication](https://zenodo.org/badge/DOI/10.1038/s41587-019-0336-3.svg)](https://www.nature.com/articles/s41587-019-0336-3)
 [![Twitter](https://img.shields.io/twitter/follow/KrishnaswamyLab.svg?style=social&label=Follow)](https://twitter.com/KrishnaswamyLab)
 
 ### Quick Start
