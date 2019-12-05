@@ -227,6 +227,8 @@ def embed_MDS(
         try:
             # use sgd2 if it is available
             Y = sgd(X_dist, n_components=ndim, random_state=seed, init=Y_classic)
+            if np.any(~np.isfinite(Y)):
+                raise NotImplementedError
         except NotImplementedError:
             # sgd2 currently only supports n_components==2
             Y = smacof(
