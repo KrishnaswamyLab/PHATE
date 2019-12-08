@@ -6,6 +6,7 @@ from sklearn import manifold
 from sklearn.decomposition import PCA
 from scipy.spatial.distance import pdist, squareform
 import scipy.spatial
+import numpy as np
 from deprecated import deprecated
 
 import tasklogger
