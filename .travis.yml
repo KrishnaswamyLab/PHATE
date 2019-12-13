@@ -21,8 +21,7 @@ script:
   - cd Python; pip install -U .[test]
   - python setup.py test
   - pip install -U .[doc]
-  - cd doc; make html
-  - cd ..
+  - python setup.py build_sphinx
 
 deploy:
   provider: pypi
