@@ -1,9 +1,3 @@
-scikit-learn>=0.19.1
-numpy>=1.14.0
-scipy>=1.1.0
-matplotlib
-future
-graphtools>=0.1.8.1
+./Python
 sphinx
 sphinxcontrib-napoleon
-scprep
