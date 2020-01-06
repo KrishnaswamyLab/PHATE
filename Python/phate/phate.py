@@ -1040,7 +1040,7 @@ class PHATE(BaseEstimator):
         with _logger.task("optimal t"):
             t, h = self._von_neumann_entropy(t_max=t_max)
             t_opt = vne.find_knee_point(y=h, x=t)
-            _logger.task("Automatically selected t = {}".format(t_opt))
+            _logger.info("Automatically selected t = {}".format(t_opt))
 
         if plot:
             if ax is None:
