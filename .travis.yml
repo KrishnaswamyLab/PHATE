@@ -11,6 +11,7 @@ cache: pip
 before_install:
   - python -m pip install --upgrade pip
   - pip install --upgrade setuptools
+  - pip install git+https://github.com/KrishnaswamyLab/graphtools@dev
 
 install:
   - cd Python; pip install -U .
