@@ -230,10 +230,16 @@ def embed_MDS(
         except NotImplementedError:
             # sgd2 currently only supports n_components==2
             Y = smacof(
-                X_dist, n_components=ndim, random_state=seed, init=Y_classic, metric=True
+                X_dist,
+                n_components=ndim,
+                random_state=seed,
+                init=Y_classic,
+                metric=True,
             )
     elif solver == "smacof":
-        Y = smacof(X_dist, n_components=ndim, random_state=seed, init=Y_classic, metric=True)
+        Y = smacof(
+            X_dist, n_components=ndim, random_state=seed, init=Y_classic, metric=True
+        )
     else:
         raise RuntimeError
     if how == "metric":
