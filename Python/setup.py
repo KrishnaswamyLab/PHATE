@@ -14,7 +14,7 @@ install_requires = [
     "sgdpy>=1.4.1",
 ]
 
-test_requires = ["nose2", "anndata"]
+test_requires = ["nose2", "anndata", "parameterized"]
 
 doc_requires = ["sphinx", "sphinxcontrib-napoleon"]
 

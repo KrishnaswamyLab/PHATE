@@ -16,7 +16,7 @@ import tasklogger
 
 import matplotlib.pyplot as plt
 
-from . import utils, vne, mds
+from . import utils, vne, mds, eig
 
 try:
     import anndata
@@ -74,6 +74,9 @@ class PHATE(BaseEstimator):
         n_pca < 20 allows neighborhoods to be calculated in
         roughly log(n_samples) time.
 
+    Other parameters
+    ----------------
+
     mds_solver : {'sgd', 'smacof'}, optional (default: 'sgd')
         which solver to use for metric MDS. SGD is substantially faster,
         but produces slightly less optimal results. Note that SMACOF was used
@@ -90,6 +93,13 @@ class PHATE(BaseEstimator):
         non-zero values down the diagonal. This is detected automatically using
         `data[0,0]`. You can override this detection with
         `knn_dist='precomputed_distance'` or `knn_dist='precomputed_affinity'`.
+
+    optimal_t_method : {'approximate', 'exact'}, optional (default: 'approximate')
+        Compute optimal t on the exact eigenvalues or a Chebyshev density estimate.
+
+    optimal_t_legacy : bool, optional (default: False)
+        Compute the legacy version of optimal t selection. Previous versions of PHATE
+        used the singular values of the diffusion operator; we now use the eigenvalues.
 
     mds_dist : string, optional, default: 'euclidean'
         Distance metric for MDS. Recommended values: 'euclidean' and 'cosine'
@@ -180,8 +190,10 @@ class PHATE(BaseEstimator):
         t="auto",
         gamma=1,
         n_pca=100,
-        mds_solver="sgd",
         knn_dist="euclidean",
+        optimal_t_method="approximate",
+        optimal_t_legacy=False,
+        mds_solver="sgd",
         mds_dist="euclidean",
         mds="metric",
         n_jobs=1,
@@ -203,9 +215,11 @@ class PHATE(BaseEstimator):
         self.knn = knn
         self.t = t
         self.n_landmark = n_landmark
-        self.mds = mds
         self.n_pca = n_pca
         self.knn_dist = knn_dist
+        self.optimal_t_method = optimal_t_method
+        self.optimal_t_legacy = optimal_t_legacy
+        self.mds = mds
         self.mds_dist = mds_dist
         self.mds_solver = mds_solver
         self.random_state = random_state
@@ -385,6 +399,9 @@ class PHATE(BaseEstimator):
                 ],
                 mds_dist=self.mds_dist,
             )
+        utils.check_in(
+            ["approximate", "exact",], optimal_t_method=self.optimal_t_method
+        )
         utils.check_in(["classic", "metric", "nonmetric"], mds=self.mds)
         utils.check_in(["sgd", "smacof"], mds_solver=self.mds_solver)
 
@@ -401,6 +418,7 @@ class PHATE(BaseEstimator):
 
     def _reset_potential(self):
         self._diff_potential = None
+        self._optimal_t = None
         self._reset_embedding()
 
     def _reset_embedding(self):
@@ -445,6 +463,9 @@ class PHATE(BaseEstimator):
             n_pca < 20 allows neighborhoods to be calculated in
             roughly log(n_samples) time.
 
+        Other parameters
+        ----------------
+
         mds_solver : {'sgd', 'smacof'}, optional (default: 'sgd')
             which solver to use for metric MDS. SGD is substantially faster,
             but produces slightly less optimal results. Note that SMACOF was used
@@ -461,6 +482,13 @@ class PHATE(BaseEstimator):
             non-zero values down the diagonal. This is detected automatically
             using `data[0,0]`. You can override this detection with
             `knn_dist='precomputed_distance'` or `knn_dist='precomputed_affinity'`.
+
+        optimal_t_method : {'approximate', 'exact'}, optional (default: 'approximate')
+            Compute optimal t on the exact eigenvalues or a Chebyshev density estimate.
+
+        optimal_t_legacy : bool, optional (default: False)
+            Compute the legacy version of optimal t selection. Previous versions of PHATE
+            used the singular values of the diffusion operator; we now use the eigenvalues.
 
         mds_dist : string, optional, default: 'euclidean'
             recommended values: 'euclidean' and 'cosine'
@@ -544,6 +572,20 @@ class PHATE(BaseEstimator):
             self.t = params["t"]
             reset_potential = True
             del params["t"]
+        if (
+            "optimal_t_method" in params
+            and params["optimal_t_method"] != self.optimal_t_method
+        ):
+            self.optimal_t_method = params["optimal_t_method"]
+            reset_potential = True
+            del params["optimal_t_method"]
+        if (
+            "optimal_t_legacy" in params
+            and params["optimal_t_legacy"] != self.optimal_t_legacy
+        ):
+            self.optimal_t_legacy = params["optimal_t_legacy"]
+            reset_potential = True
+            del params["optimal_t_legacy"]
         if "potential_method" in params:
             if params["potential_method"] == "log":
                 params["gamma"] = 1
@@ -796,11 +838,13 @@ class PHATE(BaseEstimator):
 
         if precomputed is None:
             _logger.info(
-                "Running PHATE on {} cells and {} genes.".format(X.shape[0], X.shape[1])
+                "Running PHATE on {} points and {} features.".format(
+                    X.shape[0], X.shape[1]
+                )
             )
         else:
             _logger.info(
-                "Running PHATE on precomputed {} matrix with {} cells.".format(
+                "Running PHATE on precomputed {} matrix with {} points.".format(
                     precomputed, X.shape[0]
                 )
             )
@@ -837,7 +881,7 @@ class PHATE(BaseEstimator):
         return self
 
     def transform(self, X=None, t_max=100, plot_optimal_t=False, ax=None):
-        """Computes the position of the cells in the embedding space
+        """Computes the position of the points in the embedding space
 
         Parameters
         ----------
@@ -916,7 +960,7 @@ class PHATE(BaseEstimator):
                 return self.embedding
 
     def fit_transform(self, X, **kwargs):
-        """Computes the diffusion operator and the position of the cells in the
+        """Computes the diffusion operator and the position of the points in the
         embedding space
 
         Parameters
@@ -941,7 +985,15 @@ class PHATE(BaseEstimator):
             embedding = self.transform(**kwargs)
         return embedding
 
-    def _calculate_potential(self, t=None, t_max=100, plot_optimal_t=False, ax=None):
+    def _calculate_potential(
+        self,
+        t=None,
+        t_max=100,
+        plot_optimal_t=False,
+        ax=None,
+        optimal_t_method="approximate",
+        optimal_t_legacy=False,
+    ):
         """Calculates the diffusion potential
 
         Parameters
@@ -971,7 +1023,13 @@ class PHATE(BaseEstimator):
             t = self.t
         if self._diff_potential is None:
             if t == "auto":
-                t = self._find_optimal_t(t_max=t_max, plot=plot_optimal_t, ax=ax)
+                t = self._find_optimal_t(
+                    t_max=t_max,
+                    plot=plot_optimal_t,
+                    ax=ax,
+                    method=self.optimal_t_method,
+                    legacy=self.optimal_t_legacy,
+                )
             else:
                 t = self.t
             with _logger.task("diffusion potential"):
@@ -1014,7 +1072,9 @@ class PHATE(BaseEstimator):
         t = np.arange(t_max)
         return t, vne.compute_von_neumann_entropy(self.diff_op, t_max=t_max)
 
-    def _find_optimal_t(self, t_max=100, plot=False, ax=None):
+    def _find_optimal_t(
+        self, t_max=100, plot=False, ax=None, method="approximate", legacy=False
+    ):
         """Find the optimal value of t
 
         Selects the optimal value of t based on the knee point of the
@@ -1032,13 +1092,45 @@ class PHATE(BaseEstimator):
             If plot=True and ax is not None, plots the VNE on the given axis
             Otherwise, creates a new axis and displays the plot
 
+        method : {'approximate', 'exact'}, optional (default: 'approximate')
+            Compute optimal t on the exact eigenvalues or a Chebyshev density estimate.
+
+        legacy : bool, optional (default: False)
+            Compute the legacy version of optimal t selection. Previous versions of PHATE
+            used the singular values of the diffusion operator; we now use the eigenvalues.
+
         Returns
         -------
         t_opt : int
             The optimal value of t
         """
         with _logger.task("optimal t"):
-            t, h = self._von_neumann_entropy(t_max=t_max)
+            if method == "exact":
+                t, h = self._von_neumann_entropy(t_max=t_max)
+            elif method == "approximate":
+                if legacy:
+                    # legacy code: sqrt(eig( K^T D^(-2) K )) = svd( D^(-1) K )
+                    D2 = sparse.dia_matrix(
+                        (self.graph.dw.flatten() ** (-2), [0]),
+                        shape=(self.graph.K.shape[0], self.graph.K.shape[0]),
+                    ).tocsr()
+                    legacy_eigs = True
+                    eigs, density = eig.estimate_eigenvalue_density(
+                        self.graph.K.T @ D2 @ self.graph.K, eigmin=0, symmetric=True
+                    )
+                    eigs = np.sqrt(eigs)
+                else:
+                    eigs, density = eig.estimate_eigenvalue_density(
+                        self.diff_aff, symmetric=True
+                    )
+                    eigs = np.abs(eigs)
+                t = np.arange(t_max)
+                h = vne.von_neumann_entropy(eigs, t_max=t_max, density=density)
+            else:
+                raise ValueError(
+                    "Expected method in 'exact', 'approximate'. "
+                    "Got {}".format(method)
+                )
             t_opt = vne.find_knee_point(y=h, x=t)
             _logger.info("Automatically selected t = {}".format(t_opt))
 
@@ -1057,5 +1149,18 @@ class PHATE(BaseEstimator):
                 plt.show()
 
         self.optimal_t = t_opt
+
+        if method == "approximate":
+            if legacy:
+                # legacy code: recalculate eig( D^(-1) K ) because we didn't above
+                eigs, density = eig.estimate_eigenvalue_density(
+                    self.diff_aff, symmetric=True
+                )
+                eigs = np.abs(eigs)
+            eig_threshold = ((eigs ** t_opt) > 1e-4).astype(int)
+            self._n_eigenvectors = int(np.sum(density * eig_threshold))
+            _logger.info(
+                "Using {} significant diffusion components".format(self._n_eigenvectors)
+            )
 
         return t_opt

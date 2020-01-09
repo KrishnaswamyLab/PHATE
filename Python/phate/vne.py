@@ -3,7 +3,8 @@
 
 from __future__ import print_function, division
 import numpy as np
-from scipy.linalg import svd
+import scipy
+from scipy import sparse
 
 # Von Neumann Entropy
 
@@ -11,8 +12,8 @@ from scipy.linalg import svd
 def compute_von_neumann_entropy(data, t_max=100):
     """
     Determines the Von Neumann entropy of data
-    at varying matrix powers. The user should select a value of t
-    around the "knee" of the entropy curve.
+    at varying matrix powers.
+    Uses singular values instead of eigenvalues.
 
     Parameters
     ----------
@@ -34,18 +35,52 @@ def compute_von_neumann_entropy(data, t_max=100):
     >>> h = phate.vne.compute_von_neumann_entropy(X)
     >>> phate.vne.find_knee_point(h)
     23
-
     """
-    _, eigenvalues, _ = svd(data)
+    if sparse.issparse(data):
+        eigenvalues = sparse.linalg.svds(data, return_singular_vectors=False)
+    else:
+        eigenvalues = scipy.linalg.svd(data, return_singular_vectors=False)
+    return von_neumann_entropy(eigenvalues, t_max=t_max)
+
+
+def von_neumann_entropy(eigenvalues, t_max=100, density=None):
+    """
+    Determines the Von Neumann entropy of a set of eigenvalues
+    at varying matrix powers.
+
+    Parameters
+    ----------
+    t_max : int, default: 100
+        Maximum value of t to test
+
+    Returns
+    -------
+    entropy : array, shape=[t_max]
+        The entropy of the diffusion affinities for each value of t
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import phate
+    >>> import scipy
+    >>> X = np.eye(10)
+    >>> X[0,0] = 5
+    >>> X[3,2] = 4
+    >>> eigs = scipy.linalg.svd(X, return_eigenvectors=False)
+    >>> h = phate.vne.von_neumann_entropy(X)
+    >>> phate.vne.find_knee_point(h)
+    23
+    """
+    if density is None:
+        density = np.ones(len(eigenvalues))
     entropy = []
     eigenvalues_t = np.copy(eigenvalues)
     for _ in range(t_max):
-        prob = eigenvalues_t / np.sum(eigenvalues_t)
+        prob = eigenvalues_t / np.sum(eigenvalues_t * density)
         prob = prob + np.finfo(float).eps
-        entropy.append(-np.sum(prob * np.log(prob)))
+        entropy.append(-np.sum(prob * np.log(prob) * density))
         eigenvalues_t = eigenvalues_t * eigenvalues
     entropy = np.array(entropy)
-
     return np.array(entropy)
 
 
@@ -76,7 +111,6 @@ def find_knee_point(y, x=None):
     >>> y = np.exp(-x/10)
     >>> phate.vne.find_knee_point(y,x)
     8
-
     """
     try:
         y.shape
