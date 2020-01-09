@@ -39,7 +39,7 @@ def compute_von_neumann_entropy(data, t_max=100):
     if sparse.issparse(data):
         eigenvalues = sparse.linalg.svds(data, return_singular_vectors=False)
     else:
-        eigenvalues = scipy.linalg.svd(data, return_singular_vectors=False)
+        eigenvalues = scipy.linalg.svd(data, left=False, right=False)
     return von_neumann_entropy(eigenvalues, t_max=t_max)
 
 
