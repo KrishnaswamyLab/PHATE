@@ -1121,7 +1121,7 @@ class PHATE(BaseEstimator):
                     eigs = np.sqrt(eigs)
                 else:
                     eigs, density = eig.estimate_eigenvalue_density(
-                        self.diff_aff, symmetric=True
+                        self.graph.diff_aff, symmetric=True
                     )
                     eigs = np.abs(eigs)
                 t = np.arange(t_max)
