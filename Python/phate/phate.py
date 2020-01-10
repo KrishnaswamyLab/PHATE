@@ -1108,18 +1108,18 @@ class PHATE(BaseEstimator):
             if method == "exact":
                 t, h = self._von_neumann_entropy(t_max=t_max)
             elif method == "approximate":
+                if isinstance(self.graph, graphtools.graphs.LandmarkGraph):
+                    legacy = True
                 if legacy:
-                    # legacy code: sqrt(eig( K^T D^(-2) K )) = svd( D^(-1) K )
-                    D2 = sparse.dia_matrix(
-                        (self.graph.dw.flatten() ** (-2), [0]),
-                        shape=(self.graph.K.shape[0], self.graph.K.shape[0]),
-                    ).tocsr()
-                    legacy_eigs = True
+                    # legacy code: sqrt(eig( P^T P )) = svd( P )
                     eigs, density = eig.estimate_eigenvalue_density(
-                        self.graph.K.T @ D2 @ self.graph.K, eigmin=0, symmetric=True
+                        self.diff_op.T @ self.diff_op, eigmin=0, symmetric=True
                     )
                     eigs = np.sqrt(eigs)
                 else:
+                    if isinstance(self.graph, graphtools.graphs.LandmarkGraph):
+                        A = self.diff_op
+                        symmetric = False
                     eigs, density = eig.estimate_eigenvalue_density(
                         self.graph.diff_aff, symmetric=True
                     )
@@ -1150,11 +1150,11 @@ class PHATE(BaseEstimator):
 
         self.optimal_t = t_opt
 
-        if method == "approximate":
+        if method == "approximate" and not isinstance(self.graph, graphtools.graphs.LandmarkGraph):
             if legacy:
                 # legacy code: recalculate eig( D^(-1) K ) because we didn't above
                 eigs, density = eig.estimate_eigenvalue_density(
-                    self.diff_aff, symmetric=True
+                    self.graph.diff_aff, symmetric=True
                 )
                 eigs = np.abs(eigs)
             eig_threshold = ((eigs ** t_opt) > 1e-4).astype(int)
