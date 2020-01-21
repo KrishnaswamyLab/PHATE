@@ -192,6 +192,7 @@ class PHATE(BaseEstimator):
         knn_dist="euclidean",
         optimal_t_method="approximate",
         optimal_t_legacy=False,
+        power_method="approximate",
         mds_solver="sgd",
         mds_dist="euclidean",
         mds="metric",
@@ -218,6 +219,7 @@ class PHATE(BaseEstimator):
         self.knn_dist = knn_dist
         self.optimal_t_method = optimal_t_method
         self.optimal_t_legacy = optimal_t_legacy
+        self.power_method = power_method
         self.mds = mds
         self.mds_dist = mds_dist
         self.mds_solver = mds_solver
@@ -310,6 +312,18 @@ class PHATE(BaseEstimator):
                 pass
         else:
             self.optimal_t_ = value
+
+    @property
+    @utils.check_fitted(attributes="graph_")
+    def _t_selected(self):
+        if self.t == "auto":
+            if self.optimal_t is None:
+                self._find_optimal_t(
+                    method=self.optimal_t_method, legacy=self.optimal_t_legacy,
+                )
+            return self.optimal_t
+        else:
+            return self.t
 
     @property
     @utils.check_fitted(attributes="graph_")
@@ -1017,13 +1031,7 @@ class PHATE(BaseEstimator):
         return embedding
 
     def _calculate_potential(
-        self,
-        t=None,
-        t_max=100,
-        plot_optimal_t=False,
-        ax=None,
-        optimal_t_method="approximate",
-        optimal_t_legacy=False,
+        self, t=None, t_max=100, plot_optimal_t=False, ax=None,
     ):
         """Calculates the diffusion potential
 
@@ -1056,21 +1064,21 @@ class PHATE(BaseEstimator):
             # precomputed
             return self._diff_potential
         except AttributeError:
-            # need to calculate it
+            # need to calculate the potential
             if t == "auto":
-                t = self._find_optimal_t(
+                self._find_optimal_t(
                     t_max=t_max,
                     plot=plot_optimal_t,
                     ax=ax,
                     method=self.optimal_t_method,
                     legacy=self.optimal_t_legacy,
                 )
-            else:
-                t = self.t
 
             with _logger.task("diffusion potential"):
                 # diffused diffusion operator
-                diff_op_t = np.linalg.matrix_power(self.diff_op, t)
+                diff_op_t = self._power_diff_op(
+                    self._t_selected, method=self.power_method
+                )
                 if self.gamma == 1:
                     # handling small values
                     diff_op_t = diff_op_t + 1e-7
@@ -1081,6 +1089,23 @@ class PHATE(BaseEstimator):
                     c = (1 - self.gamma) / 2
                     self._diff_potential = ((diff_op_t) ** c) / c
             return self._diff_potential
+
+    def _power_diff_op(self, t, method="exact"):
+        if self._landmarks_enabled or method == "exact":
+            diff_op_t = np.linalg.matrix_power(self.diff_op, t)
+        elif method == "approximate":
+            eigvals, eigvecs, eigvecs_inv = self._calculate_eigendecomposition()
+            eigvals = eigvals ** t
+            diff_op_t = eigvecs @ np.diag(eigvals) @ eigvecs_inv
+            # negative values are possible
+            diff_op_t = np.where(
+                diff_op_t > 0, diff_op_t, np.min(diff_op_t[diff_op_t > 0])
+            )
+        else:
+            raise ValueError(
+                "Expected method in 'exact', 'approximate'. Got {}".format(method)
+            )
+        return diff_op_t
 
     def _von_neumann_entropy(self, t_max=100):
         """Calculate Von Neumann Entropy
@@ -1104,6 +1129,44 @@ class PHATE(BaseEstimator):
         """
         t = np.arange(t_max)
         return t, vne.compute_von_neumann_entropy(self.diff_op, t_max=t_max)
+
+    def _calculate_eigendecomposition(self):
+        try:
+            return self._eigvals, self._eigvecs, self._eigvecs_inv
+        except AttributeError:
+            eigs, density = self._estimate_eigenvalue_density()
+            eigs_powered = (np.abs(eigs) ** self._t_selected) > 1e-3
+            order = np.argsort(eigs_powered)[::-1]
+            eigs_powered, density = eigs_powered[order], density[order]
+            explained_variance = np.cumsum(eigs_powered * density)
+            explained_variance /= np.max(explained_variance)
+            self._n_eigenvectors = int(
+                np.sum(density[np.cumsum(explained_variance) < 0.99]).round()
+            )
+            _logger.info(
+                "Using {} significant diffusion components".format(self._n_eigenvectors)
+            )
+            A = self.graph.diff_aff
+            if not sparse.issparse(A):
+                A = sparse.csr_matrix(A)
+            self._eigvals, self._eigvecs = sparse.linalg.eigsh(
+                A, k=self._n_eigenvectors, which="LA"
+            )
+            # convert to eigenvectors of diffusion operator
+            sqrtD = np.sqrt(self.graph.kernel_degree)
+            self._eigvecs_inv = self._eigvecs.T * sqrtD.flatten()
+            self._eigvecs = self._eigvecs / sqrtD
+            return self._eigvals, self._eigvecs, self._eigvecs_inv
+
+    def _estimate_eigenvalue_density(self):
+        try:
+            return self._eig_sample_points, self._eig_sample_density
+        except AttributeError:
+            (
+                self._eig_sample_points,
+                self._eig_sample_density,
+            ) = eig.estimate_eigenvalue_density(self.graph.diff_aff, symmetric=True)
+            return self._eig_sample_points, self._eig_sample_density
 
     def _find_optimal_t(
         self, t_max=100, plot=False, ax=None, method="approximate", legacy=False
@@ -1150,12 +1213,7 @@ class PHATE(BaseEstimator):
                     )
                     eigs = np.sqrt(eigs)
                 else:
-                    if self._landmarks_enabled:
-                        A = self.diff_op
-                        symmetric = False
-                    eigs, density = eig.estimate_eigenvalue_density(
-                        self.graph.diff_aff, symmetric=True
-                    )
+                    eigs, density = self._estimate_eigenvalue_density()
                     eigs = np.abs(eigs)
                 t = np.arange(t_max)
                 h = vne.von_neumann_entropy(eigs, t_max=t_max, density=density)
@@ -1182,18 +1240,5 @@ class PHATE(BaseEstimator):
                 plt.show()
 
         self.optimal_t = t_opt
-
-        if method == "approximate" and not self._landmarks_enabled:
-            if legacy:
-                # legacy code: recalculate eig( D^(-1) K ) because we didn't above
-                eigs, density = eig.estimate_eigenvalue_density(
-                    self.graph.diff_aff, symmetric=True
-                )
-                eigs = np.abs(eigs)
-            eig_threshold = ((eigs ** t_opt) > 1e-4).astype(int)
-            self._n_eigenvectors = int(np.sum(density * eig_threshold))
-            _logger.info(
-                "Using {} significant diffusion components".format(self._n_eigenvectors)
-            )
 
         return t_opt
