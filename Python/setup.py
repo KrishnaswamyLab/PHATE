@@ -12,6 +12,7 @@ install_requires = [
     "scprep>=0.11.1",
     "Deprecated",
     "sgdpy>=1.4.1",
+    "decorator",
 ]
 
 test_requires = ["nose2", "anndata", "parameterized"]

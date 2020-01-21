@@ -14,10 +14,10 @@ import phate
 import graphtools
 import pygsp
 import anndata
+import sklearn
 import numpy as np
 from scipy.spatial.distance import pdist, squareform
-from sklearn.utils.testing import assert_warns
-
+from sklearn.utils.testing import assert_warns, assert_raises
 
 
 def test_simple():
@@ -178,6 +178,22 @@ def test_plot():
         c=tree_clusters,
         discrete=False,
     )
+
+
+def test_not_fitted():
+    phate_op = phate.PHATE(verbose=0)
+    assert phate_op.graph is None
+    assert phate_op.optimal_t is None
+    assert_raises(sklearn.exceptions.NotFittedError, phate_op.transform)
+    assert_raises(sklearn.exceptions.NotFittedError, lambda op: op.diff_op, phate_op)
+    tree_data, tree_clusters = phate.tree.gen_dla(n_branch=3, branch_length=20)
+    phate_op.fit_transform(tree_data)
+    phate_op._reset_potential()
+    assert phate_op.optimal_t is None
+    phate_op._reset_graph()
+    assert phate_op.graph is None
+    assert_raises(sklearn.exceptions.NotFittedError, phate_op.transform)
+    assert_raises(sklearn.exceptions.NotFittedError, lambda op: op.diff_op, phate_op)
 
 
 if __name__ == "__main__":

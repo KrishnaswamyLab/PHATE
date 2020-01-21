@@ -8,3 +8,5 @@ scprep>=1.0
 matplotlib>=3.0
 Deprecated
 sgdpy>=1.4.1
+decorator
+

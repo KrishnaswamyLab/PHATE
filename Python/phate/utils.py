@@ -1,5 +1,15 @@
 import numbers
 import numpy as np
+import sklearn
+from decorator import decorator
+
+
+@decorator
+def check_fitted(func, attributes=None, msg=None, all_or_any=all, *args, **kwargs):
+    sklearn.utils.validation.check_is_fitted(
+        args[0], attributes=attributes, msg=msg, all_or_any=all_or_any
+    )
+    return func(*args, **kwargs)
 
 
 def check_positive(**params):

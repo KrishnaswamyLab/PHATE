@@ -9,7 +9,6 @@ from __future__ import print_function, division, absolute_import
 import numpy as np
 import graphtools
 from sklearn.base import BaseEstimator
-from sklearn.exceptions import NotFittedError
 from scipy import sparse
 import warnings
 import tasklogger
@@ -225,11 +224,8 @@ class PHATE(BaseEstimator):
         self.random_state = random_state
         self.kwargs = kwargs
 
-        self.graph = None
-        self._diff_potential = None
         self.embedding = None
         self.X = None
-        self.optimal_t = None
 
         if (alpha_decay is True and decay is None) or (
             alpha_decay is False and decay is not None
@@ -282,23 +278,56 @@ class PHATE(BaseEstimator):
         _logger.set_level(verbose)
 
     @property
+    def graph(self):
+        try:
+            return self.graph_
+        except AttributeError:
+            return None
+
+    @graph.setter
+    def graph(self, value):
+        if value is None:
+            try:
+                del self.graph_
+            except AttributeError:
+                pass
+        else:
+            self.graph_ = value
+
+    @property
+    def optimal_t(self):
+        try:
+            return self.optimal_t_
+        except AttributeError:
+            return None
+
+    @optimal_t.setter
+    def optimal_t(self, value):
+        if value is None:
+            try:
+                del self.optimal_t_
+            except AttributeError:
+                pass
+        else:
+            self.optimal_t_ = value
+
+    @property
+    @utils.check_fitted(attributes="graph_")
+    def _landmarks_enabled(self):
+        return isinstance(self.graph, graphtools.graphs.LandmarkGraph)
+
+    @property
+    @utils.check_fitted(attributes="graph_")
     def diff_op(self):
         """The diffusion operator calculated from the data
         """
-        if self.graph is not None:
-            if isinstance(self.graph, graphtools.graphs.LandmarkGraph):
-                diff_op = self.graph.landmark_op
-            else:
-                diff_op = self.graph.diff_op
-            if sparse.issparse(diff_op):
-                diff_op = diff_op.toarray()
-            return diff_op
+        if self._landmarks_enabled:
+            diff_op = self.graph.landmark_op
         else:
-            raise NotFittedError(
-                "This PHATE instance is not fitted yet. Call "
-                "'fit' with appropriate arguments before "
-                "using this method."
-            )
+            diff_op = self.graph.diff_op
+        if sparse.issparse(diff_op):
+            diff_op = diff_op.toarray()
+        return diff_op
 
     @property
     def diff_potential(self):
@@ -312,7 +341,7 @@ class PHATE(BaseEstimator):
         diff_potential : ndarray, shape=[n_samples, min(n_landmark, n_samples)]
         """
         diff_potential = self._calculate_potential()
-        if isinstance(self.graph, graphtools.graphs.LandmarkGraph):
+        if self._landmarks_enabled:
             diff_potential = self.graph.interpolate(diff_potential)
         return diff_potential
 
@@ -417,8 +446,15 @@ class PHATE(BaseEstimator):
         self._reset_potential()
 
     def _reset_potential(self):
-        self._diff_potential = None
-        self._optimal_t = None
+        try:
+            del self._diff_potential
+        except AttributeError:
+            pass
+        try:
+            del self._n_eigenvectors
+        except AttributeError:
+            pass
+        self.optimal_t = None
         self._reset_embedding()
 
     def _reset_embedding(self):
@@ -880,6 +916,7 @@ class PHATE(BaseEstimator):
         self.diff_op
         return self
 
+    @utils.check_fitted(attributes="graph_")
     def transform(self, X=None, t_max=100, plot_optimal_t=False, ax=None):
         """Computes the position of the points in the embedding space
 
@@ -910,13 +947,7 @@ class PHATE(BaseEstimator):
         embedding : array, shape=[n_samples, n_dimensions]
         The cells embedded in a lower dimensional space using PHATE
         """
-        if self.graph is None:
-            raise NotFittedError(
-                "This PHATE instance is not fitted yet. Call "
-                "'fit' with appropriate arguments before "
-                "using this method."
-            )
-        elif X is not None and not utils.matrix_is_equivalent(X, self.X):
+        if X is not None and not utils.matrix_is_equivalent(X, self.X):
             # fit to external data
             warnings.warn(
                 "Pre-fit PHATE should not be used to transform a "
@@ -953,7 +984,7 @@ class PHATE(BaseEstimator):
                         seed=self.random_state,
                         verbose=max(self.verbose - 1, 0),
                     )
-            if isinstance(self.graph, graphtools.graphs.LandmarkGraph):
+            if self._landmarks_enabled:
                 _logger.debug("Extending to original data...")
                 return self.graph.interpolate(self.embedding)
             else:
@@ -1021,7 +1052,11 @@ class PHATE(BaseEstimator):
         """
         if t is None:
             t = self.t
-        if self._diff_potential is None:
+        try:
+            # precomputed
+            return self._diff_potential
+        except AttributeError:
+            # need to calculate it
             if t == "auto":
                 t = self._find_optimal_t(
                     t_max=t_max,
@@ -1032,6 +1067,7 @@ class PHATE(BaseEstimator):
                 )
             else:
                 t = self.t
+
             with _logger.task("diffusion potential"):
                 # diffused diffusion operator
                 diff_op_t = np.linalg.matrix_power(self.diff_op, t)
@@ -1044,10 +1080,7 @@ class PHATE(BaseEstimator):
                 else:
                     c = (1 - self.gamma) / 2
                     self._diff_potential = ((diff_op_t) ** c) / c
-        elif plot_optimal_t:
-            self._find_optimal_t(t_max=t_max, plot=plot_optimal_t, ax=ax)
-
-        return self._diff_potential
+            return self._diff_potential
 
     def _von_neumann_entropy(self, t_max=100):
         """Calculate Von Neumann Entropy
@@ -1108,7 +1141,7 @@ class PHATE(BaseEstimator):
             if method == "exact":
                 t, h = self._von_neumann_entropy(t_max=t_max)
             elif method == "approximate":
-                if isinstance(self.graph, graphtools.graphs.LandmarkGraph):
+                if self._landmarks_enabled:
                     legacy = True
                 if legacy:
                     # legacy code: sqrt(eig( P^T P )) = svd( P )
@@ -1117,7 +1150,7 @@ class PHATE(BaseEstimator):
                     )
                     eigs = np.sqrt(eigs)
                 else:
-                    if isinstance(self.graph, graphtools.graphs.LandmarkGraph):
+                    if self._landmarks_enabled:
                         A = self.diff_op
                         symmetric = False
                     eigs, density = eig.estimate_eigenvalue_density(
@@ -1150,7 +1183,7 @@ class PHATE(BaseEstimator):
 
         self.optimal_t = t_opt
 
-        if method == "approximate" and not isinstance(self.graph, graphtools.graphs.LandmarkGraph):
+        if method == "approximate" and not self._landmarks_enabled:
             if legacy:
                 # legacy code: recalculate eig( D^(-1) K ) because we didn't above
                 eigs, density = eig.estimate_eigenvalue_density(
