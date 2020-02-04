@@ -1130,7 +1130,14 @@ class PHATE(BaseEstimator):
         t = np.arange(t_max)
         return t, vne.compute_von_neumann_entropy(self.diff_op, t_max=t_max)
 
-    def _calculate_eigendecomposition(self):
+    def _calculate_eigendecomposition(self, tol=0.01):
+        """Compute the partial eigendecomposition
+
+        Parameters
+        ----------
+        tol : float, optional (default: 0.01)
+            Tolerance of % of variation removed by low rank approximation
+        """
         try:
             return self._eigvals, self._eigvecs, self._eigvecs_inv
         except AttributeError:
@@ -1141,7 +1148,7 @@ class PHATE(BaseEstimator):
             explained_variance = np.cumsum(eigs_powered * density)
             explained_variance /= np.max(explained_variance)
             self._n_eigenvectors = int(
-                np.sum(density[np.cumsum(explained_variance) < 0.99]).round()
+                np.sum(density[np.cumsum(explained_variance) < 1-tol]).round()
             )
             _logger.info(
                 "Using {} significant diffusion components".format(self._n_eigenvectors)
