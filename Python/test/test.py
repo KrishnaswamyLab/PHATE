@@ -16,8 +16,19 @@ import pygsp
 import anndata
 import numpy as np
 from scipy.spatial.distance import pdist, squareform
-from sklearn.utils.testing import assert_warns
 
+from nose.tools import assert_raises_regex, assert_warns_regex
+import re
+
+
+def assert_warns_message(expected_warning, expected_message, *args, **kwargs):
+    expected_regex = re.escape(expected_message)
+    return assert_warns_regex(expected_warning, expected_regex, *args, **kwargs)
+
+
+def assert_raises_message(expected_warning, expected_message, *args, **kwargs):
+    expected_regex = re.escape(expected_message)
+    return assert_raises_regex(expected_warning, expected_regex, *args, **kwargs)
 
 
 def test_simple():
@@ -146,8 +157,9 @@ def test_bmmsc():
 def test_plot():
     tree_data, tree_clusters = phate.tree.gen_dla()
     # scatter
-    assert_warns(
+    assert_warns_message(
         DeprecationWarning,
+        "Call to deprecated function (or staticmethod) scatter. (Use scprep.plot.scatter instead) -- Deprecated since version 1.0.0.",
         phate.plot.scatter,
         tree_data[:, 0],
         tree_data[:, 1],
@@ -155,24 +167,27 @@ def test_plot():
         discrete=True,
     )
     # scatter2d
-    assert_warns(
+    assert_warns_message(
         DeprecationWarning,
+        "Call to deprecated function (or staticmethod) scatter2d. (Use scprep.plot.scatter2d instead) -- Deprecated since version 1.0.0.",
         phate.plot.scatter2d,
         tree_data,
         c=tree_clusters,
         discrete=True,
     )
     # scatter3d
-    assert_warns(
+    assert_warns_message(
         DeprecationWarning,
+        "Call to deprecated function (or staticmethod) scatter3d. (Use scprep.plot.scatter3d instead) -- Deprecated since version 1.0.0.",
         phate.plot.scatter3d,
         tree_data,
         c=tree_clusters,
         discrete=False,
     )
     # rotate_scatter3d
-    assert_warns(
+    assert_warns_message(
         DeprecationWarning,
+        "Call to deprecated function (or staticmethod) rotate_scatter3d. (Use scprep.plot.rotate_scatter3d instead) -- Deprecated since version 1.0.0.",
         phate.plot.rotate_scatter3d,
         tree_data,
         c=tree_clusters,
