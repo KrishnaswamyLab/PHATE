@@ -1130,7 +1130,7 @@ class PHATE(BaseEstimator):
         t = np.arange(t_max)
         return t, vne.compute_von_neumann_entropy(self.diff_op, t_max=t_max)
 
-    def _calculate_eigendecomposition(self, tol=0.01):
+    def _calculate_eigendecomposition(self, tol=0.001):
         """Compute the partial eigendecomposition
 
         Parameters
