@@ -1142,7 +1142,7 @@ class PHATE(BaseEstimator):
             return self._eigvals, self._eigvecs, self._eigvecs_inv
         except AttributeError:
             eigs, density = self._estimate_eigenvalue_density()
-            eigs_powered = (np.abs(eigs) ** self._t_selected) > 1e-3
+            eigs_powered = np.abs(eigs) ** self._t_selected
             order = np.argsort(eigs_powered)[::-1]
             eigs_powered, density = eigs_powered[order], density[order]
             explained_variance = np.cumsum(eigs_powered * density)
