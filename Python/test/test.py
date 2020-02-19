@@ -51,6 +51,8 @@ def test_simple():
     G = pygsp.graphs.Graph(G.W)
     phate_operator.fit(G)
     phate_operator.fit(anndata.AnnData(tree_data))
+    with assert_raises_message(TypeError, "Expected phate_op to be of type PHATE. Got 1"):
+        phate.cluster.kmeans(1)
 
 
 def test_vne():
