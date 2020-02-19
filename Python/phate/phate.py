@@ -796,11 +796,11 @@ class PHATE(BaseEstimator):
 
         if precomputed is None:
             _logger.info(
-                "Running PHATE on {} cells and {} genes.".format(X.shape[0], X.shape[1])
+                "Running PHATE on {} observations and {} variables.".format(X.shape[0], X.shape[1])
             )
         else:
             _logger.info(
-                "Running PHATE on precomputed {} matrix with {} cells.".format(
+                "Running PHATE on precomputed {} matrix with {} observations.".format(
                     precomputed, X.shape[0]
                 )
             )
