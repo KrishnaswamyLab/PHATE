@@ -6,6 +6,7 @@ from sklearn import manifold
 from sklearn.decomposition import PCA
 from scipy.spatial.distance import pdist, squareform
 import scipy.spatial
+import numpy as np
 from deprecated import deprecated
 
 import tasklogger
@@ -227,13 +228,22 @@ def embed_MDS(
         try:
             # use sgd2 if it is available
             Y = sgd(X_dist, n_components=ndim, random_state=seed, init=Y_classic)
+            if np.any(~np.isfinite(Y)):
+                _logger.debug("Using SMACOF because SGD returned NaN")
+                raise NotImplementedError
         except NotImplementedError:
             # sgd2 currently only supports n_components==2
             Y = smacof(
-                X_dist, n_components=ndim, random_state=seed, init=Y_classic, metric=True
+                X_dist,
+                n_components=ndim,
+                random_state=seed,
+                init=Y_classic,
+                metric=True,
             )
     elif solver == "smacof":
-        Y = smacof(X_dist, n_components=ndim, random_state=seed, init=Y_classic, metric=True)
+        Y = smacof(
+            X_dist, n_components=ndim, random_state=seed, init=Y_classic, metric=True
+        )
     else:
         raise RuntimeError
     if how == "metric":

@@ -1,6 +1,6 @@
 from sklearn import cluster, exceptions
 import warnings
-
+from .phate import PHATE
 
 def kmeans(phate_op, n_clusters=8, random_state=None, k=None):
     """KMeans on the PHATE potential
@@ -29,6 +29,8 @@ def kmeans(phate_op, n_clusters=8, random_state=None, k=None):
             "k is deprecated. Please use n_clusters in future.", FutureWarning
         )
         n_clusters = k
+    if not isinstance(phate_op, PHATE):
+        raise TypeError("Expected phate_op to be of type PHATE. Got {}".format(phate_op))
     if phate_op.graph is not None:
         diff_potential = phate_op.diff_potential
         return cluster.KMeans(n_clusters, random_state=random_state).fit_predict(

@@ -796,11 +796,11 @@ class PHATE(BaseEstimator):
 
         if precomputed is None:
             _logger.info(
-                "Running PHATE on {} cells and {} genes.".format(X.shape[0], X.shape[1])
+                "Running PHATE on {} observations and {} variables.".format(X.shape[0], X.shape[1])
             )
         else:
             _logger.info(
-                "Running PHATE on precomputed {} matrix with {} cells.".format(
+                "Running PHATE on precomputed {} matrix with {} observations.".format(
                     precomputed, X.shape[0]
                 )
             )
@@ -1040,7 +1040,7 @@ class PHATE(BaseEstimator):
         with _logger.task("optimal t"):
             t, h = self._von_neumann_entropy(t_max=t_max)
             t_opt = vne.find_knee_point(y=h, x=t)
-            _logger.task("Automatically selected t = {}".format(t_opt))
+            _logger.info("Automatically selected t = {}".format(t_opt))
 
         if plot:
             if ax is None:
