@@ -193,6 +193,7 @@ class PHATE(BaseEstimator):
         optimal_t_method="approximate",
         optimal_t_legacy=False,
         power_method="approximate",
+        n_eigenvectors=None,
         mds_solver="sgd",
         mds_dist="euclidean",
         mds="metric",
@@ -220,6 +221,7 @@ class PHATE(BaseEstimator):
         self.optimal_t_method = optimal_t_method
         self.optimal_t_legacy = optimal_t_legacy
         self.power_method = power_method
+        self._n_eigenvectors = n_eigenvectors
         self.mds = mds
         self.mds_dist = mds_dist
         self.mds_solver = mds_solver
@@ -460,14 +462,8 @@ class PHATE(BaseEstimator):
         self._reset_potential()
 
     def _reset_potential(self):
-        try:
-            del self._diff_potential
-        except AttributeError:
-            pass
-        try:
-            del self._n_eigenvectors
-        except AttributeError:
-            pass
+        for attr in ["_diff_potential", "_eigvals", "_eigvecs", "_eigvecs_inv"]:
+            utils.try_delete(self, attr)
         self.optimal_t = None
         self._reset_embedding()
 
@@ -636,6 +632,17 @@ class PHATE(BaseEstimator):
             self.optimal_t_legacy = params["optimal_t_legacy"]
             reset_potential = True
             del params["optimal_t_legacy"]
+        if "power_method" in params and params["power_method"] != self.power_method:
+            self.power_method = params["power_method"]
+            reset_potential = True
+            del params["power_method"]
+        if (
+            "n_eigenvectors" in params
+            and params["n_eigenvectors"] != self._n_eigenvectors
+        ):
+            self._n_eigenvectors = params["n_eigenvectors"]
+            reset_potential = True
+            del params["n_eigenvectors"]
         if "potential_method" in params:
             if params["potential_method"] == "log":
                 params["gamma"] = 1
@@ -1141,23 +1148,26 @@ class PHATE(BaseEstimator):
         try:
             return self._eigvals, self._eigvecs, self._eigvecs_inv
         except AttributeError:
-            eigs, density = self._estimate_eigenvalue_density()
-            eigs_powered = np.abs(eigs) ** self._t_selected
-            order = np.argsort(eigs_powered)[::-1]
-            eigs_powered, density = eigs_powered[order], density[order]
-            explained_variance = np.cumsum(eigs_powered * density)
-            explained_variance /= np.max(explained_variance)
-            self._n_eigenvectors = int(
-                np.sum(density[explained_variance < 1-tol]).round()
-            )
+            if self._n_eigenvectors is None:
+                eigs, density = self._estimate_eigenvalue_density()
+                eigs_powered = np.abs(eigs) ** self._t_selected
+                order = np.argsort(eigs_powered)[::-1]
+                eigs_powered, density = eigs_powered[order], density[order]
+                explained_variance = np.cumsum(eigs_powered * density)
+                explained_variance /= np.max(explained_variance)
+                self.n_eigenvectors = int(
+                    np.sum(density[explained_variance < 1 - tol]).round()
+                )
+            else:
+                self.n_eigenvectors = self._n_eigenvectors
             _logger.info(
-                "Using {} significant diffusion components".format(self._n_eigenvectors)
+                "Using {} significant diffusion components".format(self.n_eigenvectors)
             )
             A = self.graph.diff_aff
             if not sparse.issparse(A):
                 A = sparse.csr_matrix(A)
             self._eigvals, self._eigvecs = sparse.linalg.eigsh(
-                A, k=self._n_eigenvectors, which="LA"
+                A, k=self.n_eigenvectors, which="LA"
             )
             # convert to eigenvectors of diffusion operator
             sqrtD = np.sqrt(self.graph.kernel_degree)
@@ -1165,14 +1175,16 @@ class PHATE(BaseEstimator):
             self._eigvecs = self._eigvecs / sqrtD
             return self._eigvals, self._eigvecs, self._eigvecs_inv
 
-    def _estimate_eigenvalue_density(self):
+    def _estimate_eigenvalue_density(self, n_points=60):
         try:
             return self._eig_sample_points, self._eig_sample_density
         except AttributeError:
             (
                 self._eig_sample_points,
                 self._eig_sample_density,
-            ) = eig.estimate_eigenvalue_density(self.graph.diff_aff, symmetric=True)
+            ) = eig.estimate_eigenvalue_density(
+                self.graph.diff_aff, symmetric=True, n_points=n_points
+            )
             return self._eig_sample_points, self._eig_sample_density
 
     def _find_optimal_t(

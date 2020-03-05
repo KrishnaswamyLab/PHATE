@@ -133,3 +133,10 @@ def in_ipynb():
         return str(type(get_ipython())) in __VALID_NOTEBOOKS
     except NameError:
         return False
+
+
+def try_delete(obj, attr):
+    try:
+        delattr(obj, attr)
+    except AttributeError:
+        pass
