@@ -36,8 +36,14 @@ def test_simple():
     phate_operator = phate.PHATE(knn=15, t=100, verbose=False)
     tree_phate = phate_operator.fit_transform(tree_data)
     assert tree_phate.shape == (tree_data.shape[0], 2)
+    clusters = phate.cluster.kmeans(phate_operator, n_clusters='auto')
+    assert np.issubdtype(clusters.dtype, np.signedinteger)
+    assert len(np.unique(clusters)) >= 2
+    assert len(clusters.shape) == 1
+    assert len(clusters) == tree_data.shape[0]
     clusters = phate.cluster.kmeans(phate_operator, n_clusters=3)
     assert np.issubdtype(clusters.dtype, np.signedinteger)
+    assert len(np.unique(clusters)) == 3
     assert len(clusters.shape) == 1
     assert len(clusters) == tree_data.shape[0]
     phate_operator.fit(phate_operator.graph)
