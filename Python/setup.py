@@ -28,7 +28,7 @@ elif sys.version_info[:2] < (3, 6):
 else:
     install_requires += ["matplotlib>=3.0"]
 
-readme = open("README.rst").read()
+readme = open("README.md").read()
 
 setup(
     name="phate",
@@ -42,6 +42,7 @@ setup(
     extras_require={"test": test_requires, "doc": doc_requires},
     test_suite="nose2.collector.collector",
     long_description=readme,
+    long_description_content_type="text/markdown",
     url="https://github.com/KrishnaswamyLab/PHATE",
     download_url="https://github.com/KrishnaswamyLab/PHATE/archive/v{}.tar.gz".format(
         version
