@@ -92,6 +92,12 @@ class PHATE(BaseEstimator):
         non-zero values down the diagonal. This is detected automatically using
         `data[0,0]`. You can override this detection with
         `knn_dist='precomputed_distance'` or `knn_dist='precomputed_affinity'`.
+        
+    thresh : float, optional (default: 1e-2)
+        Threshold below which connections are set to zero
+    
+    knn_mult : int, optional (default: 10)
+        Multiplier of `knn` out to which to calculate connectivities.
 
     optimal_t_method : {'approximate', 'exact'}, optional (default: 'approximate')
         Compute optimal t on the exact eigenvalues or a Chebyshev density estimate.
@@ -190,6 +196,8 @@ class PHATE(BaseEstimator):
         gamma=1,
         n_pca=100,
         knn_dist="euclidean",
+        thresh=1e-2,
+        knn_mult=10,
         optimal_t_method="approximate",
         optimal_t_legacy=False,
         power_method="approximate",
@@ -214,6 +222,8 @@ class PHATE(BaseEstimator):
         self.n_components = n_components
         self.decay = decay
         self.knn = knn
+        self.knn_mult = knn_mult
+        self.thresh = thresh
         self.t = t
         self.n_landmark = n_landmark
         self.n_pca = n_pca
@@ -925,8 +935,9 @@ class PHATE(BaseEstimator):
                     distance=self.knn_dist,
                     precomputed=precomputed,
                     knn=self.knn,
+                    knn_max=self.knn * self.knn_mult,
                     decay=self.decay,
-                    thresh=1e-4,
+                    thresh=self.thresh,
                     n_jobs=self.n_jobs,
                     verbose=self.verbose,
                     random_state=self.random_state,
@@ -1137,7 +1148,7 @@ class PHATE(BaseEstimator):
         t = np.arange(t_max)
         return t, vne.compute_von_neumann_entropy(self.diff_op, t_max=t_max)
 
-    def _calculate_eigendecomposition(self, tol=0.01):
+    def _calculate_eigendecomposition(self, tol=0.03):
         """Compute the partial eigendecomposition
 
         Parameters
