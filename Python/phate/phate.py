@@ -1169,6 +1169,9 @@ class PHATE(BaseEstimator):
                 self.n_eigenvectors = int(
                     np.sum(density[explained_variance < 1 - tol]).round()
                 )
+                # check that this is a legal value
+                self.n_eigenvectors = min(self.n_eigenvectors, self.graph.K.shape[0]-1)
+                self.n_eigenvectors = max(self.n_eigenvectors, 1)
             else:
                 self.n_eigenvectors = self._n_eigenvectors
             _logger.info(
