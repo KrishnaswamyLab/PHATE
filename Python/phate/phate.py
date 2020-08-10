@@ -139,9 +139,6 @@ class PHATE(BaseEstimator):
     embedding : array-like, shape=[n_samples, n_components]
         Stores the position of the dataset in the embedding space
 
-    diff_op :  array-like, shape=[n_samples, n_samples] or [n_landmark, n_landmark]
-        The diffusion operator built from the graph
-
     graph : graphtools.base.BaseGraph
         The graph built on the input data
 
@@ -269,7 +266,8 @@ class PHATE(BaseEstimator):
 
     @property
     def diff_op(self):
-        """The diffusion operator calculated from the data
+        """diff_op :  array-like, shape=[n_samples, n_samples] or [n_landmark, n_landmark]
+            The diffusion operator built from the graph
         """
         if self.graph is not None:
             if isinstance(self.graph, graphtools.graphs.LandmarkGraph):
