@@ -171,7 +171,7 @@ tt_mmds = 0;
 tt_nmmds = 0;
 
 if isempty(K)
-    if ~isempty(npca) && size(data,2) > npca
+    if ~isempty(npca) && size(data,2) > npca && size(data,1) > npca
         % PCA
         disp 'Doing PCA'
         tic;
