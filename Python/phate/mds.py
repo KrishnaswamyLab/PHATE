@@ -105,7 +105,7 @@ def smacof(
 
     n_components : int, optional (default: 2)
         number of dimensions in which to embed `D`
-        
+
     metric : bool, optional (default: True)
         Use metric MDS. If False, uses non-metric MDS
 

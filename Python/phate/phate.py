@@ -267,7 +267,7 @@ class PHATE(BaseEstimator):
     @property
     def diff_op(self):
         """diff_op :  array-like, shape=[n_samples, n_samples] or [n_landmark, n_landmark]
-            The diffusion operator built from the graph
+        The diffusion operator built from the graph
         """
         if self.graph is not None:
             if isinstance(self.graph, graphtools.graphs.LandmarkGraph):
@@ -794,7 +794,9 @@ class PHATE(BaseEstimator):
 
         if precomputed is None:
             _logger.info(
-                "Running PHATE on {} observations and {} variables.".format(X.shape[0], X.shape[1])
+                "Running PHATE on {} observations and {} variables.".format(
+                    X.shape[0], X.shape[1]
+                )
             )
         else:
             _logger.info(

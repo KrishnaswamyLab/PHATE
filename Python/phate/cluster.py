@@ -3,6 +3,7 @@ import warnings
 import numpy as np
 from .phate import PHATE
 
+
 def silhouette_score(phate_op, n_clusters, random_state=None, **kwargs):
     """Compute the Silhouette score on KMeans on the PHATE potential
 
@@ -19,12 +20,15 @@ def silhouette_score(phate_op, n_clusters, random_state=None, **kwargs):
     -------
     score : float
     """
-    cluster_labels = kmeans(phate_op, n_clusters=n_clusters, random_state=random_state, **kwargs)
+    cluster_labels = kmeans(
+        phate_op, n_clusters=n_clusters, random_state=random_state, **kwargs
+    )
     return metrics.silhouette_score(phate_op.diff_potential, cluster_labels)
-    
-    
 
-def kmeans(phate_op, n_clusters='auto', max_clusters=10, random_state=None, k=None, **kwargs):
+
+def kmeans(
+    phate_op, n_clusters="auto", max_clusters=10, random_state=None, k=None, **kwargs
+):
     """KMeans on the PHATE potential
 
     Clustering on the PHATE operator as introduced in Moon et al.
@@ -55,15 +59,20 @@ def kmeans(phate_op, n_clusters='auto', max_clusters=10, random_state=None, k=No
         )
         n_clusters = k
     if not isinstance(phate_op, PHATE):
-        raise TypeError("Expected phate_op to be of type PHATE. Got {}".format(phate_op))
-    if phate_op.graph is not None:
-        if n_clusters == 'auto':
-            n_clusters = np.arange(2, max_clusters)
-            silhouette_scores = [silhouette_score(phate_op, k, random_state=random_state, **kwargs) for k in n_clusters]
-            n_clusters = n_clusters[np.argmax(silhouette_scores)]
-        return cluster.KMeans(n_clusters, random_state=random_state, **kwargs).fit_predict(
-            phate_op.diff_potential
+        raise TypeError(
+            "Expected phate_op to be of type PHATE. Got {}".format(phate_op)
         )
+    if phate_op.graph is not None:
+        if n_clusters == "auto":
+            n_clusters = np.arange(2, max_clusters)
+            silhouette_scores = [
+                silhouette_score(phate_op, k, random_state=random_state, **kwargs)
+                for k in n_clusters
+            ]
+            n_clusters = n_clusters[np.argmax(silhouette_scores)]
+        return cluster.KMeans(
+            n_clusters, random_state=random_state, **kwargs
+        ).fit_predict(phate_op.diff_potential)
     else:
         raise exceptions.NotFittedError(
             "This PHATE instance is not fitted yet. Call "
