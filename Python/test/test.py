@@ -36,7 +36,7 @@ def test_simple():
     phate_operator = phate.PHATE(knn=15, t=100, verbose=False)
     tree_phate = phate_operator.fit_transform(tree_data)
     assert tree_phate.shape == (tree_data.shape[0], 2)
-    clusters = phate.cluster.kmeans(phate_operator, n_clusters='auto')
+    clusters = phate.cluster.kmeans(phate_operator, n_clusters="auto")
     assert np.issubdtype(clusters.dtype, np.signedinteger)
     assert len(np.unique(clusters)) >= 2
     assert len(clusters.shape) == 1
@@ -57,7 +57,9 @@ def test_simple():
     G = pygsp.graphs.Graph(G.W)
     phate_operator.fit(G)
     phate_operator.fit(anndata.AnnData(tree_data))
-    with assert_raises_message(TypeError, "Expected phate_op to be of type PHATE. Got 1"):
+    with assert_raises_message(
+        TypeError, "Expected phate_op to be of type PHATE. Got 1"
+    ):
         phate.cluster.kmeans(1)
 
 

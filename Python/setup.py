@@ -14,7 +14,7 @@ install_requires = [
     "s_gd2>=1.5",
 ]
 
-test_requires = ["nose2", "anndata"]
+test_requires = ["nose2", "anndata", "coverage", "coveralls"]
 
 doc_requires = ["sphinx", "sphinxcontrib-napoleon"]
 
