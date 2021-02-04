@@ -25,10 +25,13 @@ jobs:
       run: |
         cd Python
         python -m pip install build --user
+        cd ..
 
     - name: Build a binary wheel and a source tarball
       run: |
-        python -m build --sdist --wheel --outdir dist/ .
+        cd Python
+        python -m build --sdist --wheel --outdir ../dist/ .
+        cd ..
 
     - name: Publish distribution 📦 to Test PyPI
       uses: pypa/gh-action-pypi-publish@master
@@ -41,4 +44,5 @@ jobs:
       if: startsWith(github.ref, 'refs/tags')
       uses: pypa/gh-action-pypi-publish@master
       with:
+        skip_existing: true
         password: ${{ secrets.pypi_password }}
