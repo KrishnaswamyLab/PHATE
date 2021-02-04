@@ -123,7 +123,7 @@ def find_knee_point(y, x=None):
     bbck = (-(sigma_x * sigma_xy - sigma_xx * sigma_y) / det)[::-1]
 
     # figure out the sum of per-point errors for left- and right- of-knee fits
-    error_curve = np.full_like(y, np.float("nan"))
+    error_curve = np.full_like(y, np.nan)
     for breakpt in np.arange(1, len(y) - 1):
         delsfwd = (mfwd[breakpt - 1] * x[: breakpt + 1] + bfwd[breakpt - 1]) - y[
             : breakpt + 1
