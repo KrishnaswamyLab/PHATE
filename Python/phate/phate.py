@@ -90,7 +90,7 @@ class PHATE(BaseEstimator):
         non-zero values down the diagonal. This is detected automatically using
         `data[0,0]`. You can override this detection with
         `knn_dist='precomputed_distance'` or `knn_dist='precomputed_affinity'`.
-        
+
     knn_max : int, optional, default: None
         Maximum number of neighbors for which alpha decaying kernel
         is computed for each point. For very large datasets, setting `knn_max`
@@ -319,7 +319,9 @@ class PHATE(BaseEstimator):
         ValueError : unacceptable choice of parameters
         """
         utils.check_positive(n_components=self.n_components, knn=self.knn)
-        utils.check_int(n_components=self.n_components, knn=self.knn, n_jobs=self.n_jobs)
+        utils.check_int(
+            n_components=self.n_components, knn=self.knn, n_jobs=self.n_jobs
+        )
         utils.check_between(-1, 1, gamma=self.gamma)
         utils.check_if_not(None, utils.check_positive, decay=self.decay)
         utils.check_if_not(
@@ -328,7 +330,7 @@ class PHATE(BaseEstimator):
             utils.check_int,
             n_landmark=self.n_landmark,
             n_pca=self.n_pca,
-            knn_max=self.knn_max
+            knn_max=self.knn_max,
         )
         utils.check_if_not("auto", utils.check_positive, utils.check_int, t=self.t)
         if not callable(self.knn_dist):
@@ -467,7 +469,7 @@ class PHATE(BaseEstimator):
             non-zero values down the diagonal. This is detected automatically
             using `data[0,0]`. You can override this detection with
             `knn_dist='precomputed_distance'` or `knn_dist='precomputed_affinity'`.
-        
+
         knn_max : int, optional, default: None
             Maximum number of neighbors for which alpha decaying kernel
             is computed for each point. For very large datasets, setting `knn_max`
