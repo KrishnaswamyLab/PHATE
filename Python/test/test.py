@@ -85,6 +85,7 @@ def test_tree():
         n_components=2,
         decay=10,
         knn=5,
+        knn_max=15,
         t=30,
         mds="classic",
         knn_dist="euclidean",
@@ -93,6 +94,12 @@ def test_tree():
         n_landmark=None,
         verbose=False,
     )
+    phate_operator.fit(M)
+    assert phate_operator.graph.knn == 5
+    assert phate_operator.graph.knn_max == 15
+    assert phate_operator.graph.decay == 10
+    assert phate_operator.graph.n_jobs == -2
+    assert phate_operator.graph.verbose == 0
 
     # run phate with classic MDS
     print("DLA tree, classic MDS")
