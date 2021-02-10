@@ -91,6 +91,11 @@ class PHATE(BaseEstimator):
         `data[0,0]`. You can override this detection with
         `knn_dist='precomputed_distance'` or `knn_dist='precomputed_affinity'`.
 
+    knn_max : int, optional, default: None
+        Maximum number of neighbors for which alpha decaying kernel
+        is computed for each point. For very large datasets, setting `knn_max`
+        to a small multiple of `knn` can speed up computation significantly.
+
     mds_dist : string, optional, default: 'euclidean'
         Distance metric for MDS. Recommended values: 'euclidean' and 'cosine'
         Any metric from `scipy.spatial.distance` can be used. Custom distance
@@ -179,6 +184,7 @@ class PHATE(BaseEstimator):
         n_pca=100,
         mds_solver="sgd",
         knn_dist="euclidean",
+        knn_max=None,
         mds_dist="euclidean",
         mds="metric",
         n_jobs=1,
@@ -203,6 +209,7 @@ class PHATE(BaseEstimator):
         self.mds = mds
         self.n_pca = n_pca
         self.knn_dist = knn_dist
+        self.knn_max = knn_max
         self.mds_dist = mds_dist
         self.mds_solver = mds_solver
         self.random_state = random_state
@@ -311,16 +318,19 @@ class PHATE(BaseEstimator):
         ------
         ValueError : unacceptable choice of parameters
         """
-        utils.check_positive(n_components=self.n_components, k=self.knn)
-        utils.check_int(n_components=self.n_components, k=self.knn, n_jobs=self.n_jobs)
+        utils.check_positive(n_components=self.n_components, knn=self.knn)
+        utils.check_int(
+            n_components=self.n_components, knn=self.knn, n_jobs=self.n_jobs
+        )
         utils.check_between(-1, 1, gamma=self.gamma)
-        utils.check_if_not(None, utils.check_positive, a=self.decay)
+        utils.check_if_not(None, utils.check_positive, decay=self.decay)
         utils.check_if_not(
             None,
             utils.check_positive,
             utils.check_int,
             n_landmark=self.n_landmark,
             n_pca=self.n_pca,
+            knn_max=self.knn_max,
         )
         utils.check_if_not("auto", utils.check_positive, utils.check_int, t=self.t)
         if not callable(self.knn_dist):
@@ -460,6 +470,11 @@ class PHATE(BaseEstimator):
             using `data[0,0]`. You can override this detection with
             `knn_dist='precomputed_distance'` or `knn_dist='precomputed_affinity'`.
 
+        knn_max : int, optional, default: None
+            Maximum number of neighbors for which alpha decaying kernel
+            is computed for each point. For very large datasets, setting `knn_max`
+            to a small multiple of `knn` can speed up computation significantly.
+
         mds_dist : string, optional, default: 'euclidean'
             recommended values: 'euclidean' and 'cosine'
             Any metric from `scipy.spatial.distance` can be used
@@ -578,6 +593,10 @@ class PHATE(BaseEstimator):
             self.knn = params["knn"]
             reset_kernel = True
             del params["knn"]
+        if "knn_max" in params and params["knn_max"] != self.knn_max:
+            self.knn_max = params["knn_max"]
+            reset_kernel = True
+            del params["knn_max"]
         if "decay" in params and params["decay"] != self.decay:
             self.decay = params["decay"]
             reset_kernel = True
@@ -759,6 +778,7 @@ class PHATE(BaseEstimator):
                 self.graph.set_params(
                     decay=self.decay,
                     knn=self.knn,
+                    knn_max=self.knn_max,
                     distance=self.knn_dist,
                     precomputed=precomputed,
                     n_jobs=self.n_jobs,
@@ -824,6 +844,7 @@ class PHATE(BaseEstimator):
                     distance=self.knn_dist,
                     precomputed=precomputed,
                     knn=self.knn,
+                    knn_max=self.knn_max,
                     decay=self.decay,
                     thresh=1e-4,
                     n_jobs=self.n_jobs,
