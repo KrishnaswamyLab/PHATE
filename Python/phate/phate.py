@@ -13,6 +13,7 @@ from sklearn.exceptions import NotFittedError
 from scipy import sparse
 import warnings
 import tasklogger
+from functools import wraps
 
 import matplotlib.pyplot as plt
 
@@ -31,6 +32,69 @@ except ImportError:
     pass
 
 _logger = tasklogger.get_tasklogger("graphtools")
+
+def deprecate_args(init):
+    @wraps(init)
+    def init_phate(*args, **kwargs):
+
+        alpha_decay = kwargs.pop('alpha_decay',None)
+
+        if (alpha_decay is True and kwargs['decay'] is None) or (
+                alpha_decay is False and kwargs['decay'] is not None
+            ):
+                warnings.warn(
+                    "alpha_decay is deprecated. Use `decay=None`"
+                    " to disable alpha decay in future.",
+                    FutureWarning,
+                )
+
+                if not alpha_decay:
+                    kwargs['decay'] = None
+
+        njobs = kwargs.pop('njobs',None)
+
+        if njobs is not None:
+            warnings.warn(
+                "njobs is deprecated. Please use n_jobs in future.", FutureWarning
+            )
+            kwargs['n_jobs'] = njobs
+
+        potential_method = kwargs.pop('potential_method',None)
+
+        if potential_method is not None:
+            if potential_method == "log":
+                kwargs['gamma'] = 1
+            elif potential_method == "sqrt":
+                kwargs['gamma'] = 0
+            else:
+                raise ValueError(
+                    "potential_method {} not recognized. Please "
+                    "use gamma between -1 and 1".format(potential_method)
+                )
+            warnings.warn(
+                "potential_method is deprecated. "
+                "Setting gamma to {} to achieve"
+                " {} transformation.".format(kwargs['gamma'], potential_method),
+                FutureWarning,
+            )
+
+        k = kwargs.pop('k',None)
+        if k is not None:
+            warnings.warn(
+                "k is deprecated. Please use knn in future.", FutureWarning
+            )
+            kwargs['knn'] = k
+
+        a = kwargs.pop('a',None)
+        if a is not None:
+            warnings.warn(
+                "a is deprecated. Please use decay in future.", FutureWarning
+            )
+            kwargs['decay'] = a
+
+        return init(*args, **kwargs)
+
+    return init_phate
 
 
 class PHATE(BaseEstimator):
@@ -173,6 +237,7 @@ class PHATE(BaseEstimator):
         `BioRxiv <http://biorxiv.org/content/early/2017/03/24/120378>`_.
     """
 
+    @deprecate_args
     def __init__(
         self,
         n_components=2,
@@ -190,17 +255,8 @@ class PHATE(BaseEstimator):
         n_jobs=1,
         random_state=None,
         verbose=1,
-        potential_method=None,
-        alpha_decay=None,
-        njobs=None,
-        k=None,
-        a=None,
         **kwargs
     ):
-        if k is not None:
-            knn = k
-        if a is not None:
-            decay = a
         self.n_components = n_components
         self.decay = decay
         self.knn = knn
@@ -221,41 +277,9 @@ class PHATE(BaseEstimator):
         self.X = None
         self.optimal_t = None
 
-        if (alpha_decay is True and decay is None) or (
-            alpha_decay is False and decay is not None
-        ):
-            warnings.warn(
-                "alpha_decay is deprecated. Use `decay=None`"
-                " to disable alpha decay in future.",
-                FutureWarning,
-            )
-            if not alpha_decay:
-                self.decay = None
-
-        if njobs is not None:
-            warnings.warn(
-                "njobs is deprecated. Please use n_jobs in future.", FutureWarning
-            )
-            n_jobs = njobs
         self.n_jobs = n_jobs
 
-        if potential_method is not None:
-            if potential_method == "log":
-                gamma = 1
-            elif potential_method == "sqrt":
-                gamma = 0
-            else:
-                raise ValueError(
-                    "potential_method {} not recognized. Please "
-                    "use gamma between -1 and 1".format(potential_method)
-                )
-            warnings.warn(
-                "potential_method is deprecated. "
-                "Setting gamma to {} to achieve"
-                " {} transformation.".format(gamma, potential_method),
-                FutureWarning,
-            )
-        elif gamma > 0.99 and gamma < 1:
+        if gamma > 0.99 and gamma < 1:
             warnings.warn(
                 "0.99 < gamma < 1 is numerically unstable. " "Setting gamma to 0.99",
                 RuntimeWarning,
@@ -499,10 +523,6 @@ class PHATE(BaseEstimator):
         verbose : `int` or `boolean`, optional (default: 1)
             If `True` or `> 0`, print status messages
 
-        k : Deprecated for `knn`
-
-        a : Deprecated for `decay`
-
         Examples
         --------
         >>> import phate
@@ -557,38 +577,12 @@ class PHATE(BaseEstimator):
             self.t = params["t"]
             reset_potential = True
             del params["t"]
-        if "potential_method" in params:
-            if params["potential_method"] == "log":
-                params["gamma"] = 1
-            elif params["potential_method"] == "sqrt":
-                params["gamma"] = 0
-            else:
-                raise ValueError(
-                    "potential_method {} not recognized. Please "
-                    "use gamma between -1 and 1".format(params["potential_method"])
-                )
-            warnings.warn(
-                "potential_method is deprecated. Setting gamma to {} to "
-                "achieve {} transformation.".format(
-                    params["gamma"], params["potential_method"]
-                ),
-                FutureWarning,
-            )
-            del params["potential_method"]
         if "gamma" in params and params["gamma"] != self.gamma:
             self.gamma = params["gamma"]
             reset_potential = True
             del params["gamma"]
 
         # kernel parameters
-        if "k" in params and params["k"] != self.knn:
-            self.knn = params["k"]
-            reset_kernel = True
-            del params["k"]
-        if "a" in params and params["a"] != self.decay:
-            self.decay = params["a"]
-            reset_kernel = True
-            del params["a"]
         if "knn" in params and params["knn"] != self.knn:
             self.knn = params["knn"]
             reset_kernel = True
