@@ -33,39 +33,40 @@ except ImportError:
 
 _logger = tasklogger.get_tasklogger("graphtools")
 
+
 def deprecate_args(init):
     @wraps(init)
     def init_phate(*args, **kwargs):
 
-        alpha_decay = kwargs.pop('alpha_decay',None)
+        alpha_decay = kwargs.pop("alpha_decay", None)
 
-        if (alpha_decay is True and kwargs['decay'] is None) or (
-                alpha_decay is False and kwargs['decay'] is not None
-            ):
-                warnings.warn(
-                    "alpha_decay is deprecated. Use `decay=None`"
-                    " to disable alpha decay in future.",
-                    FutureWarning,
-                )
+        if (alpha_decay is True and kwargs["decay"] is None) or (
+            alpha_decay is False and kwargs["decay"] is not None
+        ):
+            warnings.warn(
+                "alpha_decay is deprecated. Use `decay=None`"
+                " to disable alpha decay in future.",
+                FutureWarning,
+            )
 
-                if not alpha_decay:
-                    kwargs['decay'] = None
+            if not alpha_decay:
+                kwargs["decay"] = None
 
-        njobs = kwargs.pop('njobs',None)
+        njobs = kwargs.pop("njobs", None)
 
         if njobs is not None:
             warnings.warn(
                 "njobs is deprecated. Please use n_jobs in future.", FutureWarning
             )
-            kwargs['n_jobs'] = njobs
+            kwargs["n_jobs"] = njobs
 
-        potential_method = kwargs.pop('potential_method',None)
+        potential_method = kwargs.pop("potential_method", None)
 
         if potential_method is not None:
             if potential_method == "log":
-                kwargs['gamma'] = 1
+                kwargs["gamma"] = 1
             elif potential_method == "sqrt":
-                kwargs['gamma'] = 0
+                kwargs["gamma"] = 0
             else:
                 raise ValueError(
                     "potential_method {} not recognized. Please "
@@ -74,23 +75,19 @@ def deprecate_args(init):
             warnings.warn(
                 "potential_method is deprecated. "
                 "Setting gamma to {} to achieve"
-                " {} transformation.".format(kwargs['gamma'], potential_method),
+                " {} transformation.".format(kwargs["gamma"], potential_method),
                 FutureWarning,
             )
 
-        k = kwargs.pop('k',None)
+        k = kwargs.pop("k", None)
         if k is not None:
-            warnings.warn(
-                "k is deprecated. Please use knn in future.", FutureWarning
-            )
-            kwargs['knn'] = k
+            warnings.warn("k is deprecated. Please use knn in future.", FutureWarning)
+            kwargs["knn"] = k
 
-        a = kwargs.pop('a',None)
+        a = kwargs.pop("a", None)
         if a is not None:
-            warnings.warn(
-                "a is deprecated. Please use decay in future.", FutureWarning
-            )
-            kwargs['decay'] = a
+            warnings.warn("a is deprecated. Please use decay in future.", FutureWarning)
+            kwargs["decay"] = a
 
         return init(*args, **kwargs)
 
