@@ -89,9 +89,9 @@ jobs:
     - name: Install package & dependencies
       run: |
         cd Python
-        python -m pip install --upgrade "pip<=21.0"
-        pip install --use-deprecated=legacy-resolver -U wheel setuptools
-        pip install --use-deprecated=legacy-resolver -U .[test]
+        python -m pip install --upgrade pip
+        pip install -U wheel setuptools
+        pip install -U .[test]
         python -c "import phate"
 
     - name: Run tests
