@@ -89,8 +89,8 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ${{ env.pythonLocation }}
-        key: ${{runner.os}}-pip-${{ env.pythonLocation }}-${{ hashFiles('setup.py') }}
-        restore-keys: ${{runner.os}}-pip-${{ env.pythonLocation }}-
+        key: ${{runner.os}}-${{ matrix.config.python }}-pip-${{ env.pythonLocation }}-${{ hashFiles('setup.py') }}
+        restore-keys: ${{runner.os}}-${{ matrix.config.python }}-pip-${{ env.pythonLocation }}-
 
     - name: Install package & dependencies
       run: |
