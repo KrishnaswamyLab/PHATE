@@ -43,7 +43,7 @@ def classic(D, n_components=2, random_state=None):
     _logger.debug(
         "Performing classic MDS on {} of shape {}...".format(type(D).__name__, D.shape)
     )
-    D = D ** 2
+    D = D**2
     D = D - D.mean(axis=0)[None, :]
     D = D - D.mean(axis=1)[:, None]
     pca = PCA(
