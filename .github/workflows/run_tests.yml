@@ -80,11 +80,6 @@ jobs:
       with:
         python-version: ${{ matrix.config.python }}
 
-    - name: Install pip
-      run: |
-        python -m pip install --upgrade pip
-        pip install -U wheel setuptools
-
     - name: Cache Python packages
       uses: actions/cache@v2
       with:
@@ -95,6 +90,8 @@ jobs:
     - name: Install package & dependencies
       run: |
         cd Python
+        python -m pip install --upgrade pip
+        pip install -U wheel setuptools
         pip install -U .[test]
         python -c "import phate"
 
