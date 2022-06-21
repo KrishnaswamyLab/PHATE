@@ -183,15 +183,11 @@ class PHATE(BaseEstimator):
         **kwargs
     ):
         if "k" in kwargs:
-            warnings.warn(
-                "k is deprecated. Please use knn in future.", FutureWarning
-            )
+            warnings.warn("k is deprecated. Please use knn in future.", FutureWarning)
             knn = kwargs["k"]
             del kwargs["k"]
         if "a" in kwargs:
-            warnings.warn(
-                "a is deprecated. Please use decay in future.", FutureWarning
-            )
+            warnings.warn("a is deprecated. Please use decay in future.", FutureWarning)
             decay = kwargs["a"]
             del kwargs["a"]
         self.n_components = n_components
