@@ -97,6 +97,7 @@ jobs:
 
     - name: Run tests
       run: |
+        cd Python
         nose2 -vvv
 
     - name: Coveralls
