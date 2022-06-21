@@ -124,16 +124,6 @@ class PHATE(BaseEstimator):
         Use `gamma=1` for log transformation and `gamma=0` for square root
         transformation.
 
-    alpha_decay : deprecated.
-        Use `decay=None` to disable alpha decay
-
-    njobs : deprecated.
-        Use n_jobs to match `sklearn` standards
-
-    k : Deprecated for `knn`
-
-    a : Deprecated for `decay`
-
     kwargs : additional arguments for `graphtools.Graph`
 
     Attributes
@@ -190,17 +180,16 @@ class PHATE(BaseEstimator):
         n_jobs=1,
         random_state=None,
         verbose=1,
-        potential_method=None,
-        alpha_decay=None,
-        njobs=None,
-        k=None,
-        a=None,
         **kwargs
     ):
-        if k is not None:
-            knn = k
-        if a is not None:
-            decay = a
+        if "k" in kwargs:
+            warnings.warn("k is deprecated. Please use knn in future.", FutureWarning)
+            knn = kwargs["k"]
+            del kwargs["k"]
+        if "a" in kwargs:
+            warnings.warn("a is deprecated. Please use decay in future.", FutureWarning)
+            decay = kwargs["a"]
+            del kwargs["a"]
         self.n_components = n_components
         self.decay = decay
         self.knn = knn
@@ -221,40 +210,41 @@ class PHATE(BaseEstimator):
         self.X = None
         self.optimal_t = None
 
-        if (alpha_decay is True and decay is None) or (
-            alpha_decay is False and decay is not None
-        ):
+        if "alpha_decay" in kwargs:
             warnings.warn(
                 "alpha_decay is deprecated. Use `decay=None`"
                 " to disable alpha decay in future.",
                 FutureWarning,
             )
-            if not alpha_decay:
+            if not kwargs["alpha_decay"]:
                 self.decay = None
+            del kwargs["alpha_decay"]
 
-        if njobs is not None:
+        if "njobs" in kwargs:
             warnings.warn(
                 "njobs is deprecated. Please use n_jobs in future.", FutureWarning
             )
-            n_jobs = njobs
+            n_jobs = kwargs["njobs"]
+            del kwargs["njobs"]
         self.n_jobs = n_jobs
 
-        if potential_method is not None:
-            if potential_method == "log":
+        if "potential_method" in kwargs:
+            if kwargs["potential_method"] == "log":
                 gamma = 1
-            elif potential_method == "sqrt":
+            elif kwargs["potential_method"] == "sqrt":
                 gamma = 0
             else:
                 raise ValueError(
                     "potential_method {} not recognized. Please "
-                    "use gamma between -1 and 1".format(potential_method)
+                    "use gamma between -1 and 1".format(kwargs["potential_method"])
                 )
             warnings.warn(
                 "potential_method is deprecated. "
                 "Setting gamma to {} to achieve"
-                " {} transformation.".format(gamma, potential_method),
+                " {} transformation.".format(gamma, kwargs["potential_method"]),
                 FutureWarning,
             )
+            del kwargs["potential_method"]
         elif gamma > 0.99 and gamma < 1:
             warnings.warn(
                 "0.99 < gamma < 1 is numerically unstable. " "Setting gamma to 0.99",
@@ -499,10 +489,6 @@ class PHATE(BaseEstimator):
         verbose : `int` or `boolean`, optional (default: 1)
             If `True` or `> 0`, print status messages
 
-        k : Deprecated for `knn`
-
-        a : Deprecated for `decay`
-
         Examples
         --------
         >>> import phate
@@ -511,14 +497,14 @@ class PHATE(BaseEstimator):
         ...                                               branch_length=50)
         >>> tree_data.shape
         (250, 50)
-        >>> phate_operator = phate.PHATE(k=5, a=20, t=150)
+        >>> phate_operator = phate.PHATE(knn=5, decay=20, t=150)
         >>> tree_phate = phate_operator.fit_transform(tree_data)
         >>> tree_phate.shape
         (250, 2)
         >>> phate_operator.set_params(n_components=10)
-        PHATE(a=20, alpha_decay=None, k=5, knn_dist='euclidean', mds='metric',
+        PHATE(decay=20, knn=5, knn_dist='euclidean', mds='metric',
            mds_dist='euclidean', n_components=10, n_jobs=1, n_landmark=2000,
-           n_pca=100, njobs=None, potential_method='log', random_state=None, t=150,
+           n_pca=100, potential_method='log', random_state=None, t=150,
            verbose=1)
         >>> tree_phate = phate_operator.transform()
         >>> tree_phate.shape

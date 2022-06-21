@@ -34,6 +34,8 @@ def assert_raises_message(expected_warning, expected_message, *args, **kwargs):
 def test_simple():
     tree_data, tree_clusters = phate.tree.gen_dla(n_branch=3)
     phate_operator = phate.PHATE(knn=15, t=100, verbose=False)
+    assert isinstance(phate_operator.__str__(), str)
+    assert isinstance(phate_operator.__repr__(), str)
     tree_phate = phate_operator.fit_transform(tree_data)
     assert tree_phate.shape == (tree_data.shape[0], 2)
     clusters = phate.cluster.kmeans(phate_operator, n_clusters="auto")
