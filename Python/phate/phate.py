@@ -822,7 +822,7 @@ class PHATE(BaseEstimator):
         self.X = X
 
         if self.graph is None:
-            with _logger.task("graph and diffusion operator"):
+            with _logger.log_task("graph and diffusion operator"):
                 self.graph = graphtools.Graph(
                     X,
                     n_pca=n_pca,
@@ -905,7 +905,7 @@ class PHATE(BaseEstimator):
                 t_max=t_max, plot_optimal_t=plot_optimal_t, ax=ax
             )
             if self.embedding is None:
-                with _logger.task("{} MDS".format(self.mds)):
+                with _logger.log_task("{} MDS".format(self.mds)):
                     self.embedding = mds.embed_MDS(
                         diff_potential,
                         ndim=self.n_components,
@@ -943,7 +943,7 @@ class PHATE(BaseEstimator):
         embedding : array, shape=[n_samples, n_dimensions]
             The cells embedded in a lower dimensional space using PHATE
         """
-        with _logger.task("PHATE"):
+        with _logger.log_task("PHATE"):
             self.fit(X)
             embedding = self.transform(**kwargs)
         return embedding
@@ -981,7 +981,7 @@ class PHATE(BaseEstimator):
                 t = self._find_optimal_t(t_max=t_max, plot=plot_optimal_t, ax=ax)
             else:
                 t = self.t
-            with _logger.task("diffusion potential"):
+            with _logger.log_task("diffusion potential"):
                 # diffused diffusion operator
                 diff_op_t = np.linalg.matrix_power(self.diff_op, t)
                 if self.gamma == 1:
@@ -1044,7 +1044,7 @@ class PHATE(BaseEstimator):
         t_opt : int
             The optimal value of t
         """
-        with _logger.task("optimal t"):
+        with _logger.log_task("optimal t"):
             t, h = self._von_neumann_entropy(t_max=t_max)
             t_opt = vne.find_knee_point(y=h, x=t)
             _logger.info("Automatically selected t = {}".format(t_opt))
