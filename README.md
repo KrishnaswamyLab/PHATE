@@ -12,7 +12,7 @@ PHATE - Visualizing Transitions and Structure for Biological Data Exploration
 ### Quick Start
 If you would like to get started using PHATE, check out the following tutorials.
 
-* [**Guided tutorial in Python**](http://nbviewer.jupyter.org/github/KrishnaswamyLab/PHATE/blob/master/Python/tutorial/EmbryoidBody.ipynb)  
+* [**Guided tutorial in Python**](http://nbviewer.jupyter.org/github/KrishnaswamyLab/PHATE/blob/main/Python/tutorial/EmbryoidBody.ipynb)  
 * [**Guided turorial in R**](http://htmlpreview.github.io/?https://github.com/KrishnaswamyLab/phateR/blob/master/inst/examples/bonemarrow_tutorial.html)
 
 ### Introduction
