@@ -7,7 +7,7 @@ install_requires = [
     "scipy>=1.1.0",
     "scikit-learn>=0.20.0",
     "future",
-    "tasklogger>=1.0",
+    "tasklogger>=1.2",
     "graphtools>=1.5.3",
     "scprep>=0.11.1",
     "Deprecated",
