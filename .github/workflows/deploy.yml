@@ -11,15 +11,15 @@ on:
 jobs:
   build-n-publish:
     name: Build and publish Python 🐍 distributions 📦 to PyPI
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@master
 
-    - name: Set up Python 3.7
+    - name: Set up Python 3.11
       uses: actions/setup-python@v2
       with:
-        python-version: 3.7
+        python-version: 3.11
 
     - name: Install pypa/build
       run: |
