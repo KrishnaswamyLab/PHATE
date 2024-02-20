@@ -39,7 +39,7 @@ class PHATE(BaseEstimator):
     Potential of Heat-diffusion for Affinity-based Trajectory Embedding
     (PHATE) embeds high dimensional single-cell data into two or three
     dimensions for visualization of biological progressions as described
-    in Moon et al, 2017 [1]_.
+    in Moon et al, 2019 [1]_.
 
     Parameters
     ----------
@@ -157,10 +157,9 @@ class PHATE(BaseEstimator):
 
     References
     ----------
-    .. [1] Moon KR, van Dijk D, Zheng W, *et al.* (2017),
-        *PHATE: A Dimensionality Reduction Method for Visualizing Trajectory
-        Structures in High-Dimensional Biological Data*,
-        `BioRxiv <http://biorxiv.org/content/early/2017/03/24/120378>`_.
+    .. [1] Moon KR, van Dijk D, Zheng W, *et al.* (2019),
+        *Visualizing transitions and structure for biological data exploration*,
+        `Nature Biotechnology <https://doi.org/10.1038/s41587-019-0336-3>`_.
     """
 
     def __init__(
