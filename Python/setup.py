@@ -3,7 +3,7 @@ import sys
 from setuptools import setup, find_packages
 
 install_requires = [
-    "numpy>=1.16.0",
+    "numpy<=1.26.4",
     "scipy>=1.1.0",
     "scikit-learn>=0.20.0",
     "future",
@@ -69,6 +69,11 @@ setup(
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
         "Topic :: Scientific/Engineering :: Visualization",
     ],
