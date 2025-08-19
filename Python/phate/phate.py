@@ -117,6 +117,12 @@ class PHATE(BaseEstimator):
         If an integer is given, it fixes the seed
         Defaults to the global `numpy` random number generator
 
+    random_landmarking : bool, optional, default: False   
+        Whether to use random sampling for landmarking. If True, landmarks 
+        are selected randomly. If False, landmarks are selected deterministically 
+        using spectral clustering.
+        Defaults to False.
+
     verbose : `int` or `boolean`, optional (default: 1)
         If `True` or `> 0`, print status messages
 
@@ -178,6 +184,7 @@ class PHATE(BaseEstimator):
         mds="metric",
         n_jobs=1,
         random_state=None,
+        random_landmarking=False,
         verbose=1,
         **kwargs
     ):
@@ -201,6 +208,7 @@ class PHATE(BaseEstimator):
         self.mds_dist = mds_dist
         self.mds_solver = mds_solver
         self.random_state = random_state
+        self.random_landmarking = random_landmarking
         self.kwargs = kwargs
 
         self.graph = None
@@ -485,6 +493,12 @@ class PHATE(BaseEstimator):
             If an integer is given, it fixes the seed
             Defaults to the global `numpy` random number generator
 
+        random_landmarking : bool, optional, default: False   
+            Whether to use random sampling for landmarking. If True, landmarks 
+            are selected randomly. If False, landmarks are selected deterministically 
+            using spectral clustering.
+            Defaults to False.
+
         verbose : `int` or `boolean`, optional (default: 1)
             If `True` or `> 0`, print status messages
 
@@ -615,6 +629,10 @@ class PHATE(BaseEstimator):
             self.random_state = params["random_state"]
             self._set_graph_params(random_state=params["random_state"])
             del params["random_state"]
+        if "random_landmarking" in params:
+            self.random_landmarking = params["random_landmarking"]
+            self._set_graph_params(random_landmarking=params["random_landmarking"])
+            del params["random_landmarking"]
         if "verbose" in params:
             self.verbose = params["verbose"]
             _logger.set_level(self.verbose)
@@ -751,7 +769,7 @@ class PHATE(BaseEstimator):
                 n_pca = self.n_pca
         return X, n_pca, precomputed, update_graph
 
-    def _update_graph(self, X, precomputed, n_pca, n_landmark):
+    def _update_graph(self, X, precomputed, n_pca, n_landmark, random_landmarking):
         if self.X is not None and not utils.matrix_is_equivalent(X, self.X):
             """
             If the same data is used, we can reuse existing kernel and
@@ -771,6 +789,7 @@ class PHATE(BaseEstimator):
                     n_pca=n_pca,
                     n_landmark=n_landmark,
                     random_state=self.random_state,
+                    random_landmarking=random_landmarking
                 )
                 _logger.info("Using precomputed graph and diffusion operator...")
             except ValueError as e:
@@ -835,6 +854,7 @@ class PHATE(BaseEstimator):
                     n_jobs=self.n_jobs,
                     verbose=self.verbose,
                     random_state=self.random_state,
+                    random_landmarking=self.random_landmarking,
                     **(self.kwargs)
                 )
 
