@@ -11,7 +11,6 @@ install_requires = [
     "graphtools>=1.5.3",
     "scprep>=0.11.1",
     "Deprecated",
-    "s_gd2>=1.8.1",
 ]
 
 test_requires = ["nose2", "anndata", "coverage", "coveralls", "nose"]

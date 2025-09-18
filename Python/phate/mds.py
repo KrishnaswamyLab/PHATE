@@ -11,7 +11,6 @@ from deprecated import deprecated
 
 import tasklogger
 import scprep
-import s_gd2
 
 _logger = tasklogger.get_tasklogger("graphtools")
 
@@ -53,7 +52,7 @@ def classic(D, n_components=2, random_state=None):
     return Y
 
 
-@scprep.utils._with_pkg(pkg="s_gd2", min_version="1.3")
+@deprecated(version="1.0.0", reason="Use phate.mds.smacof instead")
 def sgd(D, n_components=2, random_state=None, init=None):
     """Metric MDS using stochastic gradient descent
 
@@ -75,14 +74,7 @@ def sgd(D, n_components=2, random_state=None, init=None):
     -------
     Y : array-like, embedded data [n_sample, ndim]
     """
-    if not n_components == 2:
-        raise NotImplementedError
-    _logger.debug("Performing SGD MDS on " "{} of shape {}...".format(type(D), D.shape))
-    N = D.shape[0]
-    D = squareform(D)
-    # Metric MDS from s_gd2
-    Y = s_gd2.mds_direct(N, D, init=init, random_seed=random_state)
-    return Y
+    return smacof(D=D, n_components=n_components, random_state=random_state, init=init, metric=True)
 
 
 def smacof(
@@ -223,23 +215,12 @@ def embed_MDS(
     if how == "classic":
         return Y_classic
 
-    # metric is next fastest
+    # metric MDS using SMACOF (sgd is now deprecated and redirects here)
     if solver == "sgd":
-        try:
-            # use sgd2 if it is available
-            Y = sgd(X_dist, n_components=ndim, random_state=seed, init=Y_classic)
-            if np.any(~np.isfinite(Y)):
-                _logger.warning("Using SMACOF because SGD returned NaN")
-                raise NotImplementedError
-        except NotImplementedError:
-            # sgd2 currently only supports n_components==2
-            Y = smacof(
-                X_dist,
-                n_components=ndim,
-                random_state=seed,
-                init=Y_classic,
-                metric=True,
-            )
+        # sgd is deprecated, use smacof instead
+        Y = smacof(
+            X_dist, n_components=ndim, random_state=seed, init=Y_classic, metric=True
+        )
     elif solver == "smacof":
         Y = smacof(
             X_dist, n_components=ndim, random_state=seed, init=Y_classic, metric=True
