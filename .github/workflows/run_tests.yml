@@ -24,10 +24,10 @@ jobs:
         - {name: 'current', os: ubuntu-latest, python: '3.8' }
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.config.python }}
 
@@ -57,11 +57,9 @@ jobs:
         - {name: '3.11', os: ubuntu-latest, python: '3.11' }
         - {name: '3.10', os: ubuntu-latest, python: '3.10' }
         - {name: '3.9', os: ubuntu-latest, python: '3.9' }
-        - {name: '3.8', os: ubuntu-latest, python: '3.8' }
-        - {name: '3.7', os: ubuntu-latest, python: '3.7' }
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
@@ -72,12 +70,12 @@ jobs:
         sudo apt-get install -y libhdf5-dev libhdf5-serial-dev pandoc gfortran libblas-dev liblapack-dev libedit-dev llvm-dev libcurl4-openssl-dev ffmpeg
 
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.config.python }}
 
     - name: Cache Python packages
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         path: ${{ env.pythonLocation }}
         key: ${{runner.os}}-${{ matrix.config.python }}-pip-${{ env.pythonLocation }}-${{ hashFiles('setup.py') }}
@@ -88,13 +86,13 @@ jobs:
         cd Python
         python -m pip install --upgrade pip
         pip install -U wheel setuptools
-        pip install -U --prefer-binary .[test]
+        pip install -e .[test]
         python -c "import phate"
 
     - name: Run tests
       run: |
         cd Python
-        nose2 -vvv
+        pytest -vv
 
     - name: Coveralls
       env:

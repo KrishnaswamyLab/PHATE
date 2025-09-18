@@ -1,0 +1,66 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "phate"
+dynamic = ["version"]
+description = "PHATE"
+authors = [
+    {name = "Daniel Burkhardt, Krishnaswamy Lab, Yale University", email = "daniel.burkhardt@yale.edu"}
+]
+license = {text = "GNU General Public License Version 2"}
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "numpy>=1.20.0",
+    "scipy>=1.7.0",
+    "scikit-learn>=1.5.0",
+    "future",
+    "tasklogger>=1.2",
+    "graphtools>=2.0.0",
+    "scprep>=0.11.1",
+    "Deprecated",
+    "matplotlib>=3.0",
+]
+keywords = [
+    "visualization",
+    "big-data", 
+    "dimensionality-reduction",
+    "embedding",
+    "manifold-learning",
+    "computational-biology",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Framework :: Jupyter",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Natural Language :: English",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Topic :: Scientific/Engineering :: Visualization",
+]
+
+[tool.setuptools.dynamic]
+version = {attr = "phate.version.__version__"}
+
+[project.urls]
+Homepage = "https://github.com/KrishnaswamyLab/PHATE"
+Repository = "https://github.com/KrishnaswamyLab/PHATE"
+Download = "https://github.com/KrishnaswamyLab/PHATE/archive/v{version}.tar.gz"
+
+[project.optional-dependencies]
+test = ["pytest", "anndata", "coverage", "coveralls"]
+doc = ["sphinx", "sphinxcontrib-napoleon"]
+
+
+[tool.setuptools.packages.find]
