@@ -22,6 +22,7 @@ import pytest
 
 import warnings
 
+
 def test_simple():
     tree_data, tree_clusters = phate.tree.gen_dla(n_branch=3)
     phate_operator = phate.PHATE(knn=15, t=100, verbose=False)
@@ -50,9 +51,7 @@ def test_simple():
     G = pygsp.graphs.Graph(G.W)
     phate_operator.fit(G)
     phate_operator.fit(anndata.AnnData(tree_data))
-    with pytest.raises(
-        TypeError, match="Expected phate_op to be of type PHATE. Got 1"
-    ):
+    with pytest.raises(TypeError, match="Expected phate_op to be of type PHATE. Got 1"):
         phate.cluster.kmeans(1)
 
 
@@ -131,6 +130,7 @@ def test_tree():
         phate_precomputed_D, phate_precomputed_distance, atol=5e-4
     )
     return 0
+
 
 if __name__ == "__main__":
     pytest.main([__file__])
