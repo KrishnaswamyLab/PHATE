@@ -10,7 +10,6 @@ import numpy as np
 from deprecated import deprecated
 
 import tasklogger
-import scprep
 
 _logger = tasklogger.get_tasklogger("graphtools")
 

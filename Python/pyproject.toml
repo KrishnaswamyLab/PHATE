@@ -19,7 +19,6 @@ dependencies = [
     "future",
     "tasklogger>=1.2",
     "graphtools>=2.0.0",
-    "scprep>=0.11.1",
     "Deprecated",
     "matplotlib>=3.0",
 ]
@@ -59,7 +58,7 @@ Repository = "https://github.com/KrishnaswamyLab/PHATE"
 Download = "https://github.com/KrishnaswamyLab/PHATE/archive/v{version}.tar.gz"
 
 [project.optional-dependencies]
-test = ["pytest", "anndata", "coverage", "coveralls"]
+test = ["pytest", "anndata", "coverage", "coveralls","scprep"]
 doc = ["sphinx", "sphinxcontrib-napoleon"]
 
 
