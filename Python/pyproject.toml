@@ -58,7 +58,7 @@ Repository = "https://github.com/KrishnaswamyLab/PHATE"
 Download = "https://github.com/KrishnaswamyLab/PHATE/archive/v{version}.tar.gz"
 
 [project.optional-dependencies]
-test = ["pytest", "anndata", "coverage", "coveralls","scprep"]
+test = ["pytest", "anndata", "coverage", "coveralls"]
 doc = ["sphinx", "sphinxcontrib-napoleon"]
 
 

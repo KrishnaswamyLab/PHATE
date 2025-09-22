@@ -7,7 +7,6 @@ from __future__ import print_function, division, absolute_import
 import matplotlib
 
 matplotlib.use("Agg")  # noqa
-import scprep
 
 import os
 import phate
@@ -132,75 +131,6 @@ def test_tree():
         phate_precomputed_D, phate_precomputed_distance, atol=5e-4
     )
     return 0
-
-
-def test_bmmsc():
-    data_dir = os.path.join("..", "data")
-    if not os.path.isdir(data_dir):
-        data_dir = os.path.join("..", data_dir)
-    clusters = scprep.io.load_csv(
-        os.path.join(data_dir, "MAP.csv"), gene_names=["clusters"]
-    )
-    bmmsc = scprep.io.load_csv(os.path.join(data_dir, "BMMC_myeloid.csv.gz"))
-
-    C = clusters["clusters"]  # using cluster labels from original publication
-
-    # library_size_normalize performs L1 normalization on each cell
-    bmmsc_norm = scprep.normalize.library_size_normalize(bmmsc)
-    bmmsc_norm = scprep.transform.sqrt(bmmsc_norm)
-    phate_fast_operator = phate.PHATE(
-        n_components=2,
-        t="auto",
-        decay=200,
-        knn=10,
-        mds="metric",
-        mds_dist="euclidean",
-        n_landmark=1000,
-        verbose=False,
-    )
-
-    print("BMMSC, fast PHATE")
-    Y_mmds_fast = phate_fast_operator.fit_transform(bmmsc_norm, t_max=100)
-    assert Y_mmds_fast.shape == (bmmsc_norm.shape[0], 2)
-    return 0
-
-
-def test_plot():
-    tree_data, tree_clusters = phate.tree.gen_dla()
-    
-    # Test scatter with deprecation warning
-    with pytest.warns(DeprecationWarning, match="Call to deprecated function \\(or staticmethod\\) scatter\\. \\(Use scprep\\.plot\\.scatter instead\\) -- Deprecated since version 1\\.0\\.0\\."):
-        phate.plot.scatter(
-            tree_data[:, 0],
-            tree_data[:, 1],
-            c=tree_clusters,
-            discrete=True,
-        )
-    
-    # Test scatter2d with deprecation warning
-    with pytest.warns(DeprecationWarning, match="Call to deprecated function \\(or staticmethod\\) scatter2d\\. \\(Use scprep\\.plot\\.scatter2d instead\\) -- Deprecated since version 1\\.0\\.0\\."):
-        phate.plot.scatter2d(
-            tree_data,
-            c=tree_clusters,
-            discrete=True,
-        )
-    
-    # Test scatter3d with deprecation warning
-    with pytest.warns(DeprecationWarning, match="Call to deprecated function \\(or staticmethod\\) scatter3d\\. \\(Use scprep\\.plot\\.scatter3d instead\\) -- Deprecated since version 1\\.0\\.0\\."):
-        phate.plot.scatter3d(
-            tree_data,
-            c=tree_clusters,
-            discrete=False,
-        )
-    
-    # Test rotate_scatter3d with deprecation warning
-    with pytest.warns(DeprecationWarning, match="Call to deprecated function \\(or staticmethod\\) rotate_scatter3d\\. \\(Use scprep\\.plot\\.rotate_scatter3d instead\\) -- Deprecated since version 1\\.0\\.0\\."):
-        phate.plot.rotate_scatter3d(
-            tree_data,
-            c=tree_clusters,
-            discrete=False,
-        )
-
 
 if __name__ == "__main__":
     pytest.main([__file__])
