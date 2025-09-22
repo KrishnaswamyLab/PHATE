@@ -85,24 +85,27 @@ jobs:
       run: |
         cd Python
         python -m pip install --upgrade pip
+        pip install -U wheel setuptools
         pip install -e .[test]
         python -c "import phate"
 
-    - name: Run tests
+    - name: Run tests with coverage
       run: |
         cd Python
-        pytest -vv
+        pip install coverage pytest-cov
+        pytest --cov=. --cov-report=lcov:coverage.lcov -vv
 
     - name: Coveralls
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        COVERALLS_SERVICE_NAME: github
-      run: |
-        coveralls
+      uses: coverallsapp/github-action@v2
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        path-to-lcov: Python/coverage.lcov
+      continue-on-error: true
 
     - name: Upload check results on fail
       if: failure()
-      uses: actions/upload-artifact@master
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.config.name }}_results
         path: check
+     
