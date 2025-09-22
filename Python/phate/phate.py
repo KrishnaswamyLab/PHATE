@@ -179,7 +179,7 @@ class PHATE(BaseEstimator):
         n_jobs=1,
         random_state=None,
         verbose=1,
-        **kwargs
+        **kwargs,
     ):
         if "k" in kwargs:
             warnings.warn("k is deprecated. Please use knn in future.", FutureWarning)
@@ -835,7 +835,7 @@ class PHATE(BaseEstimator):
                     n_jobs=self.n_jobs,
                     verbose=self.verbose,
                     random_state=self.random_state,
-                    **(self.kwargs)
+                    **(self.kwargs),
                 )
 
         # landmark op doesn't build unless forced

@@ -21,13 +21,13 @@ jobs:
       fail-fast: false
       matrix:
         config:
-        - {name: 'current', os: ubuntu-latest, python: '3.8' }
+        - {name: 'current', os: ubuntu-latest, python: '3.9' }
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.config.python }}
 
@@ -54,14 +54,14 @@ jobs:
       fail-fast: false
       matrix:
         config:
+        - {name: '3.13', os: ubuntu-latest, python: '3.13' }
+        - {name: '3.12', os: ubuntu-latest, python: '3.12' }
         - {name: '3.11', os: ubuntu-latest, python: '3.11' }
         - {name: '3.10', os: ubuntu-latest, python: '3.10' }
         - {name: '3.9', os: ubuntu-latest, python: '3.9' }
-        - {name: '3.8', os: ubuntu-latest, python: '3.8' }
-        - {name: '3.7', os: ubuntu-latest, python: '3.7' }
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
@@ -72,12 +72,12 @@ jobs:
         sudo apt-get install -y libhdf5-dev libhdf5-serial-dev pandoc gfortran libblas-dev liblapack-dev libedit-dev llvm-dev libcurl4-openssl-dev ffmpeg
 
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.config.python }}
 
     - name: Cache Python packages
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         path: ${{ env.pythonLocation }}
         key: ${{runner.os}}-${{ matrix.config.python }}-pip-${{ env.pythonLocation }}-${{ hashFiles('setup.py') }}
@@ -88,24 +88,26 @@ jobs:
         cd Python
         python -m pip install --upgrade pip
         pip install -U wheel setuptools
-        pip install -U --prefer-binary .[test]
+        pip install -e .[test]
         python -c "import phate"
 
-    - name: Run tests
+    - name: Run tests with coverage
       run: |
         cd Python
-        nose2 -vvv
+        pip install coverage pytest-cov
+        pytest --cov=. --cov-report=lcov:coverage.lcov -vv
 
     - name: Coveralls
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        COVERALLS_SERVICE_NAME: github
-      run: |
-        coveralls
+      uses: coverallsapp/github-action@v2
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        path-to-lcov: Python/coverage.lcov
+      continue-on-error: true
 
     - name: Upload check results on fail
       if: failure()
-      uses: actions/upload-artifact@master
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.config.name }}_results
         path: check
+     

@@ -10,7 +10,6 @@ import numpy as np
 from deprecated import deprecated
 
 import tasklogger
-import scprep
 
 _logger = tasklogger.get_tasklogger("graphtools")
 
@@ -74,7 +73,13 @@ def sgd(D, n_components=2, random_state=None, init=None):
     -------
     Y : array-like, embedded data [n_sample, ndim]
     """
-    return smacof(D=D, n_components=n_components, random_state=random_state, init=init, metric=True)
+    return smacof(
+        D=D,
+        n_components=n_components,
+        random_state=random_state,
+        init=init,
+        metric=True,
+    )
 
 
 def smacof(
