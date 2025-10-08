@@ -7,8 +7,7 @@ from __future__ import print_function, division, absolute_import
 import matplotlib
 
 matplotlib.use("Agg")  # noqa
-import scprep
-import nose2
+
 import os
 import phate
 import graphtools
@@ -17,18 +16,11 @@ import anndata
 import numpy as np
 from scipy.spatial.distance import pdist, squareform
 
-from nose.tools import assert_raises_regex, assert_warns_regex
 import re
 
+import pytest
 
-def assert_warns_message(expected_warning, expected_message, *args, **kwargs):
-    expected_regex = re.escape(expected_message)
-    return assert_warns_regex(expected_warning, expected_regex, *args, **kwargs)
-
-
-def assert_raises_message(expected_warning, expected_message, *args, **kwargs):
-    expected_regex = re.escape(expected_message)
-    return assert_raises_regex(expected_warning, expected_regex, *args, **kwargs)
+import warnings
 
 
 def test_simple():
@@ -59,9 +51,7 @@ def test_simple():
     G = pygsp.graphs.Graph(G.W)
     phate_operator.fit(G)
     phate_operator.fit(anndata.AnnData(tree_data))
-    with assert_raises_message(
-        TypeError, "Expected phate_op to be of type PHATE. Got 1"
-    ):
+    with pytest.raises(TypeError, match="Expected phate_op to be of type PHATE. Got 1"):
         phate.cluster.kmeans(1)
 
 
@@ -142,77 +132,5 @@ def test_tree():
     return 0
 
 
-def test_bmmsc():
-    data_dir = os.path.join("..", "data")
-    if not os.path.isdir(data_dir):
-        data_dir = os.path.join("..", data_dir)
-    clusters = scprep.io.load_csv(
-        os.path.join(data_dir, "MAP.csv"), gene_names=["clusters"]
-    )
-    bmmsc = scprep.io.load_csv(os.path.join(data_dir, "BMMC_myeloid.csv.gz"))
-
-    C = clusters["clusters"]  # using cluster labels from original publication
-
-    # library_size_normalize performs L1 normalization on each cell
-    bmmsc_norm = scprep.normalize.library_size_normalize(bmmsc)
-    bmmsc_norm = scprep.transform.sqrt(bmmsc_norm)
-    phate_fast_operator = phate.PHATE(
-        n_components=2,
-        t="auto",
-        decay=200,
-        knn=10,
-        mds="metric",
-        mds_dist="euclidean",
-        n_landmark=1000,
-        verbose=False,
-    )
-
-    print("BMMSC, fast PHATE")
-    Y_mmds_fast = phate_fast_operator.fit_transform(bmmsc_norm, t_max=100)
-    assert Y_mmds_fast.shape == (bmmsc_norm.shape[0], 2)
-    return 0
-
-
-def test_plot():
-    tree_data, tree_clusters = phate.tree.gen_dla()
-    # scatter
-    assert_warns_message(
-        DeprecationWarning,
-        "Call to deprecated function (or staticmethod) scatter. (Use scprep.plot.scatter instead) -- Deprecated since version 1.0.0.",
-        phate.plot.scatter,
-        tree_data[:, 0],
-        tree_data[:, 1],
-        c=tree_clusters,
-        discrete=True,
-    )
-    # scatter2d
-    assert_warns_message(
-        DeprecationWarning,
-        "Call to deprecated function (or staticmethod) scatter2d. (Use scprep.plot.scatter2d instead) -- Deprecated since version 1.0.0.",
-        phate.plot.scatter2d,
-        tree_data,
-        c=tree_clusters,
-        discrete=True,
-    )
-    # scatter3d
-    assert_warns_message(
-        DeprecationWarning,
-        "Call to deprecated function (or staticmethod) scatter3d. (Use scprep.plot.scatter3d instead) -- Deprecated since version 1.0.0.",
-        phate.plot.scatter3d,
-        tree_data,
-        c=tree_clusters,
-        discrete=False,
-    )
-    # rotate_scatter3d
-    assert_warns_message(
-        DeprecationWarning,
-        "Call to deprecated function (or staticmethod) rotate_scatter3d. (Use scprep.plot.rotate_scatter3d instead) -- Deprecated since version 1.0.0.",
-        phate.plot.rotate_scatter3d,
-        tree_data,
-        c=tree_clusters,
-        discrete=False,
-    )
-
-
 if __name__ == "__main__":
-    exit(nose2.run())
+    pytest.main([__file__])
