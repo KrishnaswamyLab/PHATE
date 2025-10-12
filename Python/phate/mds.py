@@ -214,7 +214,13 @@ def embed_MDS(
         )
 
     # MDS embeddings, each gives a different output.
-    X_dist = squareform(pdist(X, distance_metric))
+    # For large n (>1000), use optimized euclidean_distances from sklearn
+    # which is much faster than scipy's pdist + squareform
+    if distance_metric == "euclidean" and X.shape[0] > 1000:
+        from sklearn.metrics.pairwise import euclidean_distances
+        X_dist = euclidean_distances(X, X)
+    else:
+        X_dist = squareform(pdist(X, distance_metric))
 
     # initialize all by CMDS
     Y_classic = classic(X_dist, n_components=ndim, random_state=seed)
