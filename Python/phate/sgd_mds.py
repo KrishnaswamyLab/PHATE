@@ -69,7 +69,7 @@ def sgd_mds(
         pairs_per_iter = int(n_samples * np.log(n_samples))
 
     if verbose > 0:
-        _logger.debug(f"SGD-MDS: sampling {pairs_per_iter} pairs per iteration")
+        _logger.log_debug(f"SGD-MDS: sampling {pairs_per_iter} pairs per iteration")
 
     for iteration in range(n_iter):
         # Learning rate decay
@@ -114,7 +114,7 @@ def sgd_mds(
 
         if verbose > 0 and iteration % 100 == 0:
             stress = np.sum(errors ** 2)
-            _logger.debug(f"Iter {iteration}: stress={stress:.6f}, lr={lr:.6f}")
+            _logger.log_debug(f"Iter {iteration}: stress={stress:.6f}, lr={lr:.6f}")
 
     # Rescale back to original
     if D_max > 0:

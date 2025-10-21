@@ -39,7 +39,7 @@ def classic(D, n_components=2, random_state=None):
     -------
     Y : array-like, embedded data [n_sample, ndim]
     """
-    _logger.debug(
+    _logger.log_debug(
         "Performing classic MDS on {} of shape {}...".format(type(D).__name__, D.shape)
     )
     D = D**2
@@ -127,7 +127,7 @@ def smacof(
     Y : array-like, shape=[n_samples, n_components]
         embedded data
     """
-    _logger.debug(
+    _logger.log_debug(
         "Performing non-metric MDS on " "{} of shape {}...".format(type(D), D.shape)
     )
     # Metric MDS from sklearn
@@ -185,7 +185,7 @@ def embed_MDS(
     n_jobs : integer, optional, default: 1
         The number of jobs to use for the computation.
         If -1 all CPUs are used. If 1 is given, no parallel computing code is
-        used at all, which is useful for debugging.
+        used at all, which is useful for log_debugging.
         For n_jobs below -1, (n_cpus + 1 + n_jobs) are used. Thus for
         n_jobs = -2, all CPUs but one are used
 

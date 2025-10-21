@@ -4,9 +4,6 @@
 
 # Generating random fractal tree via DLA
 from __future__ import print_function, division, absolute_import
-import matplotlib
-
-matplotlib.use("Agg")  # noqa
 
 import os
 import phate
@@ -129,7 +126,8 @@ def test_tree():
     np.testing.assert_allclose(
         phate_precomputed_D, phate_precomputed_distance, atol=5e-4
     )
-    return 0
+    
+    return None
 
 
 if __name__ == "__main__":
