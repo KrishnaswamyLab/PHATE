@@ -831,10 +831,10 @@ class PHATE(BaseEstimator):
                     graph_params['random_landmarking'] = random_landmarking
 
                 self.graph.set_params(**graph_params)
-                _logger.info("Using precomputed graph and diffusion operator...")
+                _logger.log_info("Using precomputed graph and diffusion operator...")
             except ValueError as e:
                 # something changed that should have invalidated the graph
-                _logger.debug("Reset graph due to {}".format(str(e)))
+                _logger.log_debug("Reset graph due to {}".format(str(e)))
                 self._reset_graph()
 
     def fit(self, X):
@@ -857,13 +857,13 @@ class PHATE(BaseEstimator):
         X, n_pca, precomputed, update_graph = self._parse_input(X)
 
         if precomputed is None:
-            _logger.info(
+            _logger.log_info(
                 "Running PHATE on {} observations and {} variables.".format(
                     X.shape[0], X.shape[1]
                 )
             )
         else:
-            _logger.info(
+            _logger.log_info(
                 "Running PHATE on precomputed {} matrix with {} observations.".format(
                     precomputed, X.shape[0]
                 )
@@ -983,7 +983,7 @@ class PHATE(BaseEstimator):
                         verbose=max(self.verbose - 1, 0),
                     )
             if isinstance(self.graph, graphtools.graphs.LandmarkGraph):
-                _logger.debug("Extending to original data...")
+                _logger.log_debug("Extending to original data...")
                 return self.graph.interpolate(self.embedding)
             else:
                 return self.embedding
@@ -1113,7 +1113,7 @@ class PHATE(BaseEstimator):
         with _logger.log_task("optimal t"):
             t, h = self._von_neumann_entropy(t_max=t_max)
             t_opt = vne.find_knee_point(y=h, x=t)
-            _logger.info("Automatically selected t = {}".format(t_opt))
+            _logger.log_info("Automatically selected t = {}".format(t_opt))
 
         if plot:
             if ax is None:
