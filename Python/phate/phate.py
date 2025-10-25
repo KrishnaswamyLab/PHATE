@@ -905,6 +905,17 @@ class PHATE(BaseEstimator):
 
                 self.graph = graphtools.Graph(X, **graph_params)
 
+                # Check for graph connectivity
+                if not self.graph.is_connected:
+                    warnings.warn(
+                        f"Graph is disconnected with {self.graph.n_connected_components} "
+                        f"connected components. This may indicate that your knn parameter "
+                        f"(currently {self.knn}) is too small, or that your data contains "
+                        f"distinct clusters. PHATE may not accurately represent relationships "
+                        f"between disconnected components.",
+                        RuntimeWarning,
+                    )
+
         # landmark op doesn't build unless forced
         self.diff_op
         return self
