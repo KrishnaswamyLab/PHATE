@@ -9,6 +9,10 @@ description = "PHATE"
 authors = [
     {name = "Daniel Burkhardt, Krishnaswamy Lab, Yale University", email = "daniel.burkhardt@yale.edu"}
 ]
+maintainers = [
+    {name = "João Felipe Rocha, Yale University", email = "joaofelipe.rocha@yale.edu"},
+    {name = "Matthew Scicluna, Université de Montréal", email = "matthew.scicluna@umontreal.ca"}
+]
 license = {text = "GNU General Public License Version 2"}
 readme = "README.md"
 requires-python = ">=3.9"
