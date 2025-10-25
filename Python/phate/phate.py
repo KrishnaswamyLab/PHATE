@@ -33,9 +33,14 @@ except ImportError:
 
 _logger = tasklogger.get_tasklogger("graphtools")
 
-# Check graphtools version for random_landmarking support
-def _graphtools_supports_random_landmarking():
-    """Check if installed graphtools version supports random_landmarking parameter."""
+# Check graphtools version
+def _graphtools_version_is_at_least_2_0():
+    """Check if installed graphtools version is >= 2.0.0.
+
+    Version 2.0.0+ includes support for:
+    - random_landmarking parameter
+    - is_connected property and connectivity checks
+    """
     try:
         return version.parse(graphtools.__version__) >= version.parse("2.0.0")
     except AttributeError:
@@ -231,7 +236,7 @@ class PHATE(BaseEstimator):
             # Disable random_landmarking since it has no effect
             random_landmarking = False
         # Check graphtools version if random_landmarking is still requested
-        elif random_landmarking and not _graphtools_supports_random_landmarking():
+        elif random_landmarking and not _graphtools_version_is_at_least_2_0():
             warnings.warn(
                 "random_landmarking is not available in graphtools version < 2.0.0. "
                 "Please update graphtools to use this feature: "
@@ -827,7 +832,7 @@ class PHATE(BaseEstimator):
                 }
 
                 # Only add random_landmarking if graphtools supports it
-                if _graphtools_supports_random_landmarking():
+                if _graphtools_version_is_at_least_2_0():
                     graph_params['random_landmarking'] = random_landmarking
 
                 self.graph.set_params(**graph_params)
@@ -897,7 +902,7 @@ class PHATE(BaseEstimator):
                 }
 
                 # Only add random_landmarking if graphtools supports it
-                if _graphtools_supports_random_landmarking():
+                if _graphtools_version_is_at_least_2_0():
                     graph_params['random_landmarking'] = self.random_landmarking
 
                 # Merge with any additional kwargs
@@ -905,16 +910,17 @@ class PHATE(BaseEstimator):
 
                 self.graph = graphtools.Graph(X, **graph_params)
 
-                # Check for graph connectivity
-                if not self.graph.is_connected:
-                    warnings.warn(
-                        f"Graph is disconnected with {self.graph.n_connected_components} "
-                        f"connected components. This may indicate that your knn parameter "
-                        f"(currently {self.knn}) is too small, or that your data contains "
-                        f"distinct clusters. PHATE may not accurately represent relationships "
-                        f"between disconnected components.",
-                        RuntimeWarning,
-                    )
+                # Check for graph connectivity (requires graphtools >= 2.0.0)
+                if _graphtools_version_is_at_least_2_0():
+                    if not self.graph.is_connected:
+                        warnings.warn(
+                            f"Graph is disconnected with {self.graph.n_connected_components} "
+                            f"connected components. This may indicate that your knn parameter "
+                            f"(currently {self.knn}) is too small, or that your data contains "
+                            f"distinct clusters. PHATE may not accurately represent relationships "
+                            f"between disconnected components.",
+                            RuntimeWarning,
+                        )
 
         # landmark op doesn't build unless forced
         self.diff_op
