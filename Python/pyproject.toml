@@ -18,7 +18,7 @@ dependencies = [
     "scikit-learn>=1.5.0",
     "future",
     "tasklogger>=1.2",
-    "graphtools>=2.0.0",
+    "graphtools>=2.1.0",
     "Deprecated",
     "matplotlib>=3.0",
 ]
