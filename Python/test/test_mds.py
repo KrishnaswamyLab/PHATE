@@ -91,7 +91,9 @@ def test_sgd_mds_vs_classic():
     # Allow small increase due to stochastic optimization
     stress_ratio = stress_sgd / stress_classic
     print(f"Stress ratio (SGD/Classic): {stress_ratio:.6f}")
-    assert stress_ratio < 1.1, f"SGD-MDS significantly increased stress: {stress_ratio:.3f}x"
+    assert (
+        stress_ratio < 1.1
+    ), f"SGD-MDS significantly increased stress: {stress_ratio:.3f}x"
     print("✓ SGD-MDS maintains or improves stress")
 
     print("✓ Test 2 PASSED\n")
@@ -113,7 +115,10 @@ def test_sgd_mds_metric_wrapper():
 
         Y = sgd_mds_metric(D, n_components=2, random_state=42, verbose=0)
 
-        assert Y.shape == (n_samples, 2), f"Expected shape ({n_samples}, 2), got {Y.shape}"
+        assert Y.shape == (
+            n_samples,
+            2,
+        ), f"Expected shape ({n_samples}, 2), got {Y.shape}"
         assert not np.any(np.isnan(Y)), "Output contains NaN values"
         print(f"  ✓ n_samples={n_samples}: shape={Y.shape}, no NaN")
 
@@ -137,7 +142,12 @@ def test_sgd_mds_vs_smacof():
 
     # Run SMACOF
     Y_smacof = smacof(
-        D, n_components=2, init=Y_classic.copy(), random_state=42, metric=True, max_iter=300
+        D,
+        n_components=2,
+        init=Y_classic.copy(),
+        random_state=42,
+        metric=True,
+        max_iter=300,
     )
     stress_smacof = compute_stress(D, Y_smacof)
     print(f"SMACOF stress: {stress_smacof:.6f}")
@@ -277,11 +287,12 @@ def test_sgd_mds_different_n_components():
 
     for n_comp in [1, 2, 3, 5]:
         print(f"\nTesting with n_components={n_comp}")
-        Y = sgd_mds(
-            D, n_components=n_comp, n_iter=200, random_state=42
-        )
+        Y = sgd_mds(D, n_components=n_comp, n_iter=200, random_state=42)
 
-        assert Y.shape == (n_samples, n_comp), f"Expected shape ({n_samples}, {n_comp}), got {Y.shape}"
+        assert Y.shape == (
+            n_samples,
+            n_comp,
+        ), f"Expected shape ({n_samples}, {n_comp}), got {Y.shape}"
         assert not np.any(np.isnan(Y))
         print(f"  ✓ n_components={n_comp}: shape={Y.shape}")
 
@@ -373,7 +384,10 @@ def test_classic_mds_different_dimensions():
         print(f"\nTesting with n_components={n_comp}")
         Y = classic(D, n_components=n_comp, random_state=42)
 
-        assert Y.shape == (n_samples, n_comp), f"Expected shape ({n_samples}, {n_comp}), got {Y.shape}"
+        assert Y.shape == (
+            n_samples,
+            n_comp,
+        ), f"Expected shape ({n_samples}, {n_comp}), got {Y.shape}"
         assert not np.any(np.isnan(Y))
         stress = compute_stress(D, Y)
         print(f"  ✓ n_components={n_comp}: shape={Y.shape}, stress={stress:.2e}")
@@ -461,7 +475,12 @@ def test_smacof_vs_classic():
     # Run both methods
     Y_classic = classic(D, n_components=2, random_state=42)
     Y_smacof = smacof(
-        D, n_components=2, init=Y_classic.copy(), random_state=42, metric=True, max_iter=300
+        D,
+        n_components=2,
+        init=Y_classic.copy(),
+        random_state=42,
+        metric=True,
+        max_iter=300,
     )
 
     stress_classic = compute_stress(D, Y_classic)
@@ -528,7 +547,9 @@ def test_mds_zero_distances():
     Y_classic = classic(D, n_components=2, random_state=42)
     Y_smacof = smacof(D, n_components=2, random_state=42, metric=True, max_iter=300)
     # SGD-MDS needs more iterations and lower learning rate to converge on duplicates
-    Y_sgd = sgd_mds(D, n_components=2, n_iter=1000, learning_rate=0.01, random_state=42, verbose=0)
+    Y_sgd = sgd_mds(
+        D, n_components=2, n_iter=1000, learning_rate=0.01, random_state=42, verbose=0
+    )
 
     for name, Y in [("Classic", Y_classic), ("SMACOF", Y_smacof), ("SGD", Y_sgd)]:
         assert not np.any(np.isnan(Y)), f"{name}: contains NaN with duplicates"
@@ -547,8 +568,12 @@ def test_mds_zero_distances():
         print(f"{name}: Point 5 is rank {rank_5_from_10} neighbor of point 10")
 
         # Duplicates should be in top 5 nearest neighbors of each other
-        assert rank_10_from_5 <= 5, f"{name}: duplicate not in top 5 neighbors (rank={rank_10_from_5})"
-        assert rank_5_from_10 <= 5, f"{name}: duplicate not in top 5 neighbors (rank={rank_5_from_10})"
+        assert (
+            rank_10_from_5 <= 5
+        ), f"{name}: duplicate not in top 5 neighbors (rank={rank_10_from_5})"
+        assert (
+            rank_5_from_10 <= 5
+        ), f"{name}: duplicate not in top 5 neighbors (rank={rank_5_from_10})"
 
     print("✓ All methods handle duplicates correctly")
     print("✓ Test 15 PASSED\n")

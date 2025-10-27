@@ -54,19 +54,22 @@ def test_kmeans_basic():
     clusters = cluster.kmeans(phate_op, n_clusters=3)
 
     # Should return integer array
-    assert np.issubdtype(clusters.dtype, np.signedinteger), \
-        f"Expected integer dtype, got {clusters.dtype}"
+    assert np.issubdtype(
+        clusters.dtype, np.signedinteger
+    ), f"Expected integer dtype, got {clusters.dtype}"
     print(f"✓ Returns integer dtype: {clusters.dtype}")
 
     # Should have correct shape
     assert len(clusters.shape) == 1, f"Expected 1D array, got shape {clusters.shape}"
-    assert len(clusters) == tree_data.shape[0], \
-        f"Expected {tree_data.shape[0]} labels, got {len(clusters)}"
+    assert (
+        len(clusters) == tree_data.shape[0]
+    ), f"Expected {tree_data.shape[0]} labels, got {len(clusters)}"
     print(f"✓ Correct shape: {clusters.shape}")
 
     # Should have exactly 3 clusters
-    assert len(np.unique(clusters)) == 3, \
-        f"Expected 3 clusters, got {len(np.unique(clusters))}"
+    assert (
+        len(np.unique(clusters)) == 3
+    ), f"Expected 3 clusters, got {len(np.unique(clusters))}"
     print(f"✓ Correct number of clusters: {len(np.unique(clusters))}")
 
     # Cluster labels should start from 0
@@ -136,8 +139,9 @@ def test_kmeans_max_clusters():
         n_clusters = len(np.unique(clusters))
 
         # Should respect max_clusters (search from 2 to max_k)
-        assert 2 <= n_clusters < max_k, \
-            f"Expected clusters in [2, {max_k}), got {n_clusters}"
+        assert (
+            2 <= n_clusters < max_k
+        ), f"Expected clusters in [2, {max_k}), got {n_clusters}"
         print(f"✓ max_clusters={max_k}: selected {n_clusters} clusters")
 
     print("✓ Test 4 PASSED\n")
@@ -156,8 +160,9 @@ def test_kmeans_random_state():
     clusters2 = cluster.kmeans(phate_op, n_clusters=4, random_state=42)
 
     # Should be identical
-    assert np.array_equal(clusters1, clusters2), \
-        "Same random_state should give identical results"
+    assert np.array_equal(
+        clusters1, clusters2
+    ), "Same random_state should give identical results"
     print("✓ Same random_state gives identical results")
 
     # Run with different random_state
@@ -187,10 +192,12 @@ def test_kmeans_deprecated_k_parameter():
 
         # Check warning was raised
         assert len(w) == 1, f"Expected 1 warning, got {len(w)}"
-        assert issubclass(w[0].category, FutureWarning), \
-            f"Expected FutureWarning, got {w[0].category}"
-        assert "k is deprecated" in str(w[0].message).lower(), \
-            f"Unexpected warning message: {w[0].message}"
+        assert issubclass(
+            w[0].category, FutureWarning
+        ), f"Expected FutureWarning, got {w[0].category}"
+        assert (
+            "k is deprecated" in str(w[0].message).lower()
+        ), f"Unexpected warning message: {w[0].message}"
         print(f"✓ FutureWarning raised: {w[0].message}")
 
     # Should still work correctly
@@ -217,8 +224,9 @@ def test_silhouette_score_basic():
     score = cluster.silhouette_score(phate_op, n_clusters=3)
 
     # Should return a float
-    assert isinstance(score, (float, np.floating)), \
-        f"Expected float score, got {type(score)}"
+    assert isinstance(
+        score, (float, np.floating)
+    ), f"Expected float score, got {type(score)}"
     print(f"✓ Returns float: {score}")
 
     # Silhouette score should be in [-1, 1]
@@ -262,8 +270,9 @@ def test_silhouette_score_random_state():
     score1 = cluster.silhouette_score(phate_op, n_clusters=3, random_state=42)
     score2 = cluster.silhouette_score(phate_op, n_clusters=3, random_state=42)
 
-    assert np.isclose(score1, score2), \
-        f"Expected same scores, got {score1} and {score2}"
+    assert np.isclose(
+        score1, score2
+    ), f"Expected same scores, got {score1} and {score2}"
     print(f"✓ Reproducible with random_state: {score1:.4f}")
 
     print("✓ Test 9 PASSED\n")
@@ -305,8 +314,9 @@ def test_kmeans_unfitted_phate():
     phate_op = create_unfitted_phate_op()
 
     # Should raise NotFittedError
-    with pytest.raises(exceptions.NotFittedError,
-                      match="This PHATE instance is not fitted yet"):
+    with pytest.raises(
+        exceptions.NotFittedError, match="This PHATE instance is not fitted yet"
+    ):
         cluster.kmeans(phate_op, n_clusters=3)
     print("✓ Correctly raises NotFittedError for unfitted operator")
 
@@ -343,8 +353,9 @@ def test_kmeans_auto_uses_silhouette():
     phate_op, _, _ = create_simple_phate_op()
 
     # Get auto-selected clustering
-    clusters_auto = cluster.kmeans(phate_op, n_clusters="auto",
-                                   max_clusters=8, random_state=42)
+    clusters_auto = cluster.kmeans(
+        phate_op, n_clusters="auto", max_clusters=8, random_state=42
+    )
     n_auto = len(np.unique(clusters_auto))
 
     print(f"Auto-selected: {n_auto} clusters")
@@ -359,8 +370,7 @@ def test_kmeans_auto_uses_silhouette():
     # The auto-selected k should correspond to max silhouette
     best_k = np.argmax(silhouette_scores) + 2  # +2 because range starts at 2
 
-    assert n_auto == best_k, \
-        f"Auto-selected {n_auto} but best silhouette at k={best_k}"
+    assert n_auto == best_k, f"Auto-selected {n_auto} but best silhouette at k={best_k}"
     print(f"✓ Auto mode correctly selected k={best_k} (max silhouette)")
 
     print("✓ Test 13 PASSED\n")
@@ -388,8 +398,9 @@ def test_clustering_stability():
     clusters2 = cluster.kmeans(phate_op2, n_clusters=3, random_state=42)
 
     # Should get identical results
-    assert np.array_equal(clusters1, clusters2), \
-        "Same data and parameters should give identical clustering"
+    assert np.array_equal(
+        clusters1, clusters2
+    ), "Same data and parameters should give identical clustering"
     print("✓ Clustering is reproducible with same data and parameters")
 
     print("✓ Test 14 PASSED\n")

@@ -19,12 +19,14 @@ from scipy.spatial.distance import pdist, squareform
 # Optional dependencies
 try:
     import pygsp
+
     PYGSP_AVAILABLE = True
 except ImportError:
     PYGSP_AVAILABLE = False
 
 try:
     import anndata
+
     ANNDATA_AVAILABLE = True
 except ImportError:
     ANNDATA_AVAILABLE = False
@@ -61,8 +63,10 @@ def test_phate_basic_workflow():
     embedding = phate_op.fit_transform(data)
 
     # Check output shape (default n_components=2)
-    assert embedding.shape == (data.shape[0], 2), \
-        f"Expected shape ({data.shape[0]}, 2), got {embedding.shape}"
+    assert embedding.shape == (
+        data.shape[0],
+        2,
+    ), f"Expected shape ({data.shape[0]}, 2), got {embedding.shape}"
     print(f"✓ Correct output shape: {embedding.shape}")
 
     # Check output is finite
@@ -87,13 +91,17 @@ def test_phate_str_repr():
 
     # Test __str__
     str_output = str(phate_op)
-    assert isinstance(str_output, str), f"__str__ should return str, got {type(str_output)}"
+    assert isinstance(
+        str_output, str
+    ), f"__str__ should return str, got {type(str_output)}"
     assert len(str_output) > 0, "__str__ returned empty string"
     print(f"✓ __str__() returns non-empty string")
 
     # Test __repr__
     repr_output = repr(phate_op)
-    assert isinstance(repr_output, str), f"__repr__ should return str, got {type(repr_output)}"
+    assert isinstance(
+        repr_output, str
+    ), f"__repr__ should return str, got {type(repr_output)}"
     assert len(repr_output) > 0, "__repr__ returned empty string"
     print(f"✓ __repr__() returns non-empty string")
 
@@ -118,8 +126,9 @@ def test_phate_fit_vs_fit_transform():
     embedding2 = phate_op2.transform()
 
     # Should give same results
-    assert np.allclose(embedding1, embedding2, atol=1e-10), \
-        "fit_transform and fit+transform give different results"
+    assert np.allclose(
+        embedding1, embedding2, atol=1e-10
+    ), "fit_transform and fit+transform give different results"
     print(f"✓ fit_transform() and fit()+transform() give identical results")
 
     print("✓ Test 3 PASSED\n")
@@ -139,14 +148,18 @@ def test_phate_n_components():
     data, _ = create_test_data()
 
     for n_comp in [1, 2, 3, 5, 10]:
-        phate_op = phate.PHATE(n_components=n_comp, knn=5, t=10,
-                              verbose=False, random_state=42)
+        phate_op = phate.PHATE(
+            n_components=n_comp, knn=5, t=10, verbose=False, random_state=42
+        )
         embedding = phate_op.fit_transform(data)
 
-        assert embedding.shape == (data.shape[0], n_comp), \
-            f"Expected shape ({data.shape[0]}, {n_comp}), got {embedding.shape}"
-        assert np.all(np.isfinite(embedding)), \
-            f"Non-finite values with n_components={n_comp}"
+        assert embedding.shape == (
+            data.shape[0],
+            n_comp,
+        ), f"Expected shape ({data.shape[0]}, {n_comp}), got {embedding.shape}"
+        assert np.all(
+            np.isfinite(embedding)
+        ), f"Non-finite values with n_components={n_comp}"
         print(f"✓ n_components={n_comp}: shape={embedding.shape}")
 
     print("✓ Test 4 PASSED\n")
@@ -165,8 +178,9 @@ def test_phate_knn_parameters():
         phate_op = phate.PHATE(knn=knn, t=10, verbose=False, random_state=42)
         phate_op.fit(data)
 
-        assert phate_op.graph.knn == knn, \
-            f"Expected knn={knn}, got {phate_op.graph.knn}"
+        assert (
+            phate_op.graph.knn == knn
+        ), f"Expected knn={knn}, got {phate_op.graph.knn}"
         print(f"✓ knn={knn} set correctly")
 
     # Test knn_max
@@ -174,8 +188,9 @@ def test_phate_knn_parameters():
     phate_op.fit(data)
 
     assert phate_op.graph.knn == 5, f"Expected knn=5, got {phate_op.graph.knn}"
-    assert phate_op.graph.knn_max == 15, \
-        f"Expected knn_max=15, got {phate_op.graph.knn_max}"
+    assert (
+        phate_op.graph.knn_max == 15
+    ), f"Expected knn_max=15, got {phate_op.graph.knn_max}"
     print(f"✓ knn_max parameter set correctly")
 
     print("✓ Test 5 PASSED\n")
@@ -190,12 +205,12 @@ def test_phate_decay_parameter():
     data, _ = create_test_data()
 
     for decay in [5, 10, 20, 40]:
-        phate_op = phate.PHATE(knn=5, decay=decay, t=10,
-                              verbose=False, random_state=42)
+        phate_op = phate.PHATE(knn=5, decay=decay, t=10, verbose=False, random_state=42)
         phate_op.fit(data)
 
-        assert phate_op.graph.decay == decay, \
-            f"Expected decay={decay}, got {phate_op.graph.decay}"
+        assert (
+            phate_op.graph.decay == decay
+        ), f"Expected decay={decay}, got {phate_op.graph.decay}"
         print(f"✓ decay={decay} set correctly")
 
     print("✓ Test 6 PASSED\n")
@@ -218,7 +233,7 @@ def test_phate_t_parameter():
         print(f"✓ t={t} works correctly")
 
     # Test with t='auto'
-    phate_op = phate.PHATE(knn=5, t='auto', verbose=False, random_state=42)
+    phate_op = phate.PHATE(knn=5, t="auto", verbose=False, random_state=42)
     embedding = phate_op.fit_transform(data)
 
     assert np.all(np.isfinite(embedding)), "Non-finite values with t='auto'"
@@ -235,15 +250,19 @@ def test_phate_mds_methods():
 
     data, _ = create_test_data()
 
-    for mds_method in ['classic', 'metric', 'nonmetric']:
-        phate_op = phate.PHATE(knn=5, t=10, mds=mds_method,
-                              verbose=False, random_state=42)
+    for mds_method in ["classic", "metric", "nonmetric"]:
+        phate_op = phate.PHATE(
+            knn=5, t=10, mds=mds_method, verbose=False, random_state=42
+        )
         embedding = phate_op.fit_transform(data)
 
-        assert embedding.shape == (data.shape[0], 2), \
-            f"Unexpected shape with mds={mds_method}"
-        assert np.all(np.isfinite(embedding)), \
-            f"Non-finite values with mds={mds_method}"
+        assert embedding.shape == (
+            data.shape[0],
+            2,
+        ), f"Unexpected shape with mds={mds_method}"
+        assert np.all(
+            np.isfinite(embedding)
+        ), f"Non-finite values with mds={mds_method}"
         print(f"✓ mds='{mds_method}' works correctly")
 
     print("✓ Test 8 PASSED\n")
@@ -258,17 +277,17 @@ def test_phate_set_params():
     data, _ = create_test_data()
 
     # Fit with classic MDS
-    phate_op = phate.PHATE(knn=5, t=10, mds='classic',
-                          verbose=False, random_state=42)
+    phate_op = phate.PHATE(knn=5, t=10, mds="classic", verbose=False, random_state=42)
     embedding1 = phate_op.fit_transform(data)
 
     # Change to metric MDS without refitting
-    phate_op.set_params(mds='metric')
+    phate_op.set_params(mds="metric")
     embedding2 = phate_op.transform()
 
     # Should produce different embeddings
-    assert not np.allclose(embedding1, embedding2), \
-        "Different MDS methods should give different embeddings"
+    assert not np.allclose(
+        embedding1, embedding2
+    ), "Different MDS methods should give different embeddings"
     print(f"✓ set_params() changes embedding")
 
     # Both should be valid
@@ -288,18 +307,21 @@ def test_phate_gamma_parameter():
     data, _ = create_test_data()
 
     # gamma=1 (log transform)
-    phate_op1 = phate.PHATE(knn=5, t=10, mds='metric', gamma=1,
-                           verbose=False, random_state=42)
+    phate_op1 = phate.PHATE(
+        knn=5, t=10, mds="metric", gamma=1, verbose=False, random_state=42
+    )
     embedding1 = phate_op1.fit_transform(data)
 
     # gamma=0 (sqrt transform)
-    phate_op2 = phate.PHATE(knn=5, t=10, mds='metric', gamma=0,
-                           verbose=False, random_state=42)
+    phate_op2 = phate.PHATE(
+        knn=5, t=10, mds="metric", gamma=0, verbose=False, random_state=42
+    )
     embedding2 = phate_op2.fit_transform(data)
 
     # Different gamma should give different embeddings
-    assert not np.allclose(embedding1, embedding2), \
-        "Different gamma values should give different embeddings"
+    assert not np.allclose(
+        embedding1, embedding2
+    ), "Different gamma values should give different embeddings"
     print(f"✓ gamma=1 and gamma=0 give different embeddings")
 
     # Both should be valid
@@ -323,14 +345,19 @@ def test_phate_distance_metrics():
 
     data, _ = create_test_data()
 
-    for metric in ['euclidean', 'cosine', 'cityblock']:
-        phate_op = phate.PHATE(knn=5, t=10, knn_dist=metric, mds_dist=metric,
-                              verbose=False, random_state=42)
+    for metric in ["euclidean", "cosine", "cityblock"]:
+        phate_op = phate.PHATE(
+            knn=5,
+            t=10,
+            knn_dist=metric,
+            mds_dist=metric,
+            verbose=False,
+            random_state=42,
+        )
         embedding = phate_op.fit_transform(data)
 
         assert embedding.shape == (data.shape[0], 2)
-        assert np.all(np.isfinite(embedding)), \
-            f"Non-finite values with metric={metric}"
+        assert np.all(np.isfinite(embedding)), f"Non-finite values with metric={metric}"
         print(f"✓ metric='{metric}' works correctly")
 
     print("✓ Test 11 PASSED\n")
@@ -345,21 +372,24 @@ def test_phate_precomputed_distance():
     data, _ = create_test_data()
 
     # Compute distance matrix
-    D = squareform(pdist(data, 'euclidean'))
+    D = squareform(pdist(data, "euclidean"))
 
     # Fit with raw data
-    phate_op1 = phate.PHATE(knn=5, t=10, knn_dist='euclidean',
-                           verbose=False, random_state=42)
+    phate_op1 = phate.PHATE(
+        knn=5, t=10, knn_dist="euclidean", verbose=False, random_state=42
+    )
     embedding1 = phate_op1.fit_transform(data)
 
     # Fit with precomputed distance
-    phate_op2 = phate.PHATE(knn=5, t=10, knn_dist='precomputed_distance',
-                           verbose=False, random_state=42)
+    phate_op2 = phate.PHATE(
+        knn=5, t=10, knn_dist="precomputed_distance", verbose=False, random_state=42
+    )
     embedding2 = phate_op2.fit_transform(D)
 
     # Should give similar results (may have small numerical differences)
-    assert np.allclose(embedding1, embedding2, atol=1e-3), \
-        "Precomputed distance gives different results"
+    assert np.allclose(
+        embedding1, embedding2, atol=1e-3
+    ), "Precomputed distance gives different results"
     print(f"✓ Precomputed distance matrix works correctly")
 
     print("✓ Test 12 PASSED\n")
@@ -379,13 +409,15 @@ def test_phate_precomputed_affinity():
     K = phate_op1.graph.kernel
 
     # Fit with precomputed affinity
-    phate_op2 = phate.PHATE(knn=5, t=10, knn_dist='precomputed_affinity',
-                           verbose=False, random_state=42)
+    phate_op2 = phate.PHATE(
+        knn=5, t=10, knn_dist="precomputed_affinity", verbose=False, random_state=42
+    )
     embedding2 = phate_op2.fit_transform(K)
 
     # Should give nearly identical results
-    assert np.allclose(embedding1, embedding2, atol=1e-3), \
-        "Precomputed affinity gives different results"
+    assert np.allclose(
+        embedding1, embedding2, atol=1e-3
+    ), "Precomputed affinity gives different results"
     print(f"✓ Precomputed affinity matrix works correctly")
 
     print("✓ Test 13 PASSED\n")
@@ -438,10 +470,7 @@ def test_phate_pygsp_input():
 
     # Create PyGSP graph from graphtools graph
     G_graphtools = graphtools.Graph(
-        phate_op.graph.kernel,
-        precomputed='affinity',
-        use_pygsp=True,
-        verbose=False
+        phate_op.graph.kernel, precomputed="affinity", use_pygsp=True, verbose=False
     )
     G_pygsp = pygsp.graphs.Graph(G_graphtools.W)
 
@@ -502,8 +531,9 @@ def test_phate_reproducibility():
     embedding2 = phate_op2.fit_transform(data)
 
     # Should be identical
-    assert np.allclose(embedding1, embedding2, atol=1e-10), \
-        "Same random_state should give identical results"
+    assert np.allclose(
+        embedding1, embedding2, atol=1e-10
+    ), "Same random_state should give identical results"
     print(f"✓ Same random_state gives identical results")
 
     print("✓ Test 17 PASSED\n")
@@ -550,12 +580,14 @@ def test_phate_n_jobs():
     data, _ = create_test_data()
 
     for n_jobs in [1, -1, -2]:
-        phate_op = phate.PHATE(knn=5, t=10, n_jobs=n_jobs,
-                              verbose=False, random_state=42)
+        phate_op = phate.PHATE(
+            knn=5, t=10, n_jobs=n_jobs, verbose=False, random_state=42
+        )
         phate_op.fit(data)
 
-        assert phate_op.graph.n_jobs == n_jobs, \
-            f"Expected n_jobs={n_jobs}, got {phate_op.graph.n_jobs}"
+        assert (
+            phate_op.graph.n_jobs == n_jobs
+        ), f"Expected n_jobs={n_jobs}, got {phate_op.graph.n_jobs}"
         print(f"✓ n_jobs={n_jobs} set correctly")
 
     print("✓ Test 19 PASSED\n")

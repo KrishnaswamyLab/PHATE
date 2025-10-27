@@ -87,8 +87,9 @@ def test_compute_von_neumann_entropy_identity():
 
     # Identity gives uniform distribution, so entropy should be log(n)
     expected_entropy = np.log(10)
-    assert np.allclose(h[0], expected_entropy, rtol=0.1), \
-        f"Expected entropy ~{expected_entropy:.4f}, got {h[0]:.4f}"
+    assert np.allclose(
+        h[0], expected_entropy, rtol=0.1
+    ), f"Expected entropy ~{expected_entropy:.4f}, got {h[0]:.4f}"
     print(f"✓ Identity matrix entropy ~{expected_entropy:.4f} (theoretical)")
 
     print("✓ Test 3 PASSED\n")
@@ -191,8 +192,9 @@ def test_find_knee_point_default_x():
     knee_without_x = vne.find_knee_point(y)
 
     # Should get same result
-    assert knee_with_x == knee_without_x, \
-        f"Different results: with x={knee_with_x}, without x={knee_without_x}"
+    assert (
+        knee_with_x == knee_without_x
+    ), f"Different results: with x={knee_with_x}, without x={knee_without_x}"
     print(f"✓ Default x gives same result: knee={knee_without_x}")
 
     print("✓ Test 8 PASSED\n")
@@ -275,8 +277,9 @@ def test_find_knee_point_unsorted_x():
     knee_shuffled = vne.find_knee_point(y_shuffled, x_shuffled)
 
     # Should get same result (function sorts internally)
-    assert knee_sorted == knee_shuffled, \
-        f"Different results: sorted={knee_sorted}, shuffled={knee_shuffled}"
+    assert (
+        knee_sorted == knee_shuffled
+    ), f"Different results: sorted={knee_sorted}, shuffled={knee_shuffled}"
     print(f"✓ Handles unsorted x correctly: knee={knee_shuffled}")
 
     print("✓ Test 12 PASSED\n")
@@ -295,8 +298,9 @@ def test_find_knee_point_list_input():
     knee = vne.find_knee_point(y, x)
 
     # Should work and return valid result
-    assert isinstance(knee, (int, np.integer, float, np.floating)), \
-        f"Expected numeric knee, got {type(knee)}"
+    assert isinstance(
+        knee, (int, np.integer, float, np.floating)
+    ), f"Expected numeric knee, got {type(knee)}"
     print(f"✓ Accepts list input: knee={knee}")
 
     print("✓ Test 13 PASSED\n")
@@ -314,11 +318,15 @@ def test_find_knee_point_too_short():
     print("=" * 70)
 
     # Should raise error for length < 3 (message says "length 3" but means "shorter than 3")
-    with pytest.raises(ValueError, match="Cannot find knee point on vector of length 3"):
+    with pytest.raises(
+        ValueError, match="Cannot find knee point on vector of length 3"
+    ):
         vne.find_knee_point([1, 2])
     print("✓ Correctly rejects length 2")
 
-    with pytest.raises(ValueError, match="Cannot find knee point on vector of length 3"):
+    with pytest.raises(
+        ValueError, match="Cannot find knee point on vector of length 3"
+    ):
         vne.find_knee_point([1])
     print("✓ Correctly rejects length 1")
 

@@ -320,7 +320,9 @@ def test_check_if_not_skip():
 
     # Multiple parameters, some match - only non-matching should be checked
     utils.check_if_not(None, utils.check_positive, param1=5, param2=None, param3=10)
-    print("✓ Correctly skips check for matching parameters (param2=None) but checks others")
+    print(
+        "✓ Correctly skips check for matching parameters (param2=None) but checks others"
+    )
 
     print("✓ Test 15 PASSED\n")
 

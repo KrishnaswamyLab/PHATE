@@ -37,8 +37,9 @@ def test_gen_dla_basic():
 
     # Check shapes with defaults: n_branch=20, branch_length=100
     expected_n_points = 20 * 100  # n_branch * branch_length
-    assert M.shape[0] == expected_n_points, \
-        f"Expected {expected_n_points} points, got {M.shape[0]}"
+    assert (
+        M.shape[0] == expected_n_points
+    ), f"Expected {expected_n_points} points, got {M.shape[0]}"
     print(f"✓ Correct number of points: {M.shape[0]}")
 
     # Default n_dim=100
@@ -46,8 +47,9 @@ def test_gen_dla_basic():
     print(f"✓ Correct dimensionality: {M.shape[1]}")
 
     # Cluster labels should match data
-    assert C.shape[0] == M.shape[0], \
-        f"Mismatched shapes: M has {M.shape[0]} points, C has {C.shape[0]} labels"
+    assert (
+        C.shape[0] == M.shape[0]
+    ), f"Mismatched shapes: M has {M.shape[0]} points, C has {C.shape[0]} labels"
     print(f"✓ Cluster labels match data points")
 
     # Cluster labels should be integers from 0 to n_branch-1
@@ -146,10 +148,12 @@ def test_gen_dla_rand_multiplier():
     print("=" * 70)
 
     # Generate with different rand_multiplier values
-    M1, C1 = tree.gen_dla(n_dim=10, n_branch=2, branch_length=20,
-                          rand_multiplier=1, seed=42)
-    M2, C2 = tree.gen_dla(n_dim=10, n_branch=2, branch_length=20,
-                          rand_multiplier=5, seed=42)
+    M1, C1 = tree.gen_dla(
+        n_dim=10, n_branch=2, branch_length=20, rand_multiplier=1, seed=42
+    )
+    M2, C2 = tree.gen_dla(
+        n_dim=10, n_branch=2, branch_length=20, rand_multiplier=5, seed=42
+    )
 
     # Higher rand_multiplier should generally give larger spread
     spread1 = np.std(M1)
@@ -159,8 +163,9 @@ def test_gen_dla_rand_multiplier():
     print(f"rand_multiplier=5: std={spread2:.4f}")
 
     # Larger multiplier should give larger spread (in most cases)
-    assert spread2 > spread1, \
-        f"Expected larger spread with higher rand_multiplier, got {spread1:.4f} vs {spread2:.4f}"
+    assert (
+        spread2 > spread1
+    ), f"Expected larger spread with higher rand_multiplier, got {spread1:.4f} vs {spread2:.4f}"
     print(f"✓ Higher rand_multiplier gives larger spread")
 
     print("✓ Test 5 PASSED\n")
@@ -173,12 +178,10 @@ def test_gen_dla_sigma():
     print("=" * 70)
 
     # Generate with no noise
-    M1, C1 = tree.gen_dla(n_dim=10, n_branch=2, branch_length=20,
-                          sigma=0, seed=42)
+    M1, C1 = tree.gen_dla(n_dim=10, n_branch=2, branch_length=20, sigma=0, seed=42)
 
     # Generate with noise
-    M2, C2 = tree.gen_dla(n_dim=10, n_branch=2, branch_length=20,
-                          sigma=10, seed=42)
+    M2, C2 = tree.gen_dla(n_dim=10, n_branch=2, branch_length=20, sigma=10, seed=42)
 
     # Should have same shape
     assert M1.shape == M2.shape
@@ -204,14 +207,16 @@ def test_gen_dla_cluster_labels():
 
     n_branch = 4
     branch_length = 25
-    M, C = tree.gen_dla(n_dim=10, n_branch=n_branch,
-                       branch_length=branch_length, seed=42)
+    M, C = tree.gen_dla(
+        n_dim=10, n_branch=n_branch, branch_length=branch_length, seed=42
+    )
 
     # Each branch should have exactly branch_length points
     for i in range(n_branch):
         n_points_in_branch = np.sum(C == i)
-        assert n_points_in_branch == branch_length, \
-            f"Branch {i}: expected {branch_length} points, got {n_points_in_branch}"
+        assert (
+            n_points_in_branch == branch_length
+        ), f"Branch {i}: expected {branch_length} points, got {n_points_in_branch}"
         print(f"✓ Branch {i}: {n_points_in_branch} points")
 
     # Labels should be sequential
@@ -220,8 +225,9 @@ def test_gen_dla_cluster_labels():
         start_idx = i * branch_length
         end_idx = (i + 1) * branch_length
         branch_labels = C[start_idx:end_idx]
-        assert np.all(branch_labels == i), \
-            f"Branch {i}: labels not all {i} in positions [{start_idx}, {end_idx})"
+        assert np.all(
+            branch_labels == i
+        ), f"Branch {i}: labels not all {i} in positions [{start_idx}, {end_idx})"
 
     print(f"✓ Labels are correctly sequential")
 
@@ -255,15 +261,20 @@ def test_gen_dla_large_dataset():
     M, C = tree.gen_dla(n_dim=100, n_branch=50, branch_length=200, seed=42)
 
     expected_n_points = 50 * 200  # 10,000 points
-    assert M.shape == (expected_n_points, 100), \
-        f"Expected shape ({expected_n_points}, 100), got {M.shape}"
+    assert M.shape == (
+        expected_n_points,
+        100,
+    ), f"Expected shape ({expected_n_points}, 100), got {M.shape}"
     print(f"✓ Large dataset shape: {M.shape}")
 
-    assert C.shape == (expected_n_points,), \
-        f"Expected {expected_n_points} labels, got {C.shape[0]}"
+    assert C.shape == (
+        expected_n_points,
+    ), f"Expected {expected_n_points} labels, got {C.shape[0]}"
     print(f"✓ Correct number of labels: {C.shape[0]}")
 
-    assert len(np.unique(C)) == 50, f"Expected 50 unique labels, got {len(np.unique(C))}"
+    assert (
+        len(np.unique(C)) == 50
+    ), f"Expected 50 unique labels, got {len(np.unique(C))}"
     print(f"✓ Correct number of branches: {len(np.unique(C))}")
 
     assert np.all(np.isfinite(M)), "Large dataset contains non-finite values"
@@ -280,8 +291,9 @@ def test_gen_dla_data_structure():
 
     n_branch = 3
     branch_length = 50
-    M, C = tree.gen_dla(n_dim=20, n_branch=n_branch,
-                       branch_length=branch_length, seed=42)
+    M, C = tree.gen_dla(
+        n_dim=20, n_branch=n_branch, branch_length=branch_length, seed=42
+    )
 
     # Each branch should form a path (cumulative sum of random steps)
     # Points within a branch should be relatively close to each other
@@ -295,7 +307,7 @@ def test_gen_dla_data_structure():
         # (consecutive points should be close)
         consecutive_dists = []
         for j in range(len(branch_points) - 1):
-            dist = np.linalg.norm(branch_points[j+1] - branch_points[j])
+            dist = np.linalg.norm(branch_points[j + 1] - branch_points[j])
             consecutive_dists.append(dist)
 
         mean_consecutive_dist = np.mean(consecutive_dists)
@@ -303,8 +315,9 @@ def test_gen_dla_data_structure():
 
         # Consecutive distances should be relatively small (local structure)
         # This is a sanity check that the tree structure makes sense
-        assert mean_consecutive_dist < 100, \
-            f"Branch {i}: consecutive points too far apart ({mean_consecutive_dist:.4f})"
+        assert (
+            mean_consecutive_dist < 100
+        ), f"Branch {i}: consecutive points too far apart ({mean_consecutive_dist:.4f})"
 
     print(f"✓ All branches show local continuity")
 
