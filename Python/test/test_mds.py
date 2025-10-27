@@ -622,9 +622,11 @@ def test_mds_high_dimensions():
 
     print("✓ Test 16 PASSED\n")
 
+
 #####################################################
 # SMACOF and SGD 3D Tests
 #####################################################
+
 
 def test_smacof_basic_3d():
     """Test basic SMACOF functionality"""
@@ -656,6 +658,7 @@ def test_smacof_basic_3d():
 
     print("✓ Test 17 PASSED\n")
 
+
 def test_sgd_mds_basic_3d():
     """Test basic functionality of SGD-MDS"""
     print("\n" + "=" * 70)
@@ -686,6 +689,7 @@ def test_sgd_mds_basic_3d():
     print(f"✓ Embedding has variance: {variance}")
 
     print("✓ Test 18 PASSED\n")
+
 
 def test_phate_with_sgd_mds_3d():
     """Test PHATE integration with SGD-MDS solver"""
@@ -747,6 +751,7 @@ def test_phate_with_sgd_mds_3d():
 
     print("✓ Test 19 PASSED\n")
 
+
 def run_all_tests():
     """Run all tests"""
     print("\n" + "=" * 70)
@@ -777,7 +782,7 @@ def run_all_tests():
         # 3D SGD_MDS tests,
         test_smacof_basic_3d,
         test_sgd_mds_basic_3d,
-        test_phate_with_sgd_mds_3d
+        test_phate_with_sgd_mds_3d,
     ]
 
     failed = []
