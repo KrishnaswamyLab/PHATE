@@ -35,15 +35,15 @@ _logger = tasklogger.get_tasklogger("graphtools")
 
 
 # Check graphtools version
-def _graphtools_version_is_at_least_2_0():
-    """Check if installed graphtools version is >= 2.0.0.
+def _graphtools_version_is_at_least_2_1():
+    """Check if installed graphtools version is >= 2.1.0.
 
     Version 2.0.0+ includes support for:
     - random_landmarking parameter
     - is_connected property and connectivity checks
     """
     try:
-        return version.parse(graphtools.__version__) >= version.parse("2.0.0")
+        return version.parse(graphtools.__version__) >= version.parse("2.1.0")
     except AttributeError:
         # graphtools doesn't have __version__, assume old version
         return False
@@ -237,7 +237,7 @@ class PHATE(BaseEstimator):
             # Disable random_landmarking since it has no effect
             random_landmarking = False
         # Check graphtools version if random_landmarking is still requested
-        elif random_landmarking and not _graphtools_version_is_at_least_2_0():
+        elif random_landmarking and not _graphtools_version_is_at_least_2_1():
             warnings.warn(
                 "random_landmarking is not available in graphtools version < 2.0.0. "
                 "Please update graphtools to use this feature: "
@@ -833,7 +833,7 @@ class PHATE(BaseEstimator):
                 }
 
                 # Only add random_landmarking if graphtools supports it
-                if _graphtools_version_is_at_least_2_0():
+                if _graphtools_version_is_at_least_2_1():
                     graph_params["random_landmarking"] = random_landmarking
 
                 self.graph.set_params(**graph_params)
@@ -905,7 +905,7 @@ class PHATE(BaseEstimator):
                 }
 
                 # Only add random_landmarking if graphtools supports it
-                if _graphtools_version_is_at_least_2_0():
+                if _graphtools_version_is_at_least_2_1():
                     graph_params["random_landmarking"] = self.random_landmarking
 
                 # Merge with any additional kwargs
@@ -914,7 +914,7 @@ class PHATE(BaseEstimator):
                 self.graph = graphtools.Graph(X, **graph_params)
 
                 # Check for graph connectivity (requires graphtools >= 2.0.0)
-                if _graphtools_version_is_at_least_2_0():
+                if _graphtools_version_is_at_least_2_1():
                     if not self.graph.is_connected:
                         warnings.warn(
                             f"Graph is disconnected with {self.graph.n_connected_components} "
