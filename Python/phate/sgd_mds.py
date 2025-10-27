@@ -159,7 +159,7 @@ def sgd_mds(
         Y = Y - lr * gradients
 
         # Compute stress for convergence checking
-        stress = np.sum(errors ** 2) / len(errors)  # Normalized by number of samples
+        stress = np.sum(errors**2) / len(errors)  # Normalized by number of samples
         stress_history.append(stress)
 
         if verbose > 0 and iteration % 100 == 0:
@@ -189,7 +189,9 @@ def sgd_mds(
         last_10pct = max(1, len(stress_history) // 10)
         recent_stress = stress_history[-last_10pct:]
         if len(recent_stress) > 1:
-            stress_trend = (recent_stress[-1] - recent_stress[0]) / (recent_stress[0] + 1e-10)
+            stress_trend = (recent_stress[-1] - recent_stress[0]) / (
+                recent_stress[0] + 1e-10
+            )
             if abs(stress_trend) > 0.01:  # Still changing by more than 1%
                 _logger.log_warning(
                     f"SGD-MDS may not have converged: stress changed by {stress_trend*100:.1f}% "
