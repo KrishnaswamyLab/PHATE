@@ -279,18 +279,22 @@ def test_phate_anndata():
     # Create AnnData object
     adata = anndata.AnnData(
         X=data,
-        obs=pd.DataFrame(
-            {"cell_type": [f"type_{i%3}" for i in range(data.shape[0])]},
-            index=[f"cell_{i}" for i in range(data.shape[0])],
-        )
-        if PANDAS_AVAILABLE
-        else None,
-        var=pd.DataFrame(
-            {"gene_name": [f"gene_{i}" for i in range(data.shape[1])]},
-            index=[f"gene_{i}" for i in range(data.shape[1])],
-        )
-        if PANDAS_AVAILABLE
-        else None,
+        obs=(
+            pd.DataFrame(
+                {"cell_type": [f"type_{i%3}" for i in range(data.shape[0])]},
+                index=[f"cell_{i}" for i in range(data.shape[0])],
+            )
+            if PANDAS_AVAILABLE
+            else None
+        ),
+        var=(
+            pd.DataFrame(
+                {"gene_name": [f"gene_{i}" for i in range(data.shape[1])]},
+                index=[f"gene_{i}" for i in range(data.shape[1])],
+            )
+            if PANDAS_AVAILABLE
+            else None
+        ),
     )
 
     print(f"Input type: {type(adata)}")
