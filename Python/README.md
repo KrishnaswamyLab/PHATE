@@ -28,7 +28,7 @@ To see how PHATE can be applied to datasets such as facial images and single-cel
 
 [Moon, van Dijk, Wang, Gigante et al. **Visualizing Transitions and Structure for Biological Data Exploration**. 2019. *Nature Biotechnology*.](https://doi.org/10.1038/s41587-019-0336-3)
 
-PHATE has been implemented in [Python >=3.5](#python), [MATLAB](https://github.com/KrishnaswamyLab/PHATE/#matlab) and [R](https://github.com/KrishnaswamyLab/phateR/).
+PHATE has been implemented in [Python >=3.9](#python), [MATLAB](https://github.com/KrishnaswamyLab/PHATE/#matlab) and [R](https://github.com/KrishnaswamyLab/phateR/).
 
 ### Table of Contents
 
@@ -42,7 +42,7 @@ PHATE has been implemented in [Python >=3.5](#python), [MATLAB](https://github.c
 ### System Requirements
 
 * Windows (>= 7), Mac OS X (>= 10.8) or Linux
-* [Python >= 3.5](https://www.python.org/downloads/)
+* [Python >= 3.9](https://www.python.org/downloads/)
 
 All other software dependencies are installed automatically when installing PHATE.
 
@@ -50,7 +50,7 @@ All other software dependencies are installed automatically when installing PHAT
 
 The Python version of PHATE can be installed by running the following from a terminal:
 
-    pip install --user phate
+    pip install phate
 
 Installation of PHATE and all dependencies should take no more than five minutes.
 
