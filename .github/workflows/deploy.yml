@@ -14,24 +14,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@master
+    - uses: actions/checkout@v4
 
-    - name: Set up Python 3.11
-      uses: actions/setup-python@v2
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v4
       with:
-        python-version: 3.11
+        python-version: '3.12'
 
     - name: Install pypa/build
-      run: |
-        cd Python
+      run: >-
         python -m pip install build --user
-        cd ..
+
 
     - name: Build a binary wheel and a source tarball
-      run: |
-        cd Python
-        python -m build --sdist --wheel --outdir ../dist/ .
-        cd ..
+      run: >-
+        python -m
+        build
+        --sdist
+        --wheel
+        --outdir dist/
+        .
 
     # - name: Publish distribution 📦 to Test PyPI
     #   uses: pypa/gh-action-pypi-publish@master
@@ -42,7 +44,7 @@ jobs:
 
     - name: Publish distribution 📦 to PyPI
       if: startsWith(github.ref, 'refs/tags')
-      uses: pypa/gh-action-pypi-publish@master
+      uses: pypa/gh-action-pypi-publish@release/v1
       with:
         skip_existing: true
         password: ${{ secrets.pypi_password }}
