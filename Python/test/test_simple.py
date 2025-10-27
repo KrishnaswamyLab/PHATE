@@ -126,7 +126,7 @@ def test_tree():
     np.testing.assert_allclose(
         phate_precomputed_D, phate_precomputed_distance, atol=5e-4
     )
-    
+
     return None
 
 

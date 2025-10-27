@@ -33,6 +33,7 @@ except ImportError:
 
 _logger = tasklogger.get_tasklogger("graphtools")
 
+
 # Check graphtools version
 def _graphtools_version_is_at_least_2_0():
     """Check if installed graphtools version is >= 2.0.0.
@@ -132,9 +133,9 @@ class PHATE(BaseEstimator):
         If an integer is given, it fixes the seed
         Defaults to the global `numpy` random number generator
 
-    random_landmarking : bool, optional, default: False   
-        Whether to use random sampling for landmarking. If True, landmarks 
-        are selected randomly. If False, landmarks are selected deterministically 
+    random_landmarking : bool, optional, default: False
+        Whether to use random sampling for landmarking. If True, landmarks
+        are selected randomly. If False, landmarks are selected deterministically
         using spectral clustering.
         Defaults to False.
 
@@ -231,7 +232,7 @@ class PHATE(BaseEstimator):
                 "Landmarking is disabled when n_landmark=None. "
                 "To use random landmarking, please set n_landmark to a positive integer "
                 "(e.g., n_landmark=2000).",
-                UserWarning
+                UserWarning,
             )
             # Disable random_landmarking since it has no effect
             random_landmarking = False
@@ -242,7 +243,7 @@ class PHATE(BaseEstimator):
                 "Please update graphtools to use this feature: "
                 "https://pypi.org/project/graphtools/2.0.0/. "
                 "Falling back to spectral clustering for landmark selection.",
-                UserWarning
+                UserWarning,
             )
             # Disable random_landmarking since it's not supported
             random_landmarking = False
@@ -532,9 +533,9 @@ class PHATE(BaseEstimator):
             If an integer is given, it fixes the seed
             Defaults to the global `numpy` random number generator
 
-        random_landmarking : bool, optional, default: False   
-            Whether to use random sampling for landmarking. If True, landmarks 
-            are selected randomly. If False, landmarks are selected deterministically 
+        random_landmarking : bool, optional, default: False
+            Whether to use random sampling for landmarking. If True, landmarks
+            are selected randomly. If False, landmarks are selected deterministically
             using spectral clustering.
             Defaults to False.
 
@@ -819,21 +820,21 @@ class PHATE(BaseEstimator):
             try:
                 # Prepare graph params
                 graph_params = {
-                    'decay': self.decay,
-                    'knn': self.knn,
-                    'knn_max': self.knn_max,
-                    'distance': self.knn_dist,
-                    'precomputed': precomputed,
-                    'n_jobs': self.n_jobs,
-                    'verbose': self.verbose,
-                    'n_pca': n_pca,
-                    'n_landmark': n_landmark,
-                    'random_state': self.random_state,
+                    "decay": self.decay,
+                    "knn": self.knn,
+                    "knn_max": self.knn_max,
+                    "distance": self.knn_dist,
+                    "precomputed": precomputed,
+                    "n_jobs": self.n_jobs,
+                    "verbose": self.verbose,
+                    "n_pca": n_pca,
+                    "n_landmark": n_landmark,
+                    "random_state": self.random_state,
                 }
 
                 # Only add random_landmarking if graphtools supports it
                 if _graphtools_version_is_at_least_2_0():
-                    graph_params['random_landmarking'] = random_landmarking
+                    graph_params["random_landmarking"] = random_landmarking
 
                 self.graph.set_params(**graph_params)
                 _logger.log_info("Using precomputed graph and diffusion operator...")
@@ -880,7 +881,9 @@ class PHATE(BaseEstimator):
             n_landmark = self.n_landmark
 
         if self.graph is not None and update_graph:
-            self._update_graph(X, precomputed, n_pca, n_landmark, self.random_landmarking)
+            self._update_graph(
+                X, precomputed, n_pca, n_landmark, self.random_landmarking
+            )
 
         self.X = X
 
@@ -888,22 +891,22 @@ class PHATE(BaseEstimator):
             with _logger.log_task("graph and diffusion operator"):
                 # Prepare graph params
                 graph_params = {
-                    'n_pca': n_pca,
-                    'n_landmark': n_landmark,
-                    'distance': self.knn_dist,
-                    'precomputed': precomputed,
-                    'knn': self.knn,
-                    'knn_max': self.knn_max,
-                    'decay': self.decay,
-                    'thresh': 1e-4,
-                    'n_jobs': self.n_jobs,
-                    'verbose': self.verbose,
-                    'random_state': self.random_state,
+                    "n_pca": n_pca,
+                    "n_landmark": n_landmark,
+                    "distance": self.knn_dist,
+                    "precomputed": precomputed,
+                    "knn": self.knn,
+                    "knn_max": self.knn_max,
+                    "decay": self.decay,
+                    "thresh": 1e-4,
+                    "n_jobs": self.n_jobs,
+                    "verbose": self.verbose,
+                    "random_state": self.random_state,
                 }
 
                 # Only add random_landmarking if graphtools supports it
                 if _graphtools_version_is_at_least_2_0():
-                    graph_params['random_landmarking'] = self.random_landmarking
+                    graph_params["random_landmarking"] = self.random_landmarking
 
                 # Merge with any additional kwargs
                 graph_params.update(self.kwargs)

@@ -53,6 +53,7 @@ Python/doc/build/
 
 # Jupyter
 .ipynb_checkpoints/
+Python/tutorial/cache
 
 # Mac
 .DS_Store

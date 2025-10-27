@@ -218,6 +218,7 @@ def embed_MDS(
     # which is much faster than scipy's pdist + squareform
     if distance_metric == "euclidean" and X.shape[0] > 1000:
         from sklearn.metrics.pairwise import euclidean_distances
+
         X_dist = euclidean_distances(X, X)
     else:
         X_dist = squareform(pdist(X, distance_metric))
@@ -235,7 +236,7 @@ def embed_MDS(
             n_components=ndim,
             random_state=seed,
             init=Y_classic,
-            verbose=verbose
+            verbose=verbose,
         )
     elif solver == "smacof":
         Y = smacof(
