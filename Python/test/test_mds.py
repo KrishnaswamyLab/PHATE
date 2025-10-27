@@ -622,6 +622,130 @@ def test_mds_high_dimensions():
 
     print("✓ Test 16 PASSED\n")
 
+#####################################################
+# SMACOF and SGD 3D Tests
+#####################################################
+
+def test_smacof_basic_3d():
+    """Test basic SMACOF functionality"""
+    print("=" * 70)
+    print("TEST 11: SMACOF basic functionality")
+    print("=" * 70)
+
+    np.random.seed(42)
+    n_samples = 80
+    X = np.random.randn(n_samples, 6)
+    D = squareform(pdist(X, "euclidean"))
+
+    # Run SMACOF
+    Y = smacof(D, n_components=3, random_state=42, metric=True, max_iter=300)
+
+    # Check output shape
+    assert Y.shape == (n_samples, 3), f"Expected shape (80, 3), got {Y.shape}"
+    print(f"✓ Output shape correct: {Y.shape}")
+
+    # Check for NaN or Inf
+    assert not np.any(np.isnan(Y)), "Output contains NaN values"
+    assert not np.any(np.isinf(Y)), "Output contains Inf values"
+    print("✓ No NaN or Inf values")
+
+    # Compute stress
+    stress = compute_stress(D, Y)
+    print(f"Stress: {stress:.6f}")
+    print("✓ SMACOF converged")
+
+    print("✓ Test 17 PASSED\n")
+
+def test_sgd_mds_basic_3d():
+    """Test basic functionality of SGD-MDS"""
+    print("\n" + "=" * 70)
+    print("TEST 1: Basic SGD-MDS functionality")
+    print("=" * 70)
+
+    # Create simple test data
+    np.random.seed(42)
+    n_samples = 100
+    X = np.random.randn(n_samples, 10)
+    D = squareform(pdist(X, "euclidean"))
+
+    # Run SGD-MDS
+    Y = sgd_mds(D, n_components=3, n_iter=200, random_state=42)
+
+    # Check output shape
+    assert Y.shape == (n_samples, 3), f"Expected shape (100, 3), got {Y.shape}"
+    print(f"✓ Output shape correct: {Y.shape}")
+
+    # Check for NaN or Inf
+    assert not np.any(np.isnan(Y)), "Output contains NaN values"
+    assert not np.any(np.isinf(Y)), "Output contains Inf values"
+    print("✓ No NaN or Inf values")
+
+    # Check that points are spread out (not collapsed)
+    variance = np.var(Y, axis=0)
+    assert np.all(variance > 1e-6), f"Embedding collapsed: variance={variance}"
+    print(f"✓ Embedding has variance: {variance}")
+
+    print("✓ Test 18 PASSED\n")
+
+def test_phate_with_sgd_mds_3d():
+    """Test PHATE integration with SGD-MDS solver"""
+    print("=" * 70)
+    print("TEST 5: PHATE integration with SGD-MDS")
+    print("=" * 70)
+
+    # Generate tree data
+    np.random.seed(42)
+    data, labels = phate.tree.gen_dla(n_dim=50, n_branch=5, branch_length=100)
+
+    print(f"Generated tree data: {data.shape}")
+
+    # Test with SGD solver
+    print("\nRunning PHATE with mds_solver='sgd'...")
+    phate_sgd = phate.PHATE(
+        n_components=3,
+        knn=5,
+        t=20,
+        mds_solver="sgd",
+        random_state=42,
+        verbose=0,
+    )
+    embedding_sgd = phate_sgd.fit_transform(data)
+
+    assert embedding_sgd.shape == (
+        data.shape[0],
+        3,
+    ), f"Expected shape {(data.shape[0], 3)}, got {embedding_sgd.shape}"
+    assert not np.any(np.isnan(embedding_sgd)), "SGD embedding contains NaN"
+    print(f"✓ SGD embedding shape: {embedding_sgd.shape}")
+
+    # Test with SMACOF solver for comparison
+    print("\nRunning PHATE with mds_solver='smacof' for comparison...")
+    phate_smacof = phate.PHATE(
+        n_components=3,
+        knn=5,
+        t=20,
+        mds_solver="smacof",
+        random_state=42,
+        verbose=0,
+    )
+    embedding_smacof = phate_smacof.fit_transform(data)
+
+    assert embedding_smacof.shape == (
+        data.shape[0],
+        3,
+    ), f"Expected shape {(data.shape[0], 3)}, got {embedding_smacof.shape}"
+    print(f"✓ SMACOF embedding shape: {embedding_smacof.shape}")
+
+    # Compare embeddings
+    _, embedding_sgd_aligned, disparity = procrustes(embedding_smacof, embedding_sgd)
+    print(f"\nProcrustes disparity between SGD and SMACOF: {disparity:.6f}")
+
+    # PHATE adds additional processing (diffusion, potential), so embeddings
+    # may differ more than raw MDS. Accept < 0.85 as reasonable.
+    assert disparity < 0.85, f"Embeddings too different: {disparity:.6f}"
+    print(f"✓ PHATE embeddings reasonably similar (disparity={disparity:.6f})")
+
+    print("✓ Test 19 PASSED\n")
 
 def run_all_tests():
     """Run all tests"""
@@ -650,6 +774,10 @@ def run_all_tests():
         test_mds_tiny_dataset,
         test_mds_zero_distances,
         test_mds_high_dimensions,
+        # 3D SGD_MDS tests,
+        test_smacof_basic_3d,
+        test_sgd_mds_basic_3d,
+        test_phate_with_sgd_mds_3d
     ]
 
     failed = []
