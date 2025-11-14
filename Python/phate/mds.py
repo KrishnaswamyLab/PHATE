@@ -200,8 +200,6 @@ def embed_MDS(
         low dimensional embedding of X using MDS
     """
 
-    print('here')
-
     if how not in ["classic", "metric", "nonmetric"]:
         raise ValueError(
             "Allowable 'how' values for MDS: 'classic', "
