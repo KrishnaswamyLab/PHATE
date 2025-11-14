@@ -223,6 +223,22 @@ def embed_MDS(
     else:
         X_dist = squareform(pdist(X, distance_metric))
 
+    # Check for degenerate distance matrix before calling classic MDS
+    # This happens with extreme hyperparameters (e.g., KNN close to dataset size)
+    # causing complete diffusion homogeneity
+    if X_dist.std() < 1e-10 or len(np.unique(X_dist)) <= 1:
+        import warnings
+        warnings.warn(
+            f"Degenerate distance matrix detected (std={X_dist.std():.2e}, "
+            f"unique_values={len(np.unique(X_dist))}). "
+            "This typically occurs when hyperparameters cause complete diffusion homogeneity "
+            "(e.g., KNN close to dataset size). "
+            "Returning zero embedding.",
+            RuntimeWarning
+        )
+        # Return all zeros to indicate complete collapse
+        return np.zeros((X_dist.shape[0], ndim))
+
     # initialize all by CMDS
     Y_classic = classic(X_dist, n_components=ndim, random_state=seed)
     if how == "classic":
@@ -244,6 +260,7 @@ def embed_MDS(
         )
     else:
         raise RuntimeError
+
     if how == "metric":
         # re-orient to classic
         _, Y, _ = scipy.spatial.procrustes(Y_classic, Y)
