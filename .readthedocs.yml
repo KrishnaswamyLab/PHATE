@@ -1,0 +1,17 @@
+# Read the Docs configuration file
+# See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
+
+version: 2
+
+# Build documentation in the Python/doc directory
+sphinx:
+  configuration: Python/doc/source/conf.py
+
+# Python version and requirements
+python:
+  version: "3.11"
+  install:
+    - method: pip
+      path: Python
+    - method: pip
+      requirements: Python/doc/source/requirements.txt
