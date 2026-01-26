@@ -1,3 +1,2 @@
-./Python
 sphinx
 sphinxcontrib-napoleon

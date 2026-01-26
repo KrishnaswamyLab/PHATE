@@ -9,8 +9,9 @@ sphinx:
 
 # Python version and requirements
 python:
-  version: "3.12"
+  version: "3.11"
   install:
     - method: pip
       path: Python
-    - requirements: Python/doc/source/requirements.txt
+    - method: pip
+      requirements: Python/doc/source/requirements.txt
