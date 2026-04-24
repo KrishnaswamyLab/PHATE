@@ -13,7 +13,7 @@ maintainers = [
     {name = "João Felipe Rocha, Yale University", email = "joaofelipe.rocha@yale.edu"},
     {name = "Matthew Scicluna, Université de Montréal", email = "matthew.scicluna@umontreal.ca"}
 ]
-license = {text = "GNU General Public License Version 2"}
+license-files = ["LICENSE.md"]
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
