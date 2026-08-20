@@ -10,6 +10,7 @@ import numpy as np
 import graphtools
 from sklearn.base import BaseEstimator
 from sklearn.exceptions import NotFittedError
+from sklearn.preprocessing import normalize
 from scipy import sparse
 import warnings
 import tasklogger
@@ -941,7 +942,12 @@ class PHATE(BaseEstimator):
             Accepted data types: `numpy.ndarray`,
             `scipy.sparse.spmatrix`, `pd.DataFrame`, `anndata.AnnData`. If
             `knn_dist` is 'precomputed', `data` should be a n_samples x
-            n_samples distance or affinity matrix
+            n_samples distance or affinity matrix. Exception: if `knn_dist`
+            is 'precomputed_affinity', `X` may instead be a
+            n_query x n_samples query-to-train affinity matrix, in which
+            case PHATE performs an out-of-sample extension by row-
+            normalizing `X` (aggregated by landmark first, if the graph was
+            fit with landmarks) and applying it to the fitted embedding.
 
         t_max : int, optional, default: 100
             maximum t to test if `t` is set to 'auto'
@@ -974,6 +980,12 @@ class PHATE(BaseEstimator):
                 RuntimeWarning,
             )
             if (
+                self.knn_dist == "precomputed_affinity"
+                and isinstance(self.graph, graphtools.graphs.TraditionalGraph)
+                and self.graph.precomputed == "affinity"
+            ):
+                return self._transform_precomputed_affinity(X)
+            elif (
                 isinstance(self.graph, graphtools.graphs.TraditionalGraph)
                 and self.graph.precomputed is not None
             ):
@@ -987,26 +999,71 @@ class PHATE(BaseEstimator):
                 transitions = self.graph.extend_to_data(X)
                 return self.graph.interpolate(self.embedding, transitions)
         else:
-            diff_potential = self._calculate_potential(
-                t_max=t_max, plot_optimal_t=plot_optimal_t, ax=ax
-            )
-            if self.embedding is None:
-                with _logger.log_task("{} MDS".format(self.mds)):
-                    self.embedding = mds.embed_MDS(
-                        diff_potential,
-                        ndim=self.n_components,
-                        how=self.mds,
-                        solver=self.mds_solver,
-                        distance_metric=self.mds_dist,
-                        n_jobs=self.n_jobs,
-                        seed=self.random_state,
-                        verbose=max(self.verbose - 1, 0),
-                    )
+            self._ensure_embedded(t_max=t_max, plot_optimal_t=plot_optimal_t, ax=ax)
             if isinstance(self.graph, graphtools.graphs.LandmarkGraph):
                 _logger.log_debug("Extending to original data...")
                 return self.graph.interpolate(self.embedding)
             else:
                 return self.embedding
+
+    def _ensure_embedded(self, t_max=100, plot_optimal_t=False, ax=None):
+        """Ensures `self.embedding` holds the MDS embedding of `self.diff_op`
+
+        For a landmark graph, this is the embedding of the landmarks; for a
+        non-landmark graph, this is the embedding of the fitted data.
+        """
+        if self.embedding is None:
+            diff_potential = self._calculate_potential(
+                t_max=t_max, plot_optimal_t=plot_optimal_t, ax=ax
+            )
+            with _logger.log_task("{} MDS".format(self.mds)):
+                self.embedding = mds.embed_MDS(
+                    diff_potential,
+                    ndim=self.n_components,
+                    how=self.mds,
+                    solver=self.mds_solver,
+                    distance_metric=self.mds_dist,
+                    n_jobs=self.n_jobs,
+                    seed=self.random_state,
+                    verbose=max(self.verbose - 1, 0),
+                )
+        return self.embedding
+
+    def _transform_precomputed_affinity(self, X):
+        """Out-of-sample extension for a precomputed affinity graph
+
+        Given a query-to-train affinity matrix `X`, computes the PHATE
+        embedding of the query points as a transition-weighted combination
+        of the training (or landmark) embedding:
+
+        - No landmarks: row-normalize `X` to get the query-train transition
+          matrix, then apply it to the training embedding.
+        - Landmarks: aggregate the columns of `X` by landmark cluster
+          assignment, row-normalize to get the query-landmark transition
+          matrix, then apply it to the landmark embedding.
+        """
+        self._ensure_embedded()
+        if isinstance(self.graph, graphtools.graphs.LandmarkGraph):
+            clusters = self.graph.clusters
+            landmarks = np.unique(clusters)
+            if sparse.issparse(X):
+                pnm = sparse.hstack(
+                    [
+                        sparse.csr_matrix(X[:, clusters == i].sum(axis=1))
+                        for i in landmarks
+                    ]
+                )
+            else:
+                pnm = np.array(
+                    [np.sum(X[:, clusters == i], axis=1) for i in landmarks]
+                ).T
+            transitions = normalize(pnm, norm="l1", axis=1)
+        else:
+            transitions = normalize(X, norm="l1", axis=1)
+        embedding = transitions.dot(self.embedding)
+        if sparse.issparse(embedding):
+            embedding = embedding.toarray()
+        return np.asarray(embedding)
 
     def fit_transform(self, X, **kwargs):
         """Computes the diffusion operator and the position of the cells in the

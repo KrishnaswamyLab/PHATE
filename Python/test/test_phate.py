@@ -14,7 +14,9 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 import phate
 import graphtools
 import pytest
+from scipy import sparse
 from scipy.spatial.distance import pdist, squareform
+from sklearn.preprocessing import normalize
 
 # Optional dependencies
 try:
@@ -421,6 +423,122 @@ def test_phate_precomputed_affinity():
     print(f"✓ Precomputed affinity matrix works correctly")
 
     print("✓ Test 13 PASSED\n")
+
+
+def test_phate_precomputed_affinity_out_of_sample_transform():
+    """Out-of-sample transform with precomputed_affinity (no landmarks, issue #181)"""
+    print("=" * 70)
+    print("TEST 13b: Out-of-sample transform with precomputed affinity, no landmarks")
+    print("=" * 70)
+
+    data, _ = create_test_data()
+    train_data, test_data = data[:250], data[250:]
+
+    # Build a real affinity structure the way an external proximity model would:
+    # a kernel among training points, and a kernel from query points to
+    # training points.
+    G = graphtools.Graph(
+        train_data, knn=5, decay=40, distance="euclidean", random_state=42, verbose=False
+    )
+    K_train = G.kernel
+    K_test_train = G.build_kernel_to_data(test_data)
+
+    phate_op = phate.PHATE(
+        knn_dist="precomputed_affinity",
+        n_landmark=None,
+        t=10,
+        random_state=42,
+        verbose=False,
+    )
+    Z_train = phate_op.fit_transform(K_train)
+
+    with pytest.warns(RuntimeWarning, match="Pre-fit PHATE"):
+        Z_test = phate_op.transform(K_test_train)
+
+    assert Z_test.shape == (test_data.shape[0], 2)
+    assert np.all(np.isfinite(Z_test))
+
+    # Expected: row-normalize the query-train affinity, then apply to Z_train
+    P_query_train = normalize(K_test_train, norm="l1", axis=1)
+    expected = np.asarray(P_query_train.dot(Z_train))
+    assert np.allclose(Z_test, expected), "Out-of-sample embedding does not match P @ Z_train"
+
+    print("✓ Test 13b PASSED\n")
+
+
+def test_phate_precomputed_affinity_out_of_sample_transform_landmark():
+    """Out-of-sample transform with precomputed_affinity and landmarks (issue #181)"""
+    print("=" * 70)
+    print("TEST 13c: Out-of-sample transform with precomputed affinity, landmarks")
+    print("=" * 70)
+
+    data, _ = create_test_data()
+    train_data, test_data = data[:250], data[250:]
+
+    G = graphtools.Graph(
+        train_data, knn=5, decay=40, distance="euclidean", random_state=42, verbose=False
+    )
+    K_train = G.kernel
+    K_test_train = G.build_kernel_to_data(test_data)
+
+    phate_op = phate.PHATE(
+        knn_dist="precomputed_affinity",
+        n_landmark=10,
+        t=10,
+        random_state=42,
+        verbose=False,
+    )
+    phate_op.fit_transform(K_train)
+    assert isinstance(phate_op.graph, graphtools.graphs.LandmarkGraph)
+    Z_landmark = phate_op.embedding
+
+    with pytest.warns(RuntimeWarning, match="Pre-fit PHATE"):
+        Z_test = phate_op.transform(K_test_train)
+
+    assert Z_test.shape == (test_data.shape[0], 2)
+    assert np.all(np.isfinite(Z_test))
+
+    # Expected: aggregate query-train affinities by landmark cluster,
+    # row-normalize, then apply to the landmark embedding
+    clusters = phate_op.graph.clusters
+    landmarks = np.unique(clusters)
+    pnm = sparse.hstack(
+        [
+            sparse.csr_matrix(K_test_train[:, clusters == i].sum(axis=1))
+            for i in landmarks
+        ]
+    )
+    P_query_landmark = normalize(pnm, norm="l1", axis=1)
+    expected = np.asarray(P_query_landmark.dot(Z_landmark))
+    assert np.allclose(
+        Z_test, expected
+    ), "Out-of-sample landmark embedding does not match P @ Z_landmark"
+
+    print("✓ Test 13c PASSED\n")
+
+
+def test_phate_precomputed_distance_out_of_sample_transform_raises():
+    """Out-of-sample transform with precomputed_distance should still raise"""
+    print("=" * 70)
+    print("TEST 13d: Out-of-sample transform with precomputed distance still raises")
+    print("=" * 70)
+
+    data, _ = create_test_data()
+    train_data, test_data = data[:250], data[250:]
+
+    D_train = squareform(pdist(train_data, "euclidean"))
+
+    phate_op = phate.PHATE(
+        knn=5, t=10, knn_dist="precomputed_distance", verbose=False, random_state=42
+    )
+    phate_op.fit_transform(D_train)
+
+    D_test_train = np.zeros((test_data.shape[0], train_data.shape[0]))
+    with pytest.warns(RuntimeWarning, match="Pre-fit PHATE"):
+        with pytest.raises(ValueError, match="Cannot transform additional data"):
+            phate_op.transform(D_test_train)
+
+    print("✓ Test 13d PASSED\n")
 
 
 #####################################################

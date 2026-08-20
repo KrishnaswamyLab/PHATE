@@ -55,6 +55,9 @@ Python/doc/build/
 .ipynb_checkpoints/
 Python/tutorial/cache
 
+# Virtual environments
+.venv/
+
 # Mac
 .DS_Store
 
