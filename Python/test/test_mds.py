@@ -752,6 +752,32 @@ def test_phate_with_sgd_mds_3d():
     print("✓ Test 19 PASSED\n")
 
 
+def test_sgd_mds_keeps_tight_group_together():
+    """A tight group lifted off a flat disk must stay together in 2-D.
+
+    The group is about equally far from every disk point, so in 2-D any direction around the disk is
+    almost equally good. Starting from classical MDS (group in the middle of the disk), an optimiser that
+    only takes small summed steps can tear the group apart and never rejoin it; with landmarks, PHATE
+    then draws the group's samples as a straight line between the pieces.
+    """
+    rng = np.random.default_rng(0)
+    r, th = np.sqrt(rng.uniform(0, 1, 1500)), rng.uniform(0, 2 * np.pi, 1500)
+    disk = np.c_[r * np.cos(th), r * np.sin(th), np.zeros(1500)]
+    group = np.array([0, 0, 1.5]) + rng.normal(size=(50, 3)) * 0.02
+    D = squareform(pdist(np.vstack([disk, group])))
+    g = np.arange(1500, 1550)
+    iu = np.triu_indices(len(D), 1)
+    init = classic(D, n_components=2, random_state=0)
+    for seed in range(5):
+        Y = sgd_mds_metric(D, n_components=2, init=init, random_state=seed)
+        De = squareform(pdist(Y))
+        spread = De[np.ix_(g, g)].max() / np.median(De[iu])
+        # 0.125 in 3-D; about 0.26 is the best 2-D can do; a torn group gives 0.75-3.4
+        assert (
+            spread < 0.5
+        ), f"tight group torn apart (seed {seed}): spread {spread:.2f}"
+
+
 def run_all_tests():
     """Run all tests"""
     print("\n" + "=" * 70)
@@ -767,6 +793,7 @@ def run_all_tests():
         test_phate_with_sgd_mds,
         test_sgd_mds_with_pairs_per_iter,
         test_sgd_mds_different_n_components,
+        test_sgd_mds_keeps_tight_group_together,
         # Classic MDS tests
         test_classic_mds_basic,
         test_classic_mds_perfect_embedding,
